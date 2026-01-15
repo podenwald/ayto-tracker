@@ -112,6 +112,17 @@ function convertToProbabilityInput(
     frauenNICHTInCeremonies: women.filter(w => !participantsInCeremonies.has(w))
   })
   
+  // Guard: Keine Teilnehmer vorhanden
+  if (allParticipants.length === 0) {
+    console.warn('⚠️ Keine Teilnehmer vorhanden!')
+    return {
+      men: [],
+      women: [],
+      ceremonies: [],
+      boxDecisions: []
+    }
+  }
+  
   // KRITISCH: Nur Teilnehmer aus der LETZTEN Matching Night
   // Das sind die Teilnehmer, die noch auf der Suche sind
   const lastNight = matchingNights[matchingNights.length - 1]
@@ -256,11 +267,28 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
       
       // Guard: Keine Teilnehmer
       if (input.men.length === 0 || input.women.length === 0) {
+        setResult(null) // Ergebnis zurücksetzen
         setStatus({
           isCalculating: false,
           progress: 0,
-          currentStep: 'Keine Teilnehmer vorhanden',
-          error: 'Keine Teilnehmer gefunden'
+          currentStep: 'Keine Daten vorhanden',
+          error: participants.length === 0 
+            ? 'Keine Teilnehmer vorhanden. Bitte zuerst Teilnehmer im Admin-Panel hinzufügen.'
+            : matchingNights.length === 0
+            ? 'Keine Matching Nights vorhanden. Bitte zuerst Matching Nights hinzufügen.'
+            : 'Nicht genügend Teilnehmer für Berechnung vorhanden.'
+        })
+        return
+      }
+      
+      // Guard: Keine Matching Nights
+      if (input.ceremonies.length === 0) {
+        setResult(null) // Ergebnis zurücksetzen
+        setStatus({
+          isCalculating: false,
+          progress: 0,
+          currentStep: 'Keine Matching Nights vorhanden',
+          error: 'Keine Matching Nights vorhanden. Bitte zuerst Matching Nights hinzufügen.'
         })
         return
       }
@@ -329,11 +357,12 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
       
     } catch (error) {
       console.error('Fehler bei der Wahrscheinlichkeits-Berechnung:', error)
+      setResult(null) // Ergebnis zurücksetzen bei Fehler
       setStatus({
         isCalculating: false,
         progress: 0,
         currentStep: 'Fehler',
-        error: error instanceof Error ? error.message : 'Unbekannter Fehler'
+        error: error instanceof Error ? error.message : 'Unbekannter Fehler bei der Berechnung'
       })
     }
   }, [])

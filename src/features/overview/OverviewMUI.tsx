@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 // Avatar utilities removed - using simple fallback logic
 import {
   Box,
@@ -743,6 +743,9 @@ const OverviewMUI: React.FC = () => {
 
   // Benutzer-Lösungs-Matrix State
   const [userSolution, setUserSolution] = useState<Record<string, Record<string, string>>>({})
+  
+  // Ref to track if we've already attempted calculation for the current tab
+  const calculationAttemptedRef = useRef<number | null>(null)
 
   useEffect(() => {
     loadAllData()
@@ -762,17 +765,38 @@ const OverviewMUI: React.FC = () => {
   
   // Trigger probability calculation when switching to probability tab
   useEffect(() => {
+    // Reset calculation attempt tracking when switching tabs
+    if (activeTab !== 3) {
+      calculationAttemptedRef.current = null
+      return
+    }
+    
     console.log('🔍 useEffect Wahrscheinlichkeit:', {
       activeTab,
       probabilityResult: !!probabilityResult,
-      isCalculating: probabilityStatus.isCalculating
+      isCalculating: probabilityStatus.isCalculating,
+      hasError: !!probabilityStatus.error,
+      alreadyAttempted: calculationAttemptedRef.current === activeTab
     })
     
-    if (activeTab === 3 && !probabilityResult && !probabilityStatus.isCalculating) {
+    // Only trigger if:
+    // 1. We're on the probability tab (3)
+    // 2. No result yet
+    // 3. Not currently calculating
+    // 4. No error (to prevent infinite retries)
+    // 5. Haven't already attempted for this tab
+    if (
+      activeTab === 3 && 
+      !probabilityResult && 
+      !probabilityStatus.isCalculating && 
+      !probabilityStatus.error &&
+      calculationAttemptedRef.current !== activeTab
+    ) {
       console.log('▶️ Starte Wahrscheinlichkeits-Berechnung...')
+      calculationAttemptedRef.current = activeTab
       triggerCalculation()
     }
-  }, [activeTab, probabilityResult, probabilityStatus.isCalculating, triggerCalculation])
+  }, [activeTab, probabilityResult, probabilityStatus.isCalculating, probabilityStatus.error, triggerCalculation])
 
   const loadAllData = async () => {
     try {
@@ -1108,7 +1132,32 @@ const OverviewMUI: React.FC = () => {
       // Check if all 10 pairs are complete
       const completePairs = matchingNightForm.pairs.filter(pair => pair && pair.woman && pair.man)
       
-      // Check for gender conflicts in complete pairs
+      // KRITISCH: Validiere, dass im 'woman' Feld nur Frauen und im 'man' Feld nur Männer sind
+      const invalidGenderPlacements = completePairs.filter(pair => {
+        const womanParticipant = participants.find(p => p.name === pair.woman)
+        const manParticipant = participants.find(p => p.name === pair.man)
+        
+        // Prüfe, ob im 'woman' Feld wirklich eine Frau ist
+        if (womanParticipant && womanParticipant.gender !== 'F') {
+          return true
+        }
+        // Prüfe, ob im 'man' Feld wirklich ein Mann ist
+        if (manParticipant && manParticipant.gender !== 'M') {
+          return true
+        }
+        return false
+      })
+
+      if (invalidGenderPlacements.length > 0) {
+        setSnackbar({ 
+          open: true, 
+          message: `Ungültige Platzierung gefunden! Im ersten Feld (Frau) dürfen nur Frauen und im zweiten Feld (Mann) nur Männer platziert werden.`, 
+          severity: 'error' 
+        })
+        return
+      }
+      
+      // Check for gender conflicts in complete pairs (beide haben gleiches Geschlecht)
       const genderConflicts = completePairs.filter(pair => {
         const womanParticipant = participants.find(p => p.name === pair.woman)
         const manParticipant = participants.find(p => p.name === pair.man)
@@ -1270,6 +1319,24 @@ const OverviewMUI: React.FC = () => {
     
     // Check if participant is already placed or confirmed as Perfect Match
     if (placedParticipants.has(draggedParticipant.name || '') || getAllConfirmedPerfectMatchParticipants().has(draggedParticipant.name || '')) return
+    
+    // KRITISCH: Validiere, dass nur Frauen im 'woman' Feld und nur Männer im 'man' Feld platziert werden können
+    if (slot === 'woman' && draggedParticipant.gender !== 'F') {
+      setSnackbar({ 
+        open: true, 
+        message: `Nur Frauen können im ersten Feld (Frau) platziert werden! ${draggedParticipant.name} ist ein Mann.`, 
+        severity: 'error' 
+      })
+      return
+    }
+    if (slot === 'man' && draggedParticipant.gender !== 'M') {
+      setSnackbar({ 
+        open: true, 
+        message: `Nur Männer können im zweiten Feld (Mann) platziert werden! ${draggedParticipant.name} ist eine Frau.`, 
+        severity: 'error' 
+      })
+      return
+    }
     
     // Check if the target slot already has someone of the same gender
     const targetPair = matchingNightForm.pairs[pairIndex] || { woman: '', man: '' }
@@ -1988,6 +2055,8 @@ const OverviewMUI: React.FC = () => {
                     <Button
                       variant="contained"
                       onClick={async () => {
+                        // Reset calculation attempt tracking to allow manual retry
+                        calculationAttemptedRef.current = null
                         if (probabilityResult) {
                           console.log('🗑️ Lösche Cache vor Neuberechnung...')
                           await clearProbabilityCache()
@@ -2026,6 +2095,41 @@ const OverviewMUI: React.FC = () => {
                 )}
                 
                 <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+                  {/* Keine Daten vorhanden */}
+                  {(!probabilityResult && !probabilityStatus.isCalculating && !probabilityStatus.error) && (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                      <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                        Keine Daten vorhanden. Bitte zuerst Teilnehmer und Matching Nights hinzufügen.
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        onClick={() => triggerCalculation()}
+                      >
+                        Berechnung starten
+                      </Button>
+                    </Box>
+                  )}
+                  
+                  {/* Fehler oder keine Teilnehmer */}
+                  {probabilityStatus.error && (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                      <Typography variant="body1" color="error" sx={{ mb: 2 }}>
+                        {probabilityStatus.error}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Bitte füge zuerst Daten im Admin-Panel hinzu:
+                      </Typography>
+                      <Box component="ul" sx={{ textAlign: 'left', display: 'inline-block', mb: 2 }}>
+                        <li>Teilnehmer hinzufügen</li>
+                        <li>Matching Nights erstellen</li>
+                        <li>Matchboxes verwalten</li>
+                      </Box>
+                    </Box>
+                  )}
+                  
+                  {/* Matrix nur anzeigen wenn Daten vorhanden */}
+                  {probabilityResult && men.length > 0 && women.length > 0 && (
+                  <>
                   <Box sx={{ overflow: 'visible' }}>
                     <Table size="small">
                       <TableHead>
@@ -2291,6 +2395,8 @@ const OverviewMUI: React.FC = () => {
                       </Box>
                     </Box>
                   </Box>
+                  </>
+                  )}
                 </CardContent>
               </Card>
 

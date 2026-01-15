@@ -319,7 +319,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            AYTO - Reality Stars in Love 2025
+            AYTO 2026 - Live-Tracker
           </Typography>
         </Toolbar>
       </AppBar>

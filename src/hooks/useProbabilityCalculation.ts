@@ -57,7 +57,7 @@ function convertToProbabilityInput(
     }
   })
   
-  // KRITISCH: ALLE Teilnehmer einbeziehen
+  // KRITISCH: ALLE Kandidat*innen einbeziehen
   // Status kann sein: "aktiv", "Aktiv", "Perfekt Match", undefined
   // Wir schließen NUR explizit "Inaktiv" aus (oder benutzen das active Flag)
   const allParticipants = participants.filter(p => {
@@ -86,7 +86,7 @@ function convertToProbabilityInput(
     .filter(p => p.gender === 'F')
     .map(p => p.name)
   
-  console.log('👥 Alle Teilnehmer für Berechnung:', {
+  console.log('👥 Alle Kandidat*innen für Berechnung:', {
     männer: men.length,
     frauen: women.length,
     männerNamen: men,
@@ -94,7 +94,7 @@ function convertToProbabilityInput(
     alleStatus: participants.map(p => ({ name: p.name, status: p.status, active: p.active }))
   })
   
-  // DEBUG: Welche Teilnehmer kommen in den Zeremonien vor?
+  // DEBUG: Welche Kandidat*innen kommen in den Zeremonien vor?
   const participantsInCeremonies = new Set<string>()
   matchingNights.forEach(night => {
     night.pairs.forEach(pair => {
@@ -103,7 +103,7 @@ function convertToProbabilityInput(
     })
   })
   
-  console.log('🎭 Teilnehmer in Zeremonien:', {
+  console.log('🎭 Kandidat*innen in Zeremonien:', {
     gesamt: participantsInCeremonies.size,
     namen: Array.from(participantsInCeremonies),
     männerInCeremonies: men.filter(m => participantsInCeremonies.has(m)),
@@ -112,9 +112,9 @@ function convertToProbabilityInput(
     frauenNICHTInCeremonies: women.filter(w => !participantsInCeremonies.has(w))
   })
   
-  // Guard: Keine Teilnehmer vorhanden
+  // Guard: Keine Kandidat*innen vorhanden
   if (allParticipants.length === 0) {
-    console.warn('⚠️ Keine Teilnehmer vorhanden!')
+    console.warn('⚠️ Keine Kandidat*innen vorhanden!')
     return {
       men: [],
       women: [],
@@ -123,8 +123,8 @@ function convertToProbabilityInput(
     }
   }
   
-  // KRITISCH: Nur Teilnehmer aus der LETZTEN Matching Night
-  // Das sind die Teilnehmer, die noch auf der Suche sind
+  // KRITISCH: Nur Kandidat*innen aus der LETZTEN Matching Night
+  // Das sind die Kandidat*innen, die noch auf der Suche sind
   const lastNight = matchingNights[matchingNights.length - 1]
   
   if (!lastNight) {
@@ -143,7 +143,7 @@ function convertToProbabilityInput(
   const relevantMen = men.filter(m => menInLastNight.has(m))
   const relevantWomen = women.filter(w => womenInLastNight.has(w))
   
-  console.log('🎯 Relevante Teilnehmer für Berechnung (aus letzter Matching Night):', {
+  console.log('🎯 Relevante Kandidat*innen für Berechnung (aus letzter Matching Night):', {
     relevantMen: relevantMen.length,
     relevantWomen: relevantWomen.length,
     menNames: relevantMen,
@@ -265,7 +265,7 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
       // Schritt 2: Zu ProbabilityInput konvertieren
       const input = convertToProbabilityInput(participants, matchingNights, matchboxes)
       
-      // Guard: Keine Teilnehmer
+      // Guard: Keine Kandidat*innen
       if (input.men.length === 0 || input.women.length === 0) {
         setResult(null) // Ergebnis zurücksetzen
         setStatus({
@@ -273,10 +273,10 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
           progress: 0,
           currentStep: 'Keine Daten vorhanden',
           error: participants.length === 0 
-            ? 'Keine Teilnehmer vorhanden. Bitte zuerst Teilnehmer im Admin-Panel hinzufügen.'
+            ? 'Keine Kandidat*innen vorhanden. Bitte zuerst Kandidat*innen im Admin-Panel hinzufügen.'
             : matchingNights.length === 0
             ? 'Keine Matching Nights vorhanden. Bitte zuerst Matching Nights hinzufügen.'
-            : 'Nicht genügend Teilnehmer für Berechnung vorhanden.'
+            : 'Nicht genügend Kandidat*innen für Berechnung vorhanden.'
         })
         return
       }

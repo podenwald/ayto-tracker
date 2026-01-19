@@ -975,7 +975,7 @@ const OverviewMUI: React.FC = () => {
   const [isDraggingBox, setIsDraggingBox] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
-  // Helper functions - Zeige alle aktiven Teilnehmer (inkl. Perfect Matches)
+  // Helper functions - Zeige alle aktiven Kandidat*innen (inkl. Perfect Matches)
   const women = participants.filter(p => 
     p.gender === 'F' && 
     (p.status === 'Aktiv' || p.status === 'aktiv' || p.status === 'Perfekt Match')
@@ -1631,7 +1631,7 @@ const OverviewMUI: React.FC = () => {
                   }
                   subheader={
                     <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                      Ziehe Teilnehmer hier hinein • Header klicken zum Verschieben
+                      Ziehe Kandidat*in hier hinein • Header klicken zum Verschieben
                     </Typography>
                   }
                   sx={{ 
@@ -1819,7 +1819,7 @@ const OverviewMUI: React.FC = () => {
                         </Button>
                       ) : (
                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center', width: '100%', py: 1 }}>
-                          Beide Teilnehmer hinzufügen
+                          Beide Kandidat*innen hinzufügen
                         </Typography>
                       )}
                       {(matchboxForm.woman || matchboxForm.man) && (
@@ -1849,7 +1849,7 @@ const OverviewMUI: React.FC = () => {
             {/* Participants by Gender */}
             {participants.length === 0 ? (
               <Alert severity="info">
-                {'Noch keine Teilnehmer vorhanden'}
+                {'Noch keine Kandidat*innen vorhanden'}
               </Alert>
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -2112,7 +2112,7 @@ const OverviewMUI: React.FC = () => {
                   {(!probabilityResult && !probabilityStatus.isCalculating && !probabilityStatus.error) && (
                     <Box sx={{ p: 3, textAlign: 'center' }}>
                       <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                        Keine Daten vorhanden. Bitte zuerst Teilnehmer und Matching Nights hinzufügen.
+                        Keine Daten vorhanden. Bitte zuerst Kandidat*innen und Matching Nights hinzufügen.
                       </Typography>
                       <Button
                         variant="outlined"
@@ -2123,7 +2123,7 @@ const OverviewMUI: React.FC = () => {
                     </Box>
                   )}
                   
-                  {/* Fehler oder keine Teilnehmer */}
+                  {/* Fehler oder keine Kandidat*innen */}
                   {probabilityStatus.error && (
                     <Box sx={{ p: 3, textAlign: 'center' }}>
                       <Typography variant="body1" color="error" sx={{ mb: 2 }}>
@@ -2133,7 +2133,7 @@ const OverviewMUI: React.FC = () => {
                         Bitte füge zuerst Daten im Admin-Panel hinzu:
                       </Typography>
                       <Box component="ul" sx={{ textAlign: 'left', display: 'inline-block', mb: 2 }}>
-                        <li>Teilnehmer hinzufügen</li>
+                        <li>Kandidat*innen hinzufügen</li>
                         <li>Matching Nights erstellen</li>
                         <li>Matchboxes verwalten</li>
                       </Box>
@@ -2669,7 +2669,7 @@ const OverviewMUI: React.FC = () => {
               <Typography variant="h6" sx={{ width: '100%' }}>Neue Matching Night erstellen</Typography>
               {!isMobile && (
                 <Typography variant="body2" color="text.secondary">
-                  🎯 Ziehe Teilnehmer direkt in die Pärchen-Container
+                  🎯 Ziehe Kandidat*innen direkt in die Pärchen-Container
                 </Typography>
               )}
             </Box>
@@ -3126,7 +3126,7 @@ const OverviewMUI: React.FC = () => {
               Neue Matchbox erstellen
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {isMobile ? '📱 Wähle Teilnehmer aus den Listen aus' : '💡 Ziehe Teilnehmer aus der Übersicht hier hinein'}
+              {isMobile ? '📱 Wähle Kandidat*innen aus den Listen aus' : '💡 Ziehe Kandidat*innen aus der Übersicht hier hinein'}
             </Typography>
           </Box>
         </DialogTitle>
@@ -3320,7 +3320,7 @@ const OverviewMUI: React.FC = () => {
             )}
 
             {/* Manuelle Auswahl - immer sichtbar */}
-            <Typography variant="h6" sx={{ mt: 2 }}>{isMobile ? 'Teilnehmer auswählen:' : 'Oder manuell auswählen:'}</Typography>
+            <Typography variant="h6" sx={{ mt: 2 }}>{isMobile ? 'Kandidat*innen auswählen:' : 'Oder manuell auswählen:'}</Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <FormControl fullWidth>
                 <InputLabel>Frau auswählen</InputLabel>

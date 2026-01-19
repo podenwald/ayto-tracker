@@ -174,7 +174,7 @@ const BroadcastManagement: React.FC<BroadcastManagementProps> = ({
         let title = ''
         let description = ''
         
-        // MatchBox Name im Format "Teilnehmer 1 + Teilnehmer 2"
+        // MatchBox Name im Format "Kandidat*in 1 + Kandidat*in 2"
         const matchboxName = `${mb.woman} + ${mb.man}`
         
         switch (mb.matchType) {

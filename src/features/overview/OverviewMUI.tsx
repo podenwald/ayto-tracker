@@ -51,6 +51,7 @@ import {
 import { useProbabilityCalculation } from '@/hooks/useProbabilityCalculation'
 import { MatchboxService } from '@/services/matchboxService'
 import { MatchingNightService } from '@/services/matchingNightService'
+import ParticipantsView from '@/components/ParticipantsView'
 
 // ** Tab Panel Component
 interface TabPanelProps {
@@ -506,7 +507,7 @@ const MatchingNightPairContainer: React.FC<{
                   <WomanIcon sx={{ fontSize: '20px' }} />
                 </Avatar>
                 <Typography variant="caption" sx={{ textAlign: 'center', fontSize: '10px' }}>
-                  Teilnehmer hier hinziehen
+                  Kandidat*in hier hinziehen
                 </Typography>
               </Box>
             )}
@@ -595,7 +596,7 @@ const MatchingNightPairContainer: React.FC<{
                   <ManIcon sx={{ fontSize: '20px' }} />
                 </Avatar>
                 <Typography variant="caption" sx={{ textAlign: 'center', fontSize: '10px' }}>
-                  Teilnehmer hier hinziehen
+                  Kandidat*in hier hinziehen
                 </Typography>
               </Box>
             )}
@@ -766,7 +767,7 @@ const OverviewMUI: React.FC = () => {
   // Trigger probability calculation when switching to probability tab
   useEffect(() => {
     // Reset calculation attempt tracking when switching tabs
-    if (activeTab !== 3) {
+    if (activeTab !== 4) {
       calculationAttemptedRef.current = null
       return
     }
@@ -780,13 +781,13 @@ const OverviewMUI: React.FC = () => {
     })
     
     // Only trigger if:
-    // 1. We're on the probability tab (3)
+    // 1. We're on the probability tab (4)
     // 2. No result yet
     // 3. Not currently calculating
     // 4. No error (to prevent infinite retries)
     // 5. Haven't already attempted for this tab
     if (
-      activeTab === 3 && 
+      activeTab === 4 && 
       !probabilityResult && 
       !probabilityStatus.isCalculating && 
       !probabilityStatus.error &&
@@ -1546,12 +1547,13 @@ const OverviewMUI: React.FC = () => {
 
   return (
     <MenuLayout
-      activeTab={activeTab === 0 ? 'overview' : activeTab === 1 ? 'matching-nights' : activeTab === 2 ? 'matchbox' : 'probabilities'}
+      activeTab={activeTab === 0 ? 'overview' : activeTab === 1 ? 'candidates' : activeTab === 2 ? 'matching-nights' : activeTab === 3 ? 'matchbox' : 'probabilities'}
       onTabChange={(tab) => {
         if (tab === 'overview') setActiveTab(0)
-        else if (tab === 'matching-nights') setActiveTab(1)
-        else if (tab === 'matchbox') setActiveTab(2)
-        else if (tab === 'probabilities') setActiveTab(3)
+        else if (tab === 'candidates') setActiveTab(1)
+        else if (tab === 'matching-nights') setActiveTab(2)
+        else if (tab === 'matchbox') setActiveTab(3)
+        else if (tab === 'probabilities') setActiveTab(4)
       }}
       onCreateMatchbox={handleCreateMatchbox}
       onCreateMatchingNight={handleCreateMatchingNight}
@@ -1930,31 +1932,42 @@ const OverviewMUI: React.FC = () => {
             
           </TabPanel>
 
-          {/* Matching Nights Tab */}
+          {/* Kandidat*innen Tab */}
           <TabPanel value={activeTab} index={1}>
+            <ParticipantsView participants={participants} />
+          </TabPanel>
+
+          {/* Matching Nights Tab */}
+          <TabPanel value={activeTab} index={2}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                Matching Nights
+                Matching Nights ({matchingNights.length})
               </Typography>
             </Box>
             
             {/* Matching Nights List */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {matchingNights.map((matchingNight) => (
-                      <MatchingNightCard
-                        key={matchingNight.id}
-                        matchingNight={matchingNight}
-                        participants={participants}
-                        matchboxes={matchboxes}
-                  expanded={expandedMatchingNights.has(matchingNight.id || 0)}
-                  onToggle={() => toggleMatchingNight(matchingNight.id || 0)}
-                      />
-              ))}
-            </Box>
+            {matchingNights.length === 0 ? (
+              <Alert severity="info">
+                Noch keine Matching Nights vorhanden
+              </Alert>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {matchingNights.map((matchingNight) => (
+                        <MatchingNightCard
+                          key={matchingNight.id}
+                          matchingNight={matchingNight}
+                          participants={participants}
+                          matchboxes={matchboxes}
+                    expanded={expandedMatchingNights.has(matchingNight.id || 0)}
+                    onToggle={() => toggleMatchingNight(matchingNight.id || 0)}
+                        />
+                ))}
+              </Box>
+            )}
           </TabPanel>
 
           {/* Matchbox Tab */}
-          <TabPanel value={activeTab} index={2}>
+          <TabPanel value={activeTab} index={3}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                 Matchboxes ({matchboxes.length})
@@ -2004,7 +2017,7 @@ const OverviewMUI: React.FC = () => {
           </TabPanel>
 
           {/* Probability Analysis Tab */}
-          <TabPanel value={activeTab} index={3}>
+          <TabPanel value={activeTab} index={4}>
             {/* Error Message */}
             {probabilityStatus.error && (
               <Alert severity="error" sx={{ mb: 3 }}>

@@ -149,7 +149,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       disabled: true
     },
     {
-      text: 'Teilnehmer',
+      text: 'Kandidat*innen',
       icon: <PeopleIcon />,
       value: 'participants'
     },

@@ -53,7 +53,7 @@ export function ImportExport(){
         };
       });
       
-      console.log('Normalisierte Teilnehmer:', normalizedParticipants);
+      console.log('Normalisierte Kandidat*innen:', normalizedParticipants);
       
       await db.transaction('rw', db.participants, async () => {
         await db.participants.clear();
@@ -62,7 +62,7 @@ export function ImportExport(){
       
       // Nach Erfolg: Dateiname speichern
       saveLastImportedJsonFile(file.name)
-      alert(`Import erfolgreich abgeschlossen!\n\n${normalizedParticipants.length} Teilnehmer wurden importiert.`);
+      alert(`Import erfolgreich abgeschlossen!\n\n${normalizedParticipants.length} Kandidat*innen wurden importiert.`);
       location.reload();
     } catch (error) {
       console.error('Fehler beim Import:', error);

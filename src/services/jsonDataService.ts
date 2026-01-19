@@ -140,28 +140,16 @@ export async function loadAndSyncJsonData(): Promise<JsonDataState> {
  */
 export async function updateParticipantInJson(participant: Participant): Promise<JsonDataUpdateResult> {
   try {
-    // Lade aktuelle JSON-Daten
-    const jsonData = await loadJsonData()
-    
-    // Aktualisiere den Teilnehmer
-    const updatedParticipants = jsonData.participants.map(p => 
-      p.id === participant.id ? { ...participant, updatedAt: new Date().toISOString() } : p
-    )
-    
-    // Aktualisiere auch in der IndexedDB
+    // KRITISCH: Direkt in IndexedDB speichern, ohne JSON-Dateien vom Server zu laden
+    // Die JSON-Dateien existieren nur im Production-Build, nicht im Dev-Modus
     await db.participants.put(participant)
     
-    console.log(`✅ Teilnehmer ${participant.name} in JSON-Datenquelle aktualisiert`)
+    console.log(`✅ Teilnehmer ${participant.name} in IndexedDB aktualisiert`)
     console.log('📊 Aktuelle Teilnehmer-Daten:', await db.participants.toArray())
     
     return {
       success: true,
-      message: `Teilnehmer ${participant.name} erfolgreich aktualisiert`,
-      data: {
-        ...jsonData,
-        participants: updatedParticipants,
-        lastUpdated: new Date().toISOString()
-      }
+      message: `Teilnehmer ${participant.name} erfolgreich aktualisiert`
     }
   } catch (error) {
     console.error('Fehler beim Aktualisieren des Teilnehmers:', error)
@@ -177,31 +165,25 @@ export async function updateParticipantInJson(participant: Participant): Promise
  */
 export async function addParticipantToJson(participant: Participant): Promise<JsonDataUpdateResult> {
   try {
-    // Lade aktuelle JSON-Daten
-    const jsonData = await loadJsonData()
+    // KRITISCH: Direkt in IndexedDB speichern, ohne JSON-Dateien vom Server zu laden
+    // Die JSON-Dateien existieren nur im Production-Build, nicht im Dev-Modus
     
-    // Generiere neue ID
-    const maxId = Math.max(0, ...jsonData.participants.map(p => p.id || 0))
+    // Generiere neue ID basierend auf vorhandenen Teilnehmern in IndexedDB
+    const existingParticipants = await db.participants.toArray()
+    const maxId = Math.max(0, ...existingParticipants.map(p => p.id || 0))
     const newParticipant = {
       ...participant,
-      id: maxId + 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      id: maxId + 1
     }
     
     // Füge zur IndexedDB hinzu
     await db.participants.add(newParticipant)
     
-    console.log(`✅ Neuer Teilnehmer ${newParticipant.name} zur JSON-Datenquelle hinzugefügt`)
+    console.log(`✅ Neuer Teilnehmer ${newParticipant.name} zur IndexedDB hinzugefügt`)
     
     return {
       success: true,
-      message: `Teilnehmer ${newParticipant.name} erfolgreich hinzugefügt`,
-      data: {
-        ...jsonData,
-        participants: [...jsonData.participants, newParticipant],
-        lastUpdated: new Date().toISOString()
-      }
+      message: `Teilnehmer ${newParticipant.name} erfolgreich hinzugefügt`
     }
   } catch (error) {
     console.error('Fehler beim Hinzufügen des Teilnehmers:', error)

@@ -21,6 +21,7 @@ export interface Participant {
   status?: ParticipantStatus
   active?: boolean
   photoUrl?: string
+  source?: string
   bio?: string
   gender: Gender
   photoBlob?: Blob

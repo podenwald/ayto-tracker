@@ -25,7 +25,8 @@ import {
   LightMode as LightModeIcon,
   AutoAwesome as AutoAwesomeIcon,
   Savings as SavingsIcon,
-  Percent as PercentIcon
+  Percent as PercentIcon,
+  People as PeopleIcon
 } from '@mui/icons-material'
 
 const drawerWidth = 260
@@ -65,6 +66,11 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
       text: 'Übersicht',
       icon: <HomeIcon />,
       value: 'overview'
+    },
+    {
+      text: 'Kandidat*innen',
+      icon: <PeopleIcon />,
+      value: 'candidates'
     },
     {
       text: 'Matching Nights',
@@ -110,7 +116,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
               AYTO
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Reality Stars in Love 2025
+              Live-Tracker 2026
             </Typography>
           </Box>
         </Box>

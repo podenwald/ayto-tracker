@@ -90,6 +90,7 @@ export async function importJsonDataForVersion(fileName: string, version: string
             status: status,
             active: participant.active !== false, // Default: aktiv
             photoUrl: participant.photoUrl || '',
+            source: participant.source || '',
             bio: participant.bio || '',
             gender: gender || 'F', // Default: weiblich falls unbekannt
             socialMediaAccount: participant.socialMediaAccount || '',

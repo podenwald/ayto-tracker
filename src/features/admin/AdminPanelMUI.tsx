@@ -97,7 +97,7 @@ const ParticipantForm: React.FC<{
   onCancel?: () => void
 }> = ({ initial, onSaved, onCancel }) => {
   const [form, setForm] = useState<Participant>(initial ?? {
-    name: '', knownFrom: '', age: undefined, status: 'Aktiv', photoUrl: '', bio: '', gender: 'F', socialMediaAccount: ''
+    name: '', knownFrom: '', age: undefined, status: 'Aktiv', photoUrl: '', source: '', bio: '', gender: 'F', socialMediaAccount: ''
   })
 
   useEffect(() => {
@@ -149,7 +149,7 @@ const ParticipantForm: React.FC<{
   return (
     <Card>
       <CardHeader 
-        title={initial ? "Teilnehmer bearbeiten" : "Neuen Teilnehmer hinzufügen"}
+        title={initial ? "Kandidat*in bearbeiten" : "Neue*n Kandidat*in hinzufügen"}
         avatar={<Avatar sx={{ bgcolor: 'primary.main' }}><AddIcon /></Avatar>}
       />
       <CardContent>
@@ -193,6 +193,14 @@ const ParticipantForm: React.FC<{
                 value={form.photoUrl ?? ''}
                 onChange={(e) => setForm({ ...form, photoUrl: e.target.value })}
                 placeholder="https://..."
+              />
+              <TextField
+                fullWidth
+                label="Bildquelle"
+                value={form.source ?? ''}
+                onChange={(e) => setForm({ ...form, source: e.target.value })}
+                placeholder="© RTL / Frank Beer"
+                helperText="Wird unten rechtsbündig auf dem Foto angezeigt"
               />
               <TextField
                 fullWidth
@@ -256,7 +264,7 @@ const ParticipantsList: React.FC<{
   return (
     <Card>
       <CardHeader 
-        title={`Teilnehmer (${participants.length})`}
+        title={`Kandidat*innen (${participants.length})`}
         avatar={<Avatar sx={{ bgcolor: 'info.main' }}><PeopleIcon /></Avatar>}
       />
       <CardContent>
@@ -348,6 +356,32 @@ const ParticipantsList: React.FC<{
                       }
                     }}
                   />
+                  
+                  {/* Bildquelle - unten rechtsbündig */}
+                  {participant.source && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 8,
+                        right: 12,
+                        zIndex: 3
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: 'white',
+                          fontSize: '10px',
+                          fontWeight: 500,
+                          textShadow: '1px 1px 2px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.5)',
+                          textAlign: 'right',
+                          lineHeight: 1.2
+                        }}
+                      >
+                        {participant.source}
+                      </Typography>
+                    </Box>
+                  )}
                   
                   {/* Name - always visible */}
                   <Box
@@ -546,6 +580,32 @@ const ParticipantsList: React.FC<{
                       }
                     }}
                   />
+                  
+                  {/* Bildquelle - unten rechtsbündig */}
+                  {participant.source && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 8,
+                        right: 12,
+                        zIndex: 3
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: 'white',
+                          fontSize: '10px',
+                          fontWeight: 500,
+                          textShadow: '1px 1px 2px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.5)',
+                          textAlign: 'right',
+                          lineHeight: 1.2
+                        }}
+                      >
+                        {participant.source}
+                      </Typography>
+                    </Box>
+                  )}
                   
                   {/* Name - always visible */}
                   <Box
@@ -771,7 +831,7 @@ const MatchboxManagement: React.FC<{
            setSnackbar({ open: true, message: `Fehler beim Aktualisieren: ${result.message}`, severity: 'error' })
            return
          }
-        // Wenn Perfect Match, setze beide Teilnehmer auf inaktiv
+        // Wenn Perfect Match, setze beide Kandidat*innen auf inaktiv
         if (matchboxForm.matchType === 'perfect') {
           await db.participants.where('name').equals(matchboxForm.woman).modify({ active: false })
           await db.participants.where('name').equals(matchboxForm.man).modify({ active: false })
@@ -782,7 +842,7 @@ const MatchboxManagement: React.FC<{
         await MatchboxService.createMatchbox({
           ...matchboxForm,
         })
-        // Wenn Perfect Match, setze beide Teilnehmer auf inaktiv
+        // Wenn Perfect Match, setze beide Kandidat*innen auf inaktiv
         if (matchboxForm.matchType === 'perfect') {
           await db.participants.where('name').equals(matchboxForm.woman).modify({ active: false })
           await db.participants.where('name').equals(matchboxForm.man).modify({ active: false })
@@ -1820,9 +1880,9 @@ const SettingsManagement: React.FC<{
       a.download = `participants-${new Date().toISOString().split('T')[0]}.json`
       a.click()
       URL.revokeObjectURL(url)
-      setSnackbar({ open: true, message: `✅ ${data.length} Teilnehmer wurden exportiert!`, severity: 'success' })
+      setSnackbar({ open: true, message: `✅ ${data.length} Kandidat*innen wurden exportiert!`, severity: 'success' })
     } catch (error) {
-      console.error('Fehler beim Export der Teilnehmer:', error)
+      console.error('Fehler beim Export der Kandidat*innen:', error)
       setSnackbar({ open: true, message: `❌ Fehler beim Export: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`, severity: 'error' })
     }
   }
@@ -1923,7 +1983,7 @@ const SettingsManagement: React.FC<{
       URL.revokeObjectURL(url)
       
       const totalItems = participantsData.length + matchingNightsData.length + matchboxesData.length + penaltiesData.length + broadcastNotesData.length
-      setSnackbar({ open: true, message: `✅ Kompletter Export erfolgreich!\n\n${participantsData.length} Teilnehmer\n${matchingNightsData.length} Matching Nights\n${matchboxesData.length} Matchboxes\n${penaltiesData.length} Strafen/Transaktionen\n${probabilityCacheData.length} Wahrscheinlichkeits-Cache\n${broadcastNotesData.length} Notizen\n\nGesamt: ${totalItems} Einträge`, severity: 'success' })
+      setSnackbar({ open: true, message: `✅ Kompletter Export erfolgreich!\n\n${participantsData.length} Kandidat*innen\n${matchingNightsData.length} Matching Nights\n${matchboxesData.length} Matchboxes\n${penaltiesData.length} Strafen/Transaktionen\n${probabilityCacheData.length} Wahrscheinlichkeits-Cache\n${broadcastNotesData.length} Notizen\n\nGesamt: ${totalItems} Einträge`, severity: 'success' })
     } catch (error) {
       console.error('Fehler beim kompletten Export:', error)
       setSnackbar({ open: true, message: `❌ Fehler beim kompletten Export: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`, severity: 'error' })
@@ -2017,7 +2077,7 @@ const SettingsManagement: React.FC<{
       
       setSnackbar({ 
         open: true, 
-        message: `✅ Datenbankstand für Deployment exportiert!\n\n📁 Datei: ${fileName}\n📊 ${participantsData.length} Teilnehmer, ${matchingNightsData.length} Matching Nights, ${matchboxesData.length} Matchboxes, ${penaltiesData.length} Strafen, ${broadcastNotesData.length} Notizen\n📈 Gesamt: ${totalItems} Einträge\n\n💡 Diese Datei muss in public/json/ gespeichert und deployed werden.`, 
+        message: `✅ Datenbankstand für Deployment exportiert!\n\n📁 Datei: ${fileName}\n📊 ${participantsData.length} Kandidat*innen, ${matchingNightsData.length} Matching Nights, ${matchboxesData.length} Matchboxes, ${penaltiesData.length} Strafen, ${broadcastNotesData.length} Notizen\n📈 Gesamt: ${totalItems} Einträge\n\n💡 Diese Datei muss in public/json/ gespeichert und deployed werden.`, 
         severity: 'success' 
       })
       
@@ -2066,17 +2126,17 @@ const SettingsManagement: React.FC<{
   const deleteParticipants = async () => {
     setConfirmDialog({
       open: true,
-      title: 'Alle Teilnehmer löschen',
-      message: `Wirklich alle ${participants.length} Teilnehmer löschen?\n\nDieser Vorgang kann nicht rückgängig gemacht werden!`,
+      title: 'Alle Kandidat*innen löschen',
+      message: `Wirklich alle ${participants.length} Kandidat*innen löschen?\n\nDieser Vorgang kann nicht rückgängig gemacht werden!`,
       severity: 'warning',
       onConfirm: async () => {
         try {
           setIsLoading(true)
           await db.participants.clear()
           await onUpdate()
-          setSnackbar({ open: true, message: 'Alle Teilnehmer wurden erfolgreich gelöscht!', severity: 'success' })
+          setSnackbar({ open: true, message: 'Alle Kandidat*innen wurden erfolgreich gelöscht!', severity: 'success' })
         } catch (error) {
-          console.error('Fehler beim Löschen der Teilnehmer:', error)
+          console.error('Fehler beim Löschen der Kandidat*innen:', error)
           setSnackbar({ open: true, message: `Fehler beim Löschen: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`, severity: 'error' })
         } finally {
           setIsLoading(false)
@@ -2150,7 +2210,7 @@ const SettingsManagement: React.FC<{
           const menNames = allParticipants.filter(p => p.gender === 'M').map(p => p.name)
           const womenNames = allParticipants.filter(p => p.gender === 'F').map(p => p.name)
           
-          console.log('👥 Teilnehmer:', { männer: menNames.length, frauen: womenNames.length })
+          console.log('👥 Kandidat*innen:', { männer: menNames.length, frauen: womenNames.length })
           
           let correctedCount = 0
           
@@ -2364,7 +2424,7 @@ const SettingsManagement: React.FC<{
 
 Diese Aktion wird ALLE Daten unwiderruflich löschen:
 
-• ${participants.length} Teilnehmer
+• ${participants.length} Kandidat*innen
 • ${matchingNights.length} Matching Nights
 • ${matchboxes.length} Matchboxes
 • ${penalties.length} Strafen/Transaktionen
@@ -2457,7 +2517,7 @@ Alle Daten gehen unwiderruflich verloren!`)
       setConfirmDialog({
         open: true,
         title: 'JSON Import bestätigen',
-        message: `${normalizedParticipants.length} Teilnehmer aus JSON importieren?\n\nDies ersetzt alle bestehenden Teilnehmer!`,
+        message: `${normalizedParticipants.length} Kandidat*innen aus JSON importieren?\n\nDies ersetzt alle bestehenden Kandidat*innen!`,
         severity: 'warning',
         onConfirm: async () => {
           try {
@@ -2467,7 +2527,7 @@ Alle Daten gehen unwiderruflich verloren!`)
             })
             
             await onUpdate()
-            setSnackbar({ open: true, message: `✅ Import erfolgreich! ${normalizedParticipants.length} Teilnehmer wurden importiert.`, severity: 'success' })
+            setSnackbar({ open: true, message: `✅ Import erfolgreich! ${normalizedParticipants.length} Kandidat*innen wurden importiert.`, severity: 'success' })
           } catch (error) {
             console.error('Fehler beim Import:', error)
             setSnackbar({ open: true, message: `❌ Fehler beim Import: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`, severity: 'error' })
@@ -2501,7 +2561,7 @@ Alle Daten gehen unwiderruflich verloren!`)
       setConfirmDialog({
         open: true,
         title: 'Komplettdaten importieren',
-        message: `Alle Daten aus Backup importieren?\n\n${data.participants.length} Teilnehmer\n${data.matchingNights.length} Matching Nights\n${data.matchboxes.length} Matchboxes\n${data.penalties?.length || 0} Strafen/Transaktionen\n\n⚠️ Dies ersetzt ALLE bestehenden Daten!`,
+        message: `Alle Daten aus Backup importieren?\n\n${data.participants.length} Kandidat*innen\n${data.matchingNights.length} Matching Nights\n${data.matchboxes.length} Matchboxes\n${data.penalties?.length || 0} Strafen/Transaktionen\n\n⚠️ Dies ersetzt ALLE bestehenden Daten!`,
         severity: 'warning',
         onConfirm: async () => {
           try {
@@ -2554,7 +2614,7 @@ Alle Daten gehen unwiderruflich verloren!`)
             const totalImported = data.participants.length + data.matchingNights.length + data.matchboxes.length + (data.penalties?.length || 0)
             setSnackbar({ 
               open: true, 
-              message: `✅ Kompletter Import erfolgreich!\n\n${data.participants.length} Teilnehmer\n${data.matchingNights.length} Matching Nights\n${data.matchboxes.length} Matchboxes\n${data.penalties?.length || 0} Strafen/Transaktionen\n\nGesamt: ${totalImported} Einträge`, 
+              message: `✅ Kompletter Import erfolgreich!\n\n${data.participants.length} Kandidat*innen\n${data.matchingNights.length} Matching Nights\n${data.matchboxes.length} Matchboxes\n${data.penalties?.length || 0} Strafen/Transaktionen\n\nGesamt: ${totalImported} Einträge`, 
               severity: 'success' 
             })
           } catch (error) {
@@ -2587,7 +2647,7 @@ Alle Daten gehen unwiderruflich verloren!`)
 
 
   const exportItems = [
-    { title: 'Teilnehmer', count: participants.length, onClick: exportParticipants, icon: <PeopleIcon />, disabled: participants.length === 0 },
+    { title: 'Kandidat*innen', count: participants.length, onClick: exportParticipants, icon: <PeopleIcon />, disabled: participants.length === 0 },
     { title: 'Matching Nights', count: matchingNights.length, onClick: exportMatchingNights, icon: <NightlifeIcon />, disabled: matchingNights.length === 0 },
     { title: 'Matchboxes', count: matchboxes.length, onClick: exportMatchboxes, icon: <InventoryIcon />, disabled: matchboxes.length === 0 },
     { title: 'Strafen/Transaktionen', count: penalties.length, onClick: exportPenalties, icon: <AccountBalanceWalletIcon />, disabled: penalties.length === 0 },
@@ -2596,7 +2656,7 @@ Alle Daten gehen unwiderruflich verloren!`)
   ]
 
   const deleteItems = [
-    { title: 'Teilnehmer', count: participants.length, onClick: deleteParticipants, icon: <PeopleIcon />, disabled: participants.length === 0 },
+    { title: 'Kandidat*innen', count: participants.length, onClick: deleteParticipants, icon: <PeopleIcon />, disabled: participants.length === 0 },
     { title: 'Matching Nights', count: matchingNights.length, onClick: deleteMatchingNights, icon: <NightlifeIcon />, disabled: matchingNights.length === 0 },
     { title: 'Matchboxes', count: matchboxes.length, onClick: deleteMatchboxes, icon: <InventoryIcon />, disabled: matchboxes.length === 0 }
   ]
@@ -2821,7 +2881,7 @@ Alle Daten gehen unwiderruflich verloren!`)
               startIcon={<UploadIcon />}
               disabled={isLoading}
             >
-              Teilnehmer Backup importieren
+              Kandidat*innen Backup importieren
               <input
                 type="file"
                 hidden
@@ -2848,7 +2908,7 @@ Alle Daten gehen unwiderruflich verloren!`)
           </Box>
           <Alert severity="info" sx={{ mt: 2 }}>
             <Typography variant="body2">
-              <strong>JSON Import:</strong> Gender wird automatisch von w/m zu F/M konvertiert. Der Import ersetzt alle bestehenden Teilnehmer.
+              <strong>JSON Import:</strong> Gender wird automatisch von w/m zu F/M konvertiert. Der Import ersetzt alle bestehenden Kandidat*innen.
             </Typography>
           </Alert>
         </CardContent>
@@ -3097,7 +3157,7 @@ Alle Daten gehen unwiderruflich verloren!`)
                 <li>Kompletter Reset erfordert doppelte Bestätigung</li>
                 
                 <li><strong>JSON-Import:</strong> Gender wird automatisch von w/m zu F/M konvertiert</li>
-                <li>JSON-Import ersetzt alle bestehenden Teilnehmer</li>
+                <li>JSON-Import ersetzt alle bestehenden Kandidat*innen</li>
               </Box>
             </Typography>
           </Alert>
@@ -3162,10 +3222,10 @@ Alle Daten gehen unwiderruflich verloren!`)
               gap: 2
             }}>
               <FormControl fullWidth>
-                <InputLabel>Teilnehmer</InputLabel>
+                <InputLabel>Kandidat*in</InputLabel>
                 <Select
                   value={penaltyForm.participantName}
-                  label="Teilnehmer"
+                  label="Kandidat*in"
                   onChange={(e) => setPenaltyForm({...penaltyForm, participantName: e.target.value})}
                 >
                   {[...participants]
@@ -3433,7 +3493,7 @@ const AdminPanelMUI: React.FC = () => {
                   fullWidth
                   sx={{ mb: 2 }}
                 >
-                  {editingParticipant ? 'Teilnehmer bearbeiten' : 'Neuen Teilnehmer hinzufügen'}
+                  {editingParticipant ? 'Kandidat*in bearbeiten' : 'Neue*n Kandidat*in hinzufügen'}
                 </Button>
                 
                 <Collapse in={showParticipantForm}>

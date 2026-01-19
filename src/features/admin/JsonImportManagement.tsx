@@ -160,7 +160,7 @@ const JsonImportManagement: React.FC<JsonImportManagementProps> = ({ onDataUpdat
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <Chip 
               icon={<CheckCircleIcon />} 
-              label={`${dataCounts.participants} Teilnehmer`} 
+              label={`${dataCounts.participants} Kandidat*innen`} 
               color="primary" 
             />
             <Chip 

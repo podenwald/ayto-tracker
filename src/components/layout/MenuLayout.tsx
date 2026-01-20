@@ -22,7 +22,6 @@ import {
   Nightlife as NightlifeIcon,
   Inventory as InventoryIcon,
   Settings as SettingsIcon,
-  Add as AddIcon,
   LightMode as LightModeIcon,
   AutoAwesome as AutoAwesomeIcon,
   Savings as SavingsIcon,
@@ -314,11 +313,63 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
             AYTO 2026 - Live-Tracker
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
+            {/* Mobile: Icon-only buttons */}
+            <Tooltip title="Neue Matching Night" arrow>
+              <IconButton
+                color="secondary"
+                onClick={onCreateMatchingNight}
+                sx={{ 
+                  display: { xs: 'flex', sm: 'none' },
+                  bgcolor: 'secondary.main',
+                  color: 'white',
+                  width: 32,
+                  height: 32,
+                  minWidth: 32,
+                  padding: 0,
+                  borderRadius: 1,
+                  '&:hover': {
+                    bgcolor: 'secondary.dark'
+                  },
+                  '& .MuiSvgIcon-root': {
+                    fontSize: '1.05rem'
+                  }
+                }}
+                aria-label="Neue Matching Night"
+              >
+                <NightlifeIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Neue Matchbox" arrow>
+              <IconButton
+                color="primary"
+                onClick={onCreateMatchbox}
+                sx={{ 
+                  display: { xs: 'flex', sm: 'none' },
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  width: 32,
+                  height: 32,
+                  minWidth: 32,
+                  padding: 0,
+                  borderRadius: 1,
+                  '&:hover': {
+                    bgcolor: 'primary.dark'
+                  },
+                  '& .MuiSvgIcon-root': {
+                    fontSize: '1.05rem'
+                  }
+                }}
+                aria-label="Neue Matchbox"
+              >
+                <InventoryIcon />
+              </IconButton>
+            </Tooltip>
+            {/* Desktop: Buttons with text */}
             <Button 
               variant="contained" 
               color="secondary" 
               size="small"
-              startIcon={<AddIcon />} 
+              startIcon={<NightlifeIcon />} 
               onClick={onCreateMatchingNight}
               sx={{ display: { xs: 'none', sm: 'flex' } }}
             >
@@ -328,7 +379,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
               variant="contained" 
               color="primary" 
               size="small"
-              startIcon={<AddIcon />} 
+              startIcon={<InventoryIcon />} 
               onClick={onCreateMatchbox}
               sx={{ display: { xs: 'none', sm: 'flex' } }}
             >

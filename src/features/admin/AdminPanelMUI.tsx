@@ -2952,7 +2952,7 @@ Alle Daten gehen unwiderruflich verloren!`)
                     onClick={item.onClick}
                     disabled={item.disabled || isLoading}
                     startIcon={<DownloadIcon />}
-                    color={item.variant === 'contained' ? 'success' : 'primary'}
+                    color={!item.disabled && !isLoading ? 'success' : 'primary'}
                   >
                     Exportieren
                   </Button>

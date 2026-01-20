@@ -2,12 +2,12 @@ import { createTheme, type ThemeOptions } from '@mui/material/styles'
 
 // ** Materio Theme Colors
 const themeColors = {
-  primary: '#9155FD',
-  secondary: '#8A8D93', 
+  primary: '#BD0A16', // Orangeton
+  secondary: '#CD9536', // Gelbton 
   success: '#56CA00',
   error: '#FF4C51',
   warning: '#FFB400',
-  info: '#16B1FF',
+  info: '#CD9536', // Gelbton für Info-Boxen
   grey: {
     50: '#FAFAFA',
     100: '#F5F5F5',
@@ -133,14 +133,14 @@ const themeOptions: ThemeOptions = {
     mode: 'light',
     primary: {
       main: themeColors.primary,
-      light: '#A979FF',
-      dark: '#804BDF',
+      light: '#E03A44',
+      dark: '#8A080F',
       contrastText: '#FFF'
     },
     secondary: {
       main: themeColors.secondary,
-      light: '#9C9FA4',
-      dark: '#777B82',
+      light: '#E0B05F',
+      dark: '#A6752A',
       contrastText: '#FFF'
     },
     success: {
@@ -163,8 +163,8 @@ const themeOptions: ThemeOptions = {
     },
     info: {
       main: themeColors.info,
-      light: '#4FC3F7',
-      dark: '#0288D1',
+      light: '#E0B05F',
+      dark: '#A6752A',
       contrastText: '#FFF'
     },
     grey: themeColors.grey,
@@ -230,7 +230,7 @@ const themeOptions: ThemeOptions = {
         containedPrimary: {
           backgroundColor: themeColors.primary,
           '&:hover': {
-            backgroundColor: '#804BDF'
+            backgroundColor: '#8A080F'
           }
         }
       }

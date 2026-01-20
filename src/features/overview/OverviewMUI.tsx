@@ -1591,7 +1591,7 @@ const OverviewMUI: React.FC = () => {
               <Card
                 sx={{
                   width: 280,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #BD0A16 0%, #CD9536 100%)',
                   color: 'white',
                   boxShadow: 4,
                   borderRadius: 3,
@@ -1607,8 +1607,8 @@ const OverviewMUI: React.FC = () => {
                   title={
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <FavoriteIcon />
-                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                        <FavoriteIcon sx={{ color: 'white' }} />
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
                           Neue Matchbox
                         </Typography>
                       </Box>
@@ -1633,7 +1633,7 @@ const OverviewMUI: React.FC = () => {
                     </Box>
                   }
                   subheader={
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                    <Typography variant="body2" sx={{ color: 'white' }}>
                       Ziehe Kandidat*in hier hinein • Header klicken zum Verschieben
                     </Typography>
                   }
@@ -1715,8 +1715,8 @@ const OverviewMUI: React.FC = () => {
                         </Box>
                       ) : (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <WomanIcon sx={{ color: 'rgba(255,255,255,0.7)' }} />
-                          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                          <WomanIcon sx={{ color: 'white' }} />
+                          <Typography variant="body2" sx={{ color: 'white' }}>
                             Frau hinzufügen
                           </Typography>
                         </Box>
@@ -1791,8 +1791,8 @@ const OverviewMUI: React.FC = () => {
                         </Box>
                       ) : (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <ManIcon sx={{ color: 'rgba(255,255,255,0.7)' }} />
-                          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                          <ManIcon sx={{ color: 'white' }} />
+                          <Typography variant="body2" sx={{ color: 'white' }}>
                             Mann hinzufügen
                           </Typography>
                         </Box>
@@ -1821,7 +1821,7 @@ const OverviewMUI: React.FC = () => {
                           Details festlegen
                         </Button>
                       ) : (
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: 'center', width: '100%', py: 1 }}>
+                        <Typography variant="body2" sx={{ color: 'white', textAlign: 'center', width: '100%', py: 1 }}>
                           Beide Kandidat*innen hinzufügen
                         </Typography>
                       )}
@@ -1861,7 +1861,7 @@ const OverviewMUI: React.FC = () => {
                   <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                       <Avatar sx={{ bgcolor: 'secondary.main', mr: 2 }}>
-                        <WomanIcon />
+                        <WomanIcon sx={{ color: 'white' }} />
                       </Avatar>
                       <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
                         Frauen ({participants.filter(p => p.gender === 'F').length})
@@ -1898,7 +1898,7 @@ const OverviewMUI: React.FC = () => {
                   <Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                       <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-                        <ManIcon />
+                        <ManIcon sx={{ color: 'white' }} />
                       </Avatar>
                       <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                         Männer ({participants.filter(p => p.gender === 'M').length})

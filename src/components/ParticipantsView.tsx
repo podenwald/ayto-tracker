@@ -33,18 +33,14 @@ const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => 
 
   return (
     <Card>
-      <CardHeader 
-        title={`Kandidat*innen (${participants.length})`}
-        avatar={<Avatar sx={{ bgcolor: 'info.main' }}><PeopleIcon /></Avatar>}
-      />
       <CardContent>
         {/* Gender-based sections */}
         <Box sx={{ mb: 4 }}>
           {/* Women Section */}
           <Box sx={{ mb: 6 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-              <Avatar sx={{ bgcolor: 'pink.main' }}>
-                <WomanIcon />
+              <Avatar sx={{ bgcolor: '#CD9536' }}>
+                <WomanIcon sx={{ color: 'white' }} />
               </Avatar>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Frauen ({women.length})
@@ -68,7 +64,7 @@ const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => 
                     borderRadius: 3,
                     overflow: 'hidden',
                     position: 'relative',
-                    backgroundImage: (participant.photoUrl && participant.photoUrl.trim() !== '') ? `url(${participant.photoUrl})` : (participant.gender === 'F' ? 'linear-gradient(135deg, #E91E63 0%, #AD1457 100%)' : 'linear-gradient(135deg, #16B1FF 0%, #0288D1 100%)'),
+                    backgroundImage: (participant.photoUrl && participant.photoUrl.trim() !== '') ? `url(${participant.photoUrl})` : (participant.gender === 'F' ? 'linear-gradient(135deg, #E0B05F 0%, #A6752A 100%)' : 'linear-gradient(135deg, #E03A44 0%, #8A080F 100%)'),
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     transition: 'all 0.3s ease-in-out',
@@ -244,8 +240,8 @@ const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => 
           {/* Men Section */}
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-              <Avatar sx={{ bgcolor: 'info.main' }}>
-                <ManIcon />
+              <Avatar sx={{ bgcolor: '#BD0A16' }}>
+                <ManIcon sx={{ color: 'white' }} />
               </Avatar>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Männer ({men.length})
@@ -268,7 +264,7 @@ const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => 
                     borderRadius: 3,
                     overflow: 'hidden',
                     position: 'relative',
-                    backgroundImage: (participant.photoUrl && participant.photoUrl.trim() !== '') ? `url(${participant.photoUrl})` : (participant.gender === 'F' ? 'linear-gradient(135deg, #E91E63 0%, #AD1457 100%)' : 'linear-gradient(135deg, #16B1FF 0%, #0288D1 100%)'),
+                    backgroundImage: (participant.photoUrl && participant.photoUrl.trim() !== '') ? `url(${participant.photoUrl})` : (participant.gender === 'F' ? 'linear-gradient(135deg, #E0B05F 0%, #A6752A 100%)' : 'linear-gradient(135deg, #E03A44 0%, #8A080F 100%)'),
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     transition: 'all 0.3s ease-in-out',

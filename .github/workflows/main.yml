@@ -29,7 +29,7 @@ jobs:
           CI: true
 
       - name: Deploy over FTP
-        uses: SamKirkland/FTP-Deploy-Action@3.2.0
+        uses: SamKirkland/FTP-Deploy-Action@v4
         with:
           server: hosting119408.a2fac.netcup.net
           username: ${{ secrets.FTP_USERNAME }}

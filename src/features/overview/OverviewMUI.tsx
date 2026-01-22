@@ -2688,7 +2688,8 @@ const OverviewMUI: React.FC = () => {
                 </Typography>
               )}
             </Box>
-            {!isMobile && (
+            {/* Perfect Matches Setzen - vorerst deaktiviert, kann später wieder aktiviert werden */}
+            {false && !isMobile && (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
               <Button
                 variant="outlined"

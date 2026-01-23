@@ -37,6 +37,6 @@ jobs:
           password: ${{ secrets.FTP_PASSWORT }}
           protocol: ftps
           security: loose
-          port: 990
+          port: 21
           server-dir: /httpdocs/legendforest.de/
           local-dir: ./dist/

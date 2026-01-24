@@ -36,5 +36,4 @@ jobs:
           username: ${{ secrets.FTP_BETA_USER }}
           password: ${{ secrets.FTP_BETA_PASSWORD }}
           log-level: verbose
-          server-dir: /httpdocs/legendforest.de/
           local-dir: ./dist/

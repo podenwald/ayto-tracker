@@ -35,8 +35,6 @@ jobs:
           server: hosting119408.a2fac.netcup.net
           username: ${{ secrets.FTP_BETA_USER }}
           password: ${{ secrets.FTP_BETA_PASSWORD }}
-          protocol: ftp
-          port: 21
           log-level: verbose
-          server-dir: /httpdocs/legendforest.de/
-          local-dir: ./dist/
+          server-dir: /httpdocs/legendforest.de
+          local-dir: ./dist

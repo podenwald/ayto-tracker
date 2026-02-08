@@ -10,6 +10,8 @@ export interface DeviceInfo {
   isTablet: boolean
   isDesktop: boolean
   isMobile: boolean // Smartphone only
+  /** True wenn das Gerät Touch-Eingabe hat (z. B. iPad auch bei „Desktop-Website“) */
+  hasTouch: boolean
   orientation: 'portrait' | 'landscape'
   screenWidth: number
   screenHeight: number
@@ -40,12 +42,18 @@ export const detectDevice = (): DeviceInfo => {
   
   // Desktop Detection
   const isDesktop = screenWidth > 1024 && !isTablet && !isSmartphone
+
+  // Touch-Erkennung: zuverlässig auch wenn iPad als Desktop meldet (Safari „Desktop-Website“)
+  const hasTouch =
+    typeof navigator !== 'undefined' &&
+    (navigator.maxTouchPoints > 0 || ('ontouchstart' in window))
   
   return {
     isSmartphone,
     isTablet,
     isDesktop,
     isMobile: isSmartphone, // Nur Smartphones gelten als "mobile"
+    hasTouch,
     orientation,
     screenWidth,
     screenHeight

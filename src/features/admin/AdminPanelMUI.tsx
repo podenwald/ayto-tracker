@@ -1017,11 +1017,27 @@ const MatchboxManagement: React.FC<{
                   label="Frau"
                   onChange={(e) => setMatchboxForm({...matchboxForm, woman: e.target.value})}
                 >
-                  {availableWomen.map(woman => (
-                    <MenuItem key={woman.id} value={woman.name || ''}>
-                      {woman.name || 'Unbekannt'}
-                    </MenuItem>
-                  ))}
+                  {availableWomen.map(woman => {
+                    const hasPhoto = woman.photoUrl && woman.photoUrl.trim() !== ''
+                    return (
+                      <MenuItem key={woman.id} value={woman.name || ''}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Avatar
+                            src={hasPhoto ? woman.photoUrl : undefined}
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              bgcolor: hasPhoto ? undefined : 'secondary.main',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            {!hasPhoto && (woman.name?.charAt(0) || '?')}
+                          </Avatar>
+                          <Typography variant="body2" component="span">{woman.name || 'Unbekannt'}</Typography>
+                        </Box>
+                      </MenuItem>
+                    )
+                  })}
                 </Select>
               </FormControl>
 
@@ -1032,11 +1048,27 @@ const MatchboxManagement: React.FC<{
                   label="Mann"
                   onChange={(e) => setMatchboxForm({...matchboxForm, man: e.target.value})}
                 >
-                  {availableMen.map(man => (
-                    <MenuItem key={man.id} value={man.name || ''}>
-                      {man.name || 'Unbekannt'}
-                    </MenuItem>
-                  ))}
+                  {availableMen.map(man => {
+                    const hasPhoto = man.photoUrl && man.photoUrl.trim() !== ''
+                    return (
+                      <MenuItem key={man.id} value={man.name || ''}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Avatar
+                            src={hasPhoto ? man.photoUrl : undefined}
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              bgcolor: hasPhoto ? undefined : 'primary.main',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            {!hasPhoto && (man.name?.charAt(0) || '?')}
+                          </Avatar>
+                          <Typography variant="body2" component="span">{man.name || 'Unbekannt'}</Typography>
+                        </Box>
+                      </MenuItem>
+                    )
+                  })}
                 </Select>
               </FormControl>
 
@@ -1086,11 +1118,29 @@ const MatchboxManagement: React.FC<{
                   >
                     {[...women, ...men]
                       .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'))
-                      .map(participant => (
-                        <MenuItem key={participant.id} value={participant.name || ''}>
-                          {participant.name || 'Unbekannt'} ({participant.gender === 'F' ? 'F' : 'M'})
-                        </MenuItem>
-                      ))
+                      .map(participant => {
+                        const hasPhoto = participant.photoUrl && participant.photoUrl.trim() !== ''
+                        return (
+                          <MenuItem key={participant.id} value={participant.name || ''}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Avatar
+                                src={hasPhoto ? participant.photoUrl : undefined}
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  bgcolor: hasPhoto ? undefined : (participant.gender === 'F' ? 'secondary.main' : 'primary.main'),
+                                  fontSize: '0.875rem'
+                                }}
+                              >
+                                {!hasPhoto && (participant.name?.charAt(0) || '?')}
+                              </Avatar>
+                              <Typography variant="body2" component="span">
+                                {participant.name || 'Unbekannt'} ({participant.gender === 'F' ? 'F' : 'M'})
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        )
+                      })
                     }
                   </Select>
                 </FormControl>
@@ -1542,15 +1592,33 @@ const MatchingNightManagement: React.FC<{
                       label="Frau auswählen"
                       onChange={(e) => setSelectedWoman(e.target.value)}
                     >
-                      {women.map(woman => (
-                        <MenuItem 
-                          key={woman.id} 
-                          value={woman.name || ''}
-                          disabled={usedWomen.includes(woman.name || '')}
-                        >
-                          {woman.name || 'Unbekannt'} {usedWomen.includes(woman.name || '') ? '(verwendet)' : ''}
-                        </MenuItem>
-                      ))}
+                      {women.map(woman => {
+                        const hasPhoto = woman.photoUrl && woman.photoUrl.trim() !== ''
+                        return (
+                          <MenuItem 
+                            key={woman.id} 
+                            value={woman.name || ''}
+                            disabled={usedWomen.includes(woman.name || '')}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Avatar
+                                src={hasPhoto ? woman.photoUrl : undefined}
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  bgcolor: hasPhoto ? undefined : 'secondary.main',
+                                  fontSize: '0.875rem'
+                                }}
+                              >
+                                {!hasPhoto && (woman.name?.charAt(0) || '?')}
+                              </Avatar>
+                              <Typography variant="body2" component="span">
+                                {woman.name || 'Unbekannt'} {usedWomen.includes(woman.name || '') ? '(verwendet)' : ''}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        )
+                      })}
                     </Select>
                   </FormControl>
 
@@ -1561,15 +1629,33 @@ const MatchingNightManagement: React.FC<{
                       label="Mann auswählen"
                       onChange={(e) => setSelectedMan(e.target.value)}
                     >
-                      {men.map(man => (
-                        <MenuItem 
-                          key={man.id} 
-                          value={man.name || ''}
-                          disabled={usedMen.includes(man.name || '')}
-                        >
-                          {man.name || 'Unbekannt'} {usedMen.includes(man.name || '') ? '(verwendet)' : ''}
-                        </MenuItem>
-                      ))}
+                      {men.map(man => {
+                        const hasPhoto = man.photoUrl && man.photoUrl.trim() !== ''
+                        return (
+                          <MenuItem 
+                            key={man.id} 
+                            value={man.name || ''}
+                            disabled={usedMen.includes(man.name || '')}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Avatar
+                                src={hasPhoto ? man.photoUrl : undefined}
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  bgcolor: hasPhoto ? undefined : 'primary.main',
+                                  fontSize: '0.875rem'
+                                }}
+                              >
+                                {!hasPhoto && (man.name?.charAt(0) || '?')}
+                              </Avatar>
+                              <Typography variant="body2" component="span">
+                                {man.name || 'Unbekannt'} {usedMen.includes(man.name || '') ? '(verwendet)' : ''}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        )
+                      })}
                     </Select>
                   </FormControl>
 
@@ -3236,11 +3322,29 @@ Alle Daten gehen unwiderruflich verloren!`)
                 >
                   {[...participants]
                     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'))
-                    .map(participant => (
-                      <MenuItem key={participant.id} value={participant.name || ''}>
-                        {participant.name || 'Unbekannt'} ({participant.gender === 'F' ? 'F' : 'M'})
-                      </MenuItem>
-                    ))
+                    .map(participant => {
+                      const hasPhoto = participant.photoUrl && participant.photoUrl.trim() !== ''
+                      return (
+                        <MenuItem key={participant.id} value={participant.name || ''}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Avatar
+                              src={hasPhoto ? participant.photoUrl : undefined}
+                              sx={{
+                                width: 28,
+                                height: 28,
+                                bgcolor: hasPhoto ? undefined : (participant.gender === 'F' ? 'secondary.main' : 'primary.main'),
+                                fontSize: '0.875rem'
+                              }}
+                            >
+                              {!hasPhoto && (participant.name?.charAt(0) || '?')}
+                            </Avatar>
+                            <Typography variant="body2" component="span">
+                              {participant.name || 'Unbekannt'} ({participant.gender === 'F' ? 'F' : 'M'})
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      )
+                    })
                   }
                 </Select>
               </FormControl>

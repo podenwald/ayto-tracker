@@ -1536,6 +1536,8 @@ const OverviewMUI: React.FC = () => {
   // Erweiterte Geräteerkennung
   const deviceInfo = useDeviceDetection()
   const isMobile = deviceInfo.isSmartphone // Nur Smartphones gelten als "mobile"
+  // Touch-Geräte (Smartphone, Tablet, oder beliebiges Gerät mit Touch): Drag & Drop funktioniert auf iPad/iOS nicht – Dropdown-UI nutzen (hasTouch greift auch wenn iPad als „Desktop“ meldet)
+  const useTouchFriendlyMatchingNight = deviceInfo.isSmartphone || deviceInfo.isTablet || deviceInfo.hasTouch
   
   // Geräte-spezifische Rotation-Locks aktivieren
   useEffect(() => {
@@ -2682,7 +2684,7 @@ const OverviewMUI: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <Box sx={{ flex: 1 }}>
               <Typography variant="h6" sx={{ width: '100%' }}>Neue Matching Night erstellen</Typography>
-              {!isMobile && (
+              {!useTouchFriendlyMatchingNight && (
                 <Typography variant="body2" color="text.secondary">
                   🎯 Ziehe Kandidat*innen direkt in die Pärchen-Container
                 </Typography>
@@ -2722,7 +2724,7 @@ const OverviewMUI: React.FC = () => {
               <Typography variant="h6" sx={{ 
                 fontWeight: 'bold', 
                 color: 'text.primary',
-                fontSize: isMobile ? '18px' : '16px',
+                fontSize: useTouchFriendlyMatchingNight ? '18px' : '16px',
                 textAlign: 'center'
               }}>
                 {matchingNightForm.name}
@@ -2860,8 +2862,8 @@ const OverviewMUI: React.FC = () => {
               </Box>
             </Box>
 
-            {/* Drag & Drop Pairs Grid - nur auf Desktop */}
-            {!isMobile && (
+            {/* Drag & Drop Pairs Grid - nur auf Desktop (nicht auf Touch-Geräten wie iPad) */}
+            {!useTouchFriendlyMatchingNight && (
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
@@ -2926,8 +2928,8 @@ const OverviewMUI: React.FC = () => {
             </Box>
             )}
 
-            {/* Manuelle Paar-Auswahl - mobil */}
-            {isMobile && (
+            {/* Manuelle Paar-Auswahl - Touch-Geräte (Smartphone + iPad/Tablet) */}
+            {useTouchFriendlyMatchingNight && (
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
                 Pärchen zusammenstellen
@@ -2957,7 +2959,7 @@ const OverviewMUI: React.FC = () => {
                             value={pair.woman}
                             label="Frau"
                             disabled={isPerfectMatch}
-                            sx={isMobile ? {
+                            sx={useTouchFriendlyMatchingNight ? {
                               '& .MuiFormControl-root': {
                                 width: '100% !important'
                               },
@@ -2978,9 +2980,27 @@ const OverviewMUI: React.FC = () => {
                             </MenuItem>
                             {women.map((woman) => {
                               const isUsed = matchingNightForm.pairs.some((p, i) => i !== index && p.woman === woman.name)
+                              const hasPhoto = woman.photoUrl && woman.photoUrl.trim() !== ''
                               return (
                                 <MenuItem key={woman.id} value={woman.name} disabled={isUsed || isPerfectMatch}>
-                                  {woman.name} {isUsed && '(bereits verwendet)'} {isPerfectMatch && '(Perfect Match - gesperrt)'}
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Avatar
+                                      src={hasPhoto ? woman.photoUrl : undefined}
+                                      sx={{
+                                        width: 28,
+                                        height: 28,
+                                        bgcolor: hasPhoto ? undefined : 'secondary.main',
+                                        fontSize: '0.875rem'
+                                      }}
+                                    >
+                                      {!hasPhoto && (woman.name?.charAt(0) || '?')}
+                                    </Avatar>
+                                    <Typography variant="body2" component="span">
+                                      {woman.name}
+                                      {isUsed && ' (bereits verwendet)'}
+                                      {isPerfectMatch && ' (Perfect Match - gesperrt)'}
+                                    </Typography>
+                                  </Box>
                                 </MenuItem>
                               )
                             })}
@@ -2992,7 +3012,7 @@ const OverviewMUI: React.FC = () => {
                             value={pair.man}
                             label="Mann"
                             disabled={isPerfectMatch}
-                            sx={isMobile ? {
+                            sx={useTouchFriendlyMatchingNight ? {
                               '& .MuiFormControl-root': {
                                 width: '100% !important'
                               },
@@ -3013,9 +3033,27 @@ const OverviewMUI: React.FC = () => {
                             </MenuItem>
                             {men.map((man) => {
                               const isUsed = matchingNightForm.pairs.some((p, i) => i !== index && p.man === man.name)
+                              const hasPhoto = man.photoUrl && man.photoUrl.trim() !== ''
                               return (
                                 <MenuItem key={man.id} value={man.name} disabled={isUsed || isPerfectMatch}>
-                                  {man.name} {isUsed && '(bereits verwendet)'} {isPerfectMatch && '(Perfect Match - gesperrt)'}
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Avatar
+                                      src={hasPhoto ? man.photoUrl : undefined}
+                                      sx={{
+                                        width: 28,
+                                        height: 28,
+                                        bgcolor: hasPhoto ? undefined : 'primary.main',
+                                        fontSize: '0.875rem'
+                                      }}
+                                    >
+                                      {!hasPhoto && (man.name?.charAt(0) || '?')}
+                                    </Avatar>
+                                    <Typography variant="body2" component="span">
+                                      {man.name}
+                                      {isUsed && ' (bereits verwendet)'}
+                                      {isPerfectMatch && ' (Perfect Match - gesperrt)'}
+                                    </Typography>
+                                  </Box>
                                 </MenuItem>
                               )
                             })}
@@ -3029,8 +3067,8 @@ const OverviewMUI: React.FC = () => {
             </Box>
             )}
 
-            {/* Available Participants for Drag & Drop - nur auf Desktop */}
-            {!isMobile && (
+            {/* Available Participants for Drag & Drop - nur auf Desktop (nicht auf Touch-Geräten) */}
+            {!useTouchFriendlyMatchingNight && (
             <Box>
               
               {/* Participants Layout: Men Left, Women Right */}
@@ -3345,11 +3383,27 @@ const OverviewMUI: React.FC = () => {
                   label="Frau auswählen"
                   onChange={(e) => setMatchboxForm({...matchboxForm, woman: e.target.value})}
                 >
-                  {availableWomen.map(woman => (
-                    <MenuItem key={woman.id} value={woman.name || ''}>
-                      {woman.name || 'Unbekannt'}
-                    </MenuItem>
-                  ))}
+                  {availableWomen.map(woman => {
+                    const hasPhoto = woman.photoUrl && woman.photoUrl.trim() !== ''
+                    return (
+                      <MenuItem key={woman.id} value={woman.name || ''}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Avatar
+                            src={hasPhoto ? woman.photoUrl : undefined}
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              bgcolor: hasPhoto ? undefined : 'secondary.main',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            {!hasPhoto && (woman.name?.charAt(0) || '?')}
+                          </Avatar>
+                          <Typography variant="body2" component="span">{woman.name || 'Unbekannt'}</Typography>
+                        </Box>
+                      </MenuItem>
+                    )
+                  })}
                 </Select>
               </FormControl>
 
@@ -3360,11 +3414,27 @@ const OverviewMUI: React.FC = () => {
                   label="Mann auswählen"
                   onChange={(e) => setMatchboxForm({...matchboxForm, man: e.target.value})}
                 >
-                  {availableMen.map(man => (
-                    <MenuItem key={man.id} value={man.name || ''}>
-                      {man.name || 'Unbekannt'}
-                    </MenuItem>
-                  ))}
+                  {availableMen.map(man => {
+                    const hasPhoto = man.photoUrl && man.photoUrl.trim() !== ''
+                    return (
+                      <MenuItem key={man.id} value={man.name || ''}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Avatar
+                            src={hasPhoto ? man.photoUrl : undefined}
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              bgcolor: hasPhoto ? undefined : 'primary.main',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            {!hasPhoto && (man.name?.charAt(0) || '?')}
+                          </Avatar>
+                          <Typography variant="body2" component="span">{man.name || 'Unbekannt'}</Typography>
+                        </Box>
+                      </MenuItem>
+                    )
+                  })}
                 </Select>
               </FormControl>
             </Box>

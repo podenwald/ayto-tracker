@@ -63,25 +63,21 @@ const typography = {
   },
   body1: {
     fontSize: '0.9375rem',
-    lineHeight: 1.467,
-    color: '#6F6B7D'
+    lineHeight: 1.467
   },
   body2: {
     fontSize: '0.8125rem',
-    lineHeight: 1.538,
-    color: '#6F6B7D'
+    lineHeight: 1.538
   },
   subtitle1: {
     fontSize: '1rem',
     fontWeight: 400,
-    lineHeight: 1.5,
-    color: '#6F6B7D'
+    lineHeight: 1.5
   },
   subtitle2: {
     fontSize: '0.875rem',
     fontWeight: 400,
-    lineHeight: 1.57,
-    color: '#6F6B7D'
+    lineHeight: 1.57
   },
   caption: {
     fontSize: '0.75rem',
@@ -170,7 +166,7 @@ const themeOptions: ThemeOptions = {
     grey: themeColors.grey,
     text: {
       primary: '#3A3541',
-      secondary: '#6F6B7D',
+      secondary: '#3A3541',
       disabled: '#A8AAAE'
     },
     background: {
@@ -284,8 +280,7 @@ const themeOptions: ThemeOptions = {
       styleOverrides: {
         root: {
           borderBottom: '1px solid #DBDADE',
-          fontSize: '0.875rem',
-          color: '#6F6B7D'
+          fontSize: '0.875rem'
         },
         head: {
           fontWeight: 600,
@@ -300,7 +295,6 @@ const themeOptions: ThemeOptions = {
           textTransform: 'none',
           fontWeight: 500,
           fontSize: '0.875rem',
-          color: '#6F6B7D',
           '&.Mui-selected': {
             color: themeColors.primary
           }

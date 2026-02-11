@@ -41,13 +41,16 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Nightlife as NightlifeIcon,
-  Inventory as InventoryIcon
+  Inventory as InventoryIcon,
+  Add as AddIcon,
+  Groups as GroupsIcon,
+  Delete as DeleteIcon,
+  AutoAwesome as AutoAwesomeIcon
 } from '@mui/icons-material'
 import ThemeProvider from '@/theme/ThemeProvider'
 import { db, type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
 import { 
   isPairConfirmedAsPerfectMatch,
-  getValidPerfectMatchesBeforeDateTime,
   getMatchboxBroadcastDateTime
 } from '@/utils/broadcastUtils'
 import { useProbabilityCalculation } from '@/hooks/useProbabilityCalculation'
@@ -351,264 +354,6 @@ const ParticipantCard: React.FC<{
   )
 }
 
-// ** Matching Night Pair Container Component
-const MatchingNightPairContainer: React.FC<{
-  pairIndex: number
-  pair: { woman: string, man: string }
-  participants: Participant[]
-  isDragOver: boolean
-  dragOverSlot: 'woman' | 'man' | null
-  onDragOver: (e: React.DragEvent, pairIndex: number, slot: 'woman' | 'man') => void
-  onDragLeave: () => void
-  onDrop: (e: React.DragEvent, pairIndex: number, slot: 'woman' | 'man') => void
-  onRemove: (pairIndex: number, slot: 'woman' | 'man') => void
-  isPerfectMatch?: boolean
-}> = ({ pairIndex, pair, participants, isDragOver, dragOverSlot, onDragOver, onDragLeave, onDrop, onRemove, isPerfectMatch = false }) => {
-  // Ensure pair exists, otherwise create empty pair
-  const safePair = pair || { woman: '', man: '' }
-  const womanParticipant = participants.find(p => p.name === safePair.woman)
-  const manParticipant = participants.find(p => p.name === safePair.man)
-  
-  // Check if pair is complete
-  const isComplete = safePair.woman && safePair.man
-  
-  // Check for gender conflict
-  const hasGenderConflict = () => {
-    if (!safePair.woman || !safePair.man) return false
-    const womanParticipant = participants.find(p => p.name === safePair.woman)
-    const manParticipant = participants.find(p => p.name === safePair.man)
-    return womanParticipant && manParticipant && womanParticipant.gender === manParticipant.gender
-  }
-  
-  return (
-    <Card 
-      variant="outlined" 
-      sx={{ 
-        minHeight: 65,
-        border: isDragOver ? '2px dashed' : isPerfectMatch ? '2px solid' : hasGenderConflict() ? '2px solid' : isComplete ? '2px solid' : '1px solid',
-        borderColor: isDragOver ? 'primary.main' : isPerfectMatch ? 'warning.main' : hasGenderConflict() ? 'error.main' : isComplete ? 'success.main' : 'grey.300',
-        bgcolor: isDragOver ? 'primary.50' : isPerfectMatch ? 'warning.50' : hasGenderConflict() ? 'error.50' : isComplete ? 'success.50' : 'background.paper',
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        boxShadow: isComplete ? 1 : 0,
-        cursor: isPerfectMatch ? 'default' : 'pointer'
-      }}
-    >
-      <CardContent sx={{ p: 1, height: '100%' }}>
-        {isPerfectMatch && (
-          <Typography sx={{ 
-            position: 'absolute', 
-            bottom: 4, 
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: '16px',
-            color: 'warning.main'
-          }}>
-            🔒
-          </Typography>
-        )}
-        {hasGenderConflict() && (
-          <Typography sx={{ 
-            position: 'absolute', 
-            bottom: 4, 
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: '16px',
-            color: 'error.main'
-          }}>
-            ⚠️
-          </Typography>
-        )}
-        {isComplete && !isPerfectMatch && !hasGenderConflict() && (
-          <Typography sx={{ 
-            position: 'absolute', 
-            bottom: 4, 
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: '16px',
-            color: 'success.main'
-          }}>
-            ✅
-          </Typography>
-        )}
-        
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          height: '100%',
-          pt: 1
-        }}>
-          {/* Left Slot */}
-          <Box
-            onDrop={isPerfectMatch ? undefined : (e) => onDrop(e, pairIndex, 'woman')}
-            onDragOver={isPerfectMatch ? undefined : (e) => onDragOver(e, pairIndex, 'woman')}
-            onDragLeave={isPerfectMatch ? undefined : onDragLeave}
-            sx={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              p: 0.5,
-              border: dragOverSlot === 'woman' ? '2px dashed' : '2px solid transparent',
-              borderColor: dragOverSlot === 'woman' ? 'primary.main' : 'transparent',
-              borderRadius: 2,
-              bgcolor: dragOverSlot === 'woman' ? 'primary.50' : 'transparent',
-              transition: 'all 0.3s ease',
-              minHeight: 60,
-              justifyContent: 'center'
-            }}
-          >
-            {safePair.woman ? (
-              <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Avatar 
-                  src={womanParticipant?.photoUrl}
-                  sx={{ 
-                    width: 40, 
-                    height: 40,
-                    bgcolor: womanParticipant?.photoUrl ? undefined : (womanParticipant?.gender === 'F' ? 'secondary.main' : 'primary.main'),
-                    border: '1px solid',
-                    borderColor: womanParticipant?.gender === 'F' ? 'secondary.main' : 'primary.main',
-                    mb: 0.5
-                  }}
-                >
-                  {!womanParticipant?.photoUrl && (womanParticipant?.name?.charAt(0) || '?')}
-                </Avatar>
-                <Typography variant="caption" sx={{ textAlign: 'center', fontWeight: 'bold', fontSize: '10px' }}>
-                  {safePair.woman}
-                </Typography>
-                {!isPerfectMatch && (
-                  <IconButton
-                    size="small"
-                    onClick={() => onRemove(pairIndex, 'woman')}
-                    sx={{
-                      position: 'absolute',
-                    top: -6,
-                    right: -6,
-                    bgcolor: 'error.main',
-                    color: 'white',
-                    width: 16,
-                    height: 16,
-                    '&:hover': { bgcolor: 'error.dark' }
-                  }}
-                >
-                  <Typography sx={{ fontSize: '10px', color: 'white' }}>×</Typography>
-                </IconButton>
-                )}
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0.5 }}>
-                <Avatar sx={{ 
-                  width: 40, 
-                  height: 40, 
-                  bgcolor: 'grey.300',
-                  border: '1px dashed',
-                  borderColor: 'grey.400',
-                  mb: 0.5
-                }}>
-                  <WomanIcon sx={{ fontSize: '20px' }} />
-                </Avatar>
-                <Typography variant="caption" sx={{ textAlign: 'center', fontSize: '10px' }}>
-                  Kandidat*in hier hinziehen
-                </Typography>
-              </Box>
-            )}
-          </Box>
-          
-          {/* Pair Title - positioned between participants */}
-          <Box sx={{ mx: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography variant="caption" sx={{ 
-              textAlign: 'center', 
-              fontWeight: 'bold', 
-              fontSize: '12px',
-              mb: 0.5
-            }}>
-              Paar {pairIndex + 1}
-            </Typography>
-            <Typography sx={{ fontSize: '20px' }}>💕</Typography>
-          </Box>
-          
-          {/* Right Slot */}
-          <Box
-            onDrop={isPerfectMatch ? undefined : (e) => onDrop(e, pairIndex, 'man')}
-            onDragOver={isPerfectMatch ? undefined : (e) => onDragOver(e, pairIndex, 'man')}
-            onDragLeave={isPerfectMatch ? undefined : onDragLeave}
-            sx={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              p: 0.5,
-              border: dragOverSlot === 'man' ? '2px dashed' : '2px solid transparent',
-              borderColor: dragOverSlot === 'man' ? 'primary.main' : 'transparent',
-              borderRadius: 2,
-              bgcolor: dragOverSlot === 'man' ? 'primary.50' : 'transparent',
-              transition: 'all 0.3s ease',
-              minHeight: 60,
-              justifyContent: 'center'
-            }}
-          >
-            {safePair.man ? (
-              <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Avatar 
-                  src={manParticipant?.photoUrl}
-                  sx={{ 
-                    width: 40, 
-                    height: 40,
-                    bgcolor: manParticipant?.photoUrl ? undefined : (manParticipant?.gender === 'F' ? 'secondary.main' : 'primary.main'),
-                    border: '1px solid',
-                    borderColor: manParticipant?.gender === 'F' ? 'secondary.main' : 'primary.main',
-                    mb: 0.5
-                  }}
-                >
-                  {!manParticipant?.photoUrl && (manParticipant?.name?.charAt(0) || '?')}
-                </Avatar>
-                <Typography variant="caption" sx={{ textAlign: 'center', fontWeight: 'bold', fontSize: '10px' }}>
-                  {safePair.man}
-                </Typography>
-                {!isPerfectMatch && (
-                  <IconButton
-                    size="small"
-                    onClick={() => onRemove(pairIndex, 'man')}
-                    sx={{
-                      position: 'absolute',
-                      top: -6,
-                      right: -6,
-                      bgcolor: 'error.main',
-                      color: 'white',
-                      width: 16,
-                      height: 16,
-                      '&:hover': { bgcolor: 'error.dark' }
-                    }}
-                  >
-                    <Typography sx={{ fontSize: '10px', color: 'white' }}>×</Typography>
-                  </IconButton>
-                )}
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0.5 }}>
-                <Avatar sx={{ 
-                  width: 40, 
-                  height: 40, 
-                  bgcolor: 'grey.300',
-                  border: '1px dashed',
-                  borderColor: 'grey.400',
-                  mb: 0.5
-                }}>
-                  <ManIcon sx={{ fontSize: '20px' }} />
-                </Avatar>
-                <Typography variant="caption" sx={{ textAlign: 'center', fontSize: '10px' }}>
-                  Kandidat*in hier hinziehen
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
-  )
-}
-
 // ** Matching Night Card Component
 const MatchingNightCard: React.FC<{ 
   matchingNight: MatchingNight
@@ -841,8 +586,26 @@ const OverviewMUI: React.FC = () => {
   }
 
   const handleCreateMatchingNight = () => {
-    resetMatchingNightFormWithPerfectMatches()
+    resetMatchingNightForm()
     setMatchingNightDialog(true)
+  }
+
+  const addPairToMatchingNight = () => {
+    if (matchingNightSelectedWoman && matchingNightSelectedMan && matchingNightForm.pairs.length < 10) {
+      setMatchingNightForm(prev => ({
+        ...prev,
+        pairs: [...prev.pairs, { woman: matchingNightSelectedWoman, man: matchingNightSelectedMan }]
+      }))
+      setMatchingNightSelectedWoman('')
+      setMatchingNightSelectedMan('')
+    }
+  }
+
+  const removePairFromMatchingNight = (index: number) => {
+    setMatchingNightForm(prev => ({
+      ...prev,
+      pairs: prev.pairs.filter((_, i) => i !== index)
+    }))
   }
 
   // Admin functionality states
@@ -852,7 +615,7 @@ const OverviewMUI: React.FC = () => {
     severity: 'success'
   })
 
-  // Matching Night form states
+  // Matching Night form states (nur Multiselect, kein Drag & Drop)
   const [matchingNightDialog, setMatchingNightDialog] = useState(false)
   const [matchingNightForm, setMatchingNightForm] = useState({
     name: '',
@@ -861,12 +624,8 @@ const OverviewMUI: React.FC = () => {
     ausstrahlungsdatum: '',
     ausstrahlungszeit: ''
   })
-  
-  // Drag & Drop states for Matching Night
-  const [draggedParticipant, setDraggedParticipant] = useState<Participant | null>(null)
-  const [dragOverPairIndex, setDragOverPairIndex] = useState<number | null>(null)
-  const [dragOverSlot, setDragOverSlot] = useState<'woman' | 'man' | null>(null)
-  const [placedParticipants, setPlacedParticipants] = useState<Set<string>>(new Set())
+  const [matchingNightSelectedWoman, setMatchingNightSelectedWoman] = useState<string>('')
+  const [matchingNightSelectedMan, setMatchingNightSelectedMan] = useState<string>('')
   
   // Get all participants who are already confirmed as Perfect Matches (regardless of airing order)
   const getAllConfirmedPerfectMatchParticipants = () => {
@@ -878,82 +637,6 @@ const OverviewMUI: React.FC = () => {
         confirmedParticipants.add(mb.man)
       })
     return confirmedParticipants
-  }
-
-  // Get Perfect Match pairs that should be auto-placed
-  // Only includes Perfect Matches that were aired BEFORE the current matching night
-  const getAutoPlaceablePerfectMatches = () => {
-    return getValidPerfectMatchesBeforeDateTime(matchboxes, new Date())
-      .slice(0, 10) // Max 10 Perfect Matches (one per container)
-  }
-
-  // Auto-initialize Perfect Matches when dialog opens
-  const initializePerfectMatches = () => {
-    const perfectMatches = getAutoPlaceablePerfectMatches()
-    const newPairs = Array.from({ length: 10 }, (_, index) => {
-      if (index < perfectMatches.length) {
-        return perfectMatches[index]
-      }
-      return { woman: '', man: '' }
-    })
-    
-    setMatchingNightForm(prev => ({
-      ...prev,
-      pairs: newPairs,
-      totalLights: perfectMatches.length // Auto-set lights for Perfect Matches
-    }))
-    
-    // Mark Perfect Match participants as placed
-    const perfectMatchParticipants = new Set<string>()
-    perfectMatches.forEach(pair => {
-      perfectMatchParticipants.add(pair.woman)
-      perfectMatchParticipants.add(pair.man)
-    })
-    setPlacedParticipants(perfectMatchParticipants)
-  }
-
-  // Set confirmed Perfect Matches manually
-  const setConfirmedPerfectMatches = () => {
-    const perfectMatches = getAutoPlaceablePerfectMatches()
-    
-    if (perfectMatches.length === 0) {
-      setSnackbar({ 
-        open: true, 
-        message: 'Keine bestätigten Perfect Matches verfügbar!', 
-        severity: 'error' 
-      })
-      return
-    }
-
-    // Create new pairs array with Perfect Matches in first containers
-    const newPairs = Array.from({ length: 10 }, (_, index) => {
-      if (index < perfectMatches.length) {
-        return perfectMatches[index]
-      }
-      return { woman: '', man: '' }
-    })
-    
-    setMatchingNightForm(prev => ({
-      ...prev,
-      pairs: newPairs,
-      totalLights: perfectMatches.length, // Auto-set lights for Perfect Matches
-      ausstrahlungsdatum: '',
-      ausstrahlungszeit: ''
-    }))
-    
-    // Mark Perfect Match participants as placed
-    const perfectMatchParticipants = new Set<string>()
-    perfectMatches.forEach(pair => {
-      perfectMatchParticipants.add(pair.woman)
-      perfectMatchParticipants.add(pair.man)
-    })
-    setPlacedParticipants(perfectMatchParticipants)
-
-    setSnackbar({ 
-      open: true, 
-      message: `${perfectMatches.length} bestätigte Perfect Matches wurden gesetzt!`, 
-      severity: 'success' 
-    })
   }
 
   // Matchbox form states
@@ -1209,17 +892,16 @@ const OverviewMUI: React.FC = () => {
         return
       }
 
-      const autoGeneratedName = `Matching Night #${matchingNights.length + 1}`
+      const nameToUse = matchingNightForm.name?.trim() || `Matching Night #${matchingNights.length + 1}`
       
-      // Verwende den MatchingNightService für die Erstellung
       await MatchingNightService.createMatchingNight({
-        name: autoGeneratedName,
+        name: nameToUse,
         date: new Date().toISOString().split('T')[0],
         totalLights: matchingNightForm.totalLights,
         pairs: completePairs
       })
 
-      setSnackbar({ open: true, message: `Matching Night "${autoGeneratedName}" mit allen 10 Paaren wurde erfolgreich erstellt!`, severity: 'success' })
+      setSnackbar({ open: true, message: `Matching Night "${nameToUse}" mit allen 10 Paaren wurde erfolgreich erstellt!`, severity: 'success' })
       setMatchingNightDialog(false)
       resetMatchingNightForm()
       loadAllData()
@@ -1285,139 +967,8 @@ const OverviewMUI: React.FC = () => {
       ausstrahlungsdatum: '',
       ausstrahlungszeit: ''
     })
-    setPlacedParticipants(new Set())
-  }
-
-  const resetMatchingNightFormWithPerfectMatches = () => {
-    setMatchingNightForm({
-      name: '',
-      totalLights: 0,
-      pairs: [],
-      ausstrahlungsdatum: '',
-      ausstrahlungszeit: ''
-    })
-    setPlacedParticipants(new Set())
-    // Auto-initialize Perfect Matches
-    setTimeout(() => initializePerfectMatches(), 100)
-  }
-
-
-  const handleMatchingNightDragOver = (e: React.DragEvent, pairIndex: number, slot: 'woman' | 'man') => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'copy'
-    setDragOverPairIndex(pairIndex)
-    setDragOverSlot(slot)
-  }
-
-  const handleMatchingNightDragLeave = () => {
-    setDragOverPairIndex(null)
-    setDragOverSlot(null)
-  }
-
-  const handleMatchingNightDrop = (e: React.DragEvent, pairIndex: number, slot: 'woman' | 'man') => {
-    e.preventDefault()
-    setDragOverPairIndex(null)
-    setDragOverSlot(null)
-    
-    if (!draggedParticipant) return
-    
-    // Check if participant is already placed or confirmed as Perfect Match
-    if (placedParticipants.has(draggedParticipant.name || '') || getAllConfirmedPerfectMatchParticipants().has(draggedParticipant.name || '')) return
-    
-    // KRITISCH: Validiere, dass nur Frauen im 'woman' Feld und nur Männer im 'man' Feld platziert werden können
-    if (slot === 'woman' && draggedParticipant.gender !== 'F') {
-      setSnackbar({ 
-        open: true, 
-        message: `Nur Frauen können im ersten Feld (Frau) platziert werden! ${draggedParticipant.name} ist ein Mann.`, 
-        severity: 'error' 
-      })
-      return
-    }
-    if (slot === 'man' && draggedParticipant.gender !== 'M') {
-      setSnackbar({ 
-        open: true, 
-        message: `Nur Männer können im zweiten Feld (Mann) platziert werden! ${draggedParticipant.name} ist eine Frau.`, 
-        severity: 'error' 
-      })
-      return
-    }
-    
-    // Check if the target slot already has someone of the same gender
-    const targetPair = matchingNightForm.pairs[pairIndex] || { woman: '', man: '' }
-    if (slot === 'woman' && targetPair.man) {
-      const manParticipant = participants.find(p => p.name === targetPair.man)
-      if (manParticipant && manParticipant.gender === draggedParticipant.gender) {
-        setSnackbar({ 
-          open: true, 
-          message: `Nicht möglich: ${draggedParticipant.name} und ${targetPair.man} haben das gleiche Geschlecht!`, 
-          severity: 'error' 
-        })
-        return
-      }
-    }
-    if (slot === 'man' && targetPair.woman) {
-      const womanParticipant = participants.find(p => p.name === targetPair.woman)
-      if (womanParticipant && womanParticipant.gender === draggedParticipant.gender) {
-        setSnackbar({ 
-          open: true, 
-          message: `Nicht möglich: ${draggedParticipant.name} und ${targetPair.woman} haben das gleiche Geschlecht!`, 
-          severity: 'error' 
-        })
-        return
-      }
-    }
-    
-    // Update pairs array
-    const newPairs = [...matchingNightForm.pairs]
-    if (!newPairs[pairIndex]) {
-      newPairs[pairIndex] = { woman: '', man: '' }
-    }
-    
-    // Remove participant from other pairs if already placed
-    const participantName = draggedParticipant.name || ''
-    newPairs.forEach((pair, index) => {
-      if (index !== pairIndex && pair) {
-        if (pair.woman === participantName) pair.woman = ''
-        if (pair.man === participantName) pair.man = ''
-      }
-    })
-    
-    // Place participant in new slot
-    newPairs[pairIndex][slot] = participantName
-    
-      setMatchingNightForm(prev => ({
-        ...prev,
-      pairs: newPairs
-    }))
-    
-    // Update placed participants
-    setPlacedParticipants(prev => {
-      const newSet = new Set(prev)
-      newSet.add(participantName)
-      return newSet
-    })
-    
-    setDraggedParticipant(null)
-  }
-
-  const removeParticipantFromPair = (pairIndex: number, slot: 'woman' | 'man') => {
-    const participantName = matchingNightForm.pairs[pairIndex]?.[slot]
-    if (!participantName) return
-    
-    const newPairs = [...matchingNightForm.pairs]
-    newPairs[pairIndex][slot] = ''
-    
-    setMatchingNightForm(prev => ({
-      ...prev,
-      pairs: newPairs
-    }))
-    
-    // Remove from placed participants
-    setPlacedParticipants(prev => {
-      const newSet = new Set(prev)
-      newSet.delete(participantName)
-      return newSet
-    })
+    setMatchingNightSelectedWoman('')
+    setMatchingNightSelectedMan('')
   }
 
   const resetMatchboxForm = () => {
@@ -1536,9 +1087,7 @@ const OverviewMUI: React.FC = () => {
   // Erweiterte Geräteerkennung
   const deviceInfo = useDeviceDetection()
   const isMobile = deviceInfo.isSmartphone // Nur Smartphones gelten als "mobile"
-  // Touch-Geräte (Smartphone, Tablet, oder beliebiges Gerät mit Touch): Drag & Drop funktioniert auf iPad/iOS nicht – Dropdown-UI nutzen (hasTouch greift auch wenn iPad als „Desktop“ meldet)
-  const useTouchFriendlyMatchingNight = deviceInfo.isSmartphone || deviceInfo.isTablet || deviceInfo.hasTouch
-  
+
   // Geräte-spezifische Rotation-Locks aktivieren
   useEffect(() => {
     if (deviceInfo.isTablet) {
@@ -1721,7 +1270,7 @@ const OverviewMUI: React.FC = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <WomanIcon sx={{ color: 'white' }} />
                           <Typography variant="body2" sx={{ color: 'white' }}>
-                            Frau hinzufügen
+                            Frau
                           </Typography>
                         </Box>
                       )}
@@ -1797,7 +1346,7 @@ const OverviewMUI: React.FC = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <ManIcon sx={{ color: 'white' }} />
                           <Typography variant="body2" sx={{ color: 'white' }}>
-                            Mann hinzufügen
+                            Mann
                           </Typography>
                         </Box>
                       )}
@@ -1882,14 +1431,13 @@ const OverviewMUI: React.FC = () => {
                         .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'))
                         .map((participant) => {
                           const isConfirmedPM = getAllConfirmedPerfectMatchParticipants().has(participant.name || '')
-                          const isUnavailable = isConfirmedPM || placedParticipants.has(participant.name || '')
                           return (
                             <ParticipantCard 
                               key={participant.id} 
                               participant={participant} 
-                              draggable={!isUnavailable}
-                              onDragStart={(p) => setDraggedParticipant(p)}
-                              isPlaced={isUnavailable}
+                              draggable={false}
+                              onDragStart={() => {}}
+                              isPlaced={isConfirmedPM}
                             />
                           )
                         })}
@@ -1919,14 +1467,13 @@ const OverviewMUI: React.FC = () => {
                         .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'))
                         .map((participant) => {
                           const isConfirmedPM = getAllConfirmedPerfectMatchParticipants().has(participant.name || '')
-                          const isUnavailable = isConfirmedPM || placedParticipants.has(participant.name || '')
                           return (
                             <ParticipantCard 
                               key={participant.id} 
                               participant={participant} 
-                              draggable={!isUnavailable}
-                              onDragStart={(p) => setDraggedParticipant(p)}
-                              isPlaced={isUnavailable}
+                              draggable={false}
+                              onDragStart={() => {}}
+                              isPlaced={isConfirmedPM}
                             />
                           )
                         })}
@@ -2684,490 +2231,206 @@ const OverviewMUI: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <Box sx={{ flex: 1 }}>
               <Typography variant="h6" sx={{ width: '100%' }}>Neue Matching Night erstellen</Typography>
-              {!useTouchFriendlyMatchingNight && (
-                <Typography variant="body2" color="text.secondary">
-                  🎯 Ziehe Kandidat*innen direkt in die Pärchen-Container
-                </Typography>
-              )}
-            </Box>
-            {/* Perfect Matches Setzen - vorerst deaktiviert, kann später wieder aktiviert werden */}
-            {false && !isMobile && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
-              <Button
-                variant="outlined"
-                color="warning"
-                startIcon={<Typography sx={{ fontSize: '16px' }}>🔒</Typography>}
-                onClick={setConfirmedPerfectMatches}
-                sx={{ 
-                  whiteSpace: 'nowrap',
-                  borderColor: 'warning.main',
-                  color: 'warning.main',
-                  '&:hover': {
-                    borderColor: 'warning.dark',
-                    bgcolor: 'warning.50'
-                  }
-                }}
-              >
-                Perfect Matches setzen
-              </Button>
-              <Typography variant="caption" color="warning.main" sx={{ fontWeight: 'bold' }}>
-                {getAutoPlaceablePerfectMatches().length} bestätigte Perfect Matches verfügbar
+              <Typography variant="body2" color="text.secondary">
+                Wähle die Pärchen aus, die zusammen sitzen.
               </Typography>
             </Box>
-            )}
           </Box>
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* Basic Info */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Typography variant="h6" sx={{ 
-                fontWeight: 'bold', 
-                color: 'text.primary',
-                fontSize: useTouchFriendlyMatchingNight ? '18px' : '16px',
-                textAlign: 'center'
-              }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: '16px', textAlign: 'center' }}>
                 {matchingNightForm.name}
               </Typography>
-              
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-start' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                    Lichter:
-                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Lichter:</Typography>
                   <TextField
                     fullWidth={false}
                     label="Lichter (max. 10)"
                     type="number"
-                    sx={{ 
-                      '& .MuiInputBase-input': { 
-                        width: '60px !important',
-                        minWidth: '60px !important',
-                        maxWidth: '60px !important',
-                        fontSize: '16px !important',
-                        padding: '16px 14px !important'
-                      },
-                      '& .MuiOutlinedInput-root': {
-                        width: '100px !important',
-                        minWidth: '100px !important',
-                        maxWidth: '100px !important'
-                      }
+                    sx={{
+                      '& .MuiInputBase-input': { width: '60px !important', minWidth: '60px !important', maxWidth: '60px !important', fontSize: '16px !important', padding: '16px 14px !important' },
+                      '& .MuiOutlinedInput-root': { width: '100px !important', minWidth: '100px !important', maxWidth: '100px !important' }
                     }}
-                  inputProps={{ 
-                    min: (() => {
-                      const perfectMatchLights = matchingNightForm.pairs.filter(pair => 
-                        pair && pair.woman && pair.man && 
-                        matchboxes.some(mb => 
-                          mb.matchType === 'perfect' && 
-                          mb.woman === pair.woman && 
-                          mb.man === pair.man
-                        )
-                      ).length
-                      return perfectMatchLights
-                    })(), 
-                    max: 10 
-                  }}
-                  value={matchingNightForm.totalLights}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 0
-                    setMatchingNightForm({...matchingNightForm, totalLights: value})
-                  }}
-                  placeholder="0"
-                  error={(() => {
-                    const perfectMatchLights = matchingNightForm.pairs.filter(pair => 
-                      pair && pair.woman && pair.man && 
-                      matchboxes.some(mb => 
-                        mb.matchType === 'perfect' && 
-                        mb.woman === pair.woman && 
-                        mb.man === pair.man
-                      )
-                    ).length
-                    return matchingNightForm.totalLights > 10 || matchingNightForm.totalLights < perfectMatchLights
-                  })()}
-                  helperText={(() => {
-                    const perfectMatchLights = matchingNightForm.pairs.filter(pair => 
-                      pair && pair.woman && pair.man && 
-                      matchboxes.some(mb => 
-                        mb.matchType === 'perfect' && 
-                        mb.woman === pair.woman && 
-                        mb.man === pair.man
-                      )
-                    ).length
-                    
-                    if (matchingNightForm.totalLights > 10) {
-                      return "Maximum 10 Lichter erlaubt!"
+                    inputProps={{
+                      min: matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length,
+                      max: 10
+                    }}
+                    value={matchingNightForm.totalLights}
+                    onChange={(e) => setMatchingNightForm({ ...matchingNightForm, totalLights: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
+                    error={matchingNightForm.totalLights > 10 || matchingNightForm.totalLights < matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length}
+                    helperText={
+                      matchingNightForm.totalLights > 10
+                        ? 'Maximum 10 Lichter erlaubt!'
+                        : matchingNightForm.totalLights < matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length
+                          ? `Minimum ${matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length} Lichter erforderlich (Perfect Matches)`
+                          : ''
                     }
-                    if (matchingNightForm.totalLights < perfectMatchLights) {
-                      return `Minimum ${perfectMatchLights} Lichter erforderlich (Perfect Matches)`
-                    }
-                    return ""
-                  })()}
-                />
+                  />
                 </Box>
-                
-                {/* Visual Light Dots */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Lichter:
-                  </Typography>
+                  <Typography variant="caption" color="text.secondary">Lichter:</Typography>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
                     {Array.from({ length: 10 }, (_, index) => {
-                      const perfectMatchLights = matchingNightForm.pairs.filter(pair => 
-                        pair && pair.woman && pair.man && 
-                        matchboxes.some(mb => 
-                          mb.matchType === 'perfect' && 
-                          mb.woman === pair.woman && 
-                          mb.man === pair.man
-                        )
-                      ).length
-                      
+                      const perfectMatchLights = matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length
                       const isActive = index < matchingNightForm.totalLights
                       const isSecureLight = index < perfectMatchLights
-                      
                       return (
                         <Box
                           key={index}
                           sx={{
+                            position: 'relative',
                             width: 12,
                             height: 12,
                             borderRadius: '50%',
                             bgcolor: isActive ? (isSecureLight ? 'warning.dark' : 'warning.main') : 'grey.300',
                             border: '1px solid',
-                            borderColor: isActive ? (isSecureLight ? 'warning.darker' : 'warning.dark') : 'grey.400',
-                            transition: 'all 0.3s ease',
-                            position: 'relative'
+                            borderColor: isActive ? (isSecureLight ? 'warning.darker' : 'warning.dark') : 'grey.400'
                           }}
                         >
                           {isSecureLight && isActive && (
-                            <Typography sx={{ 
-                              position: 'absolute',
-                              top: -2,
-                              left: -2,
-                              fontSize: '8px',
-                              color: 'white',
-                              fontWeight: 'bold'
-                            }}>
-                              🔒
-                            </Typography>
+                            <Typography sx={{ position: 'absolute', top: -2, left: -2, fontSize: '8px', color: 'white', fontWeight: 'bold' }}>🔒</Typography>
                           )}
                         </Box>
                       )
                     })}
                   </Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {matchingNightForm.totalLights}/10
-                  </Typography>
-                </Box>
-                
-              </Box>
-            </Box>
-
-            {/* Drag & Drop Pairs Grid - nur auf Desktop (nicht auf Touch-Geräten wie iPad) */}
-            {!useTouchFriendlyMatchingNight && (
-            <Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  Pärchen-Container - Beliebige Paarungen möglich
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                {/* First Row - 5 pairs */}
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1.5 }}>
-                  {Array.from({ length: 5 }, (_, index) => {
-                    const pair = matchingNightForm.pairs[index] || { woman: '', man: '' }
-                    const isPerfectMatch = matchboxes.some(mb => 
-                      mb.matchType === 'perfect' && 
-                      mb.woman === pair.woman && 
-                      mb.man === pair.man
-                    )
-                    return (
-                      <MatchingNightPairContainer
-                        key={index}
-                        pairIndex={index}
-                        pair={pair}
-                        participants={participants}
-                        isDragOver={dragOverPairIndex === index}
-                        dragOverSlot={dragOverPairIndex === index ? dragOverSlot : null}
-                        onDragOver={handleMatchingNightDragOver}
-                        onDragLeave={handleMatchingNightDragLeave}
-                        onDrop={handleMatchingNightDrop}
-                        onRemove={removeParticipantFromPair}
-                        isPerfectMatch={isPerfectMatch}
-                      />
-                    )
-                  })}
-                </Box>
-                
-                {/* Second Row - 5 pairs */}
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1.5 }}>
-                  {Array.from({ length: 5 }, (_, index) => {
-                    const pair = matchingNightForm.pairs[index + 5] || { woman: '', man: '' }
-                    const isPerfectMatch = matchboxes.some(mb => 
-                      mb.matchType === 'perfect' && 
-                      mb.woman === pair.woman && 
-                      mb.man === pair.man
-                    )
-                    return (
-                      <MatchingNightPairContainer
-                        key={index + 5}
-                        pairIndex={index + 5}
-                        pair={pair}
-                        participants={participants}
-                        isDragOver={dragOverPairIndex === index + 5}
-                        dragOverSlot={dragOverPairIndex === index + 5 ? dragOverSlot : null}
-                        onDragOver={handleMatchingNightDragOver}
-                        onDragLeave={handleMatchingNightDragLeave}
-                        onDrop={handleMatchingNightDrop}
-                        onRemove={removeParticipantFromPair}
-                        isPerfectMatch={isPerfectMatch}
-                      />
-                    )
-                  })}
                 </Box>
               </Box>
             </Box>
-            )}
 
-            {/* Manuelle Paar-Auswahl - Touch-Geräte (Smartphone + iPad/Tablet) */}
-            {useTouchFriendlyMatchingNight && (
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
-                Pärchen zusammenstellen
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {Array.from({ length: 10 }, (_, index) => {
-                  const pair = matchingNightForm.pairs[index] || { woman: '', man: '' }
-                  const isPerfectMatch = matchboxes.some(mb => 
-                    mb.matchType === 'perfect' && 
-                    mb.woman === pair.woman && 
-                    mb.man === pair.man
-                  )
-                  return (
-                    <Card key={index} sx={{ p: 2, bgcolor: isPerfectMatch ? 'warning.50' : 'grey.50' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', minWidth: 60 }}>
-                          Paar {index + 1}
-                        </Typography>
-                        {isPerfectMatch && (
-                          <Chip label="Perfect Match" color="warning" size="small" />
-                        )}
-                      </Box>
-                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        <FormControl fullWidth>
-                          <InputLabel>Frau</InputLabel>
-                          <Select
-                            value={pair.woman}
-                            label="Frau"
-                            disabled={isPerfectMatch}
-                            sx={useTouchFriendlyMatchingNight ? {
-                              '& .MuiFormControl-root': {
-                                width: '100% !important'
-                              },
-                              '& .MuiInputBase-input': {
-                                width: '100% !important',
-                                minWidth: '100% !important'
-                              }
-                            } : {}}
-                            onChange={(e) => {
-                              const newPairs = [...matchingNightForm.pairs]
-                              if (!newPairs[index]) newPairs[index] = { woman: '', man: '' }
-                              newPairs[index].woman = e.target.value
-                              setMatchingNightForm({...matchingNightForm, pairs: newPairs})
-                            }}
-                          >
-                            <MenuItem value="">
-                              <em>Keine Auswahl</em>
+            {/* Paar hinzufügen (wie im Admin: Select Frau, Select Mann, Hinzufügen) */}
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 2 }}>Paar hinzufügen</Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr auto' }, gap: 2, alignItems: 'flex-end' }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Frau</InputLabel>
+                    <Select
+                      value={matchingNightSelectedWoman}
+                      label="Frau"
+                      onChange={(e) => setMatchingNightSelectedWoman(e.target.value)}
+                    >
+                      <MenuItem value=""><em>Keine Auswahl</em></MenuItem>
+                      {women
+                        .filter(w => !matchingNightForm.pairs.some(p => p.woman === w.name))
+                        .map((woman) => {
+                          const hasPhoto = woman.photoUrl && woman.photoUrl.trim() !== ''
+                          return (
+                            <MenuItem key={woman.id} value={woman.name || ''}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Avatar src={hasPhoto ? woman.photoUrl : undefined} sx={{ width: 28, height: 28, bgcolor: hasPhoto ? undefined : 'secondary.main', fontSize: '0.875rem' }}>
+                                  {!hasPhoto && (woman.name?.charAt(0) || '?')}
+                                </Avatar>
+                                <Typography variant="body2" component="span">{woman.name || 'Unbekannt'}</Typography>
+                              </Box>
                             </MenuItem>
-                            {women.map((woman) => {
-                              const isUsed = matchingNightForm.pairs.some((p, i) => i !== index && p.woman === woman.name)
-                              const hasPhoto = woman.photoUrl && woman.photoUrl.trim() !== ''
-                              return (
-                                <MenuItem key={woman.id} value={woman.name} disabled={isUsed || isPerfectMatch}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                    <Avatar
-                                      src={hasPhoto ? woman.photoUrl : undefined}
-                                      sx={{
-                                        width: 28,
-                                        height: 28,
-                                        bgcolor: hasPhoto ? undefined : 'secondary.main',
-                                        fontSize: '0.875rem'
-                                      }}
-                                    >
-                                      {!hasPhoto && (woman.name?.charAt(0) || '?')}
-                                    </Avatar>
-                                    <Typography variant="body2" component="span">
-                                      {woman.name}
-                                      {isUsed && ' (bereits verwendet)'}
-                                      {isPerfectMatch && ' (Perfect Match - gesperrt)'}
-                                    </Typography>
-                                  </Box>
-                                </MenuItem>
-                              )
-                            })}
-                          </Select>
-                        </FormControl>
-                        <FormControl fullWidth>
-                          <InputLabel>Mann</InputLabel>
-                          <Select
-                            value={pair.man}
-                            label="Mann"
-                            disabled={isPerfectMatch}
-                            sx={useTouchFriendlyMatchingNight ? {
-                              '& .MuiFormControl-root': {
-                                width: '100% !important'
-                              },
-                              '& .MuiInputBase-input': {
-                                width: '100% !important',
-                                minWidth: '100% !important'
-                              }
-                            } : {}}
-                            onChange={(e) => {
-                              const newPairs = [...matchingNightForm.pairs]
-                              if (!newPairs[index]) newPairs[index] = { woman: '', man: '' }
-                              newPairs[index].man = e.target.value
-                              setMatchingNightForm({...matchingNightForm, pairs: newPairs})
-                            }}
-                          >
-                            <MenuItem value="">
-                              <em>Keine Auswahl</em>
+                          )
+                        })}
+                    </Select>
+                  </FormControl>
+                  <FormControl fullWidth>
+                    <InputLabel>Mann</InputLabel>
+                    <Select
+                      value={matchingNightSelectedMan}
+                      label="Mann"
+                      onChange={(e) => setMatchingNightSelectedMan(e.target.value)}
+                    >
+                      <MenuItem value=""><em>Keine Auswahl</em></MenuItem>
+                      {men
+                        .filter(m => !matchingNightForm.pairs.some(p => p.man === m.name))
+                        .map((man) => {
+                          const hasPhoto = man.photoUrl && man.photoUrl.trim() !== ''
+                          return (
+                            <MenuItem key={man.id} value={man.name || ''}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Avatar src={hasPhoto ? man.photoUrl : undefined} sx={{ width: 28, height: 28, bgcolor: hasPhoto ? undefined : 'primary.main', fontSize: '0.875rem' }}>
+                                  {!hasPhoto && (man.name?.charAt(0) || '?')}
+                                </Avatar>
+                                <Typography variant="body2" component="span">{man.name || 'Unbekannt'}</Typography>
+                              </Box>
                             </MenuItem>
-                            {men.map((man) => {
-                              const isUsed = matchingNightForm.pairs.some((p, i) => i !== index && p.man === man.name)
-                              const hasPhoto = man.photoUrl && man.photoUrl.trim() !== ''
-                              return (
-                                <MenuItem key={man.id} value={man.name} disabled={isUsed || isPerfectMatch}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                    <Avatar
-                                      src={hasPhoto ? man.photoUrl : undefined}
-                                      sx={{
-                                        width: 28,
-                                        height: 28,
-                                        bgcolor: hasPhoto ? undefined : 'primary.main',
-                                        fontSize: '0.875rem'
-                                      }}
-                                    >
-                                      {!hasPhoto && (man.name?.charAt(0) || '?')}
-                                    </Avatar>
-                                    <Typography variant="body2" component="span">
-                                      {man.name}
-                                      {isUsed && ' (bereits verwendet)'}
-                                      {isPerfectMatch && ' (Perfect Match - gesperrt)'}
-                                    </Typography>
-                                  </Box>
-                                </MenuItem>
-                              )
-                            })}
-                          </Select>
-                        </FormControl>
-                      </Box>
-                    </Card>
-                  )
-                })}
-              </Box>
-            </Box>
-            )}
-
-            {/* Available Participants for Drag & Drop - nur auf Desktop (nicht auf Touch-Geräten) */}
-            {!useTouchFriendlyMatchingNight && (
-            <Box>
-              
-              {/* Participants Layout: Men Left, Women Right */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                {/* Men Section - Left */}
-                <Box>
-                  <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold', color: 'primary.main' }}>
-                    Männer ({men.filter(m => !placedParticipants.has(m.name || '') && !getAllConfirmedPerfectMatchParticipants().has(m.name || '')).length} verfügbar)
-                  </Typography>
-                  <Box sx={{ 
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 1.5,
-                    p: 1.5,
-                    border: '1px dashed',
-                    borderColor: 'primary.main',
-                    borderRadius: 2,
-                    bgcolor: 'primary.50',
-                    minHeight: 80,
-                    alignItems: 'center'
-                  }}>
-                    {men.filter(m => !placedParticipants.has(m.name || '') && !getAllConfirmedPerfectMatchParticipants().has(m.name || '')).map((man) => (
-                      <ParticipantCard 
-                        key={man.id} 
-                        participant={man} 
-                        draggable={true}
-                        onDragStart={(p) => setDraggedParticipant(p)}
-                        isPlaced={false}
-                      />
-                    ))}
-                    {men.filter(m => !placedParticipants.has(m.name || '') && !getAllConfirmedPerfectMatchParticipants().has(m.name || '')).length === 0 && (
-                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%', fontSize: '12px' }}>
-                        Alle Männer sind bereits platziert
-                      </Typography>
-                    )}
-                  </Box>
+                          )
+                        })}
+                    </Select>
+                  </FormControl>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={addPairToMatchingNight}
+                    disabled={!matchingNightSelectedWoman || !matchingNightSelectedMan || matchingNightForm.pairs.length >= 10}
+                  >
+                    Hinzufügen
+                  </Button>
                 </Box>
+              </CardContent>
+            </Card>
 
-                {/* Women Section - Right */}
-                <Box>
-                  <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold', color: 'secondary.main' }}>
-                    Frauen ({women.filter(w => !placedParticipants.has(w.name || '') && !getAllConfirmedPerfectMatchParticipants().has(w.name || '')).length} verfügbar)
+            {/* Ausgewählte Paare */}
+            {matchingNightForm.pairs.length > 0 && (
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Ausgewählte Paare ({matchingNightForm.pairs.length}/10)
                   </Typography>
-                  <Box sx={{ 
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 1.5,
-                    p: 1.5,
-                    border: '1px dashed',
-                    borderColor: 'secondary.main',
-                    borderRadius: 2,
-                    bgcolor: 'secondary.50',
-                    minHeight: 80,
-                    alignItems: 'center'
-                  }}>
-                    {women.filter(w => !placedParticipants.has(w.name || '') && !getAllConfirmedPerfectMatchParticipants().has(w.name || '')).map((woman) => (
-                      <ParticipantCard 
-                        key={woman.id} 
-                        participant={woman} 
-                        draggable={true}
-                        onDragStart={(p) => setDraggedParticipant(p)}
-                        isPlaced={false}
-                      />
-                    ))}
-                    {women.filter(w => !placedParticipants.has(w.name || '') && !getAllConfirmedPerfectMatchParticipants().has(w.name || '')).length === 0 && (
-                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%', fontSize: '12px' }}>
-                        Alle Frauen sind bereits platziert
-                      </Typography>
-                    )}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {matchingNightForm.pairs.map((pair, index) => {
+                      const isPerfectMatch = matchboxes.some(mb =>
+                        mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man
+                      )
+                      return (
+                        <Card
+                          key={index}
+                          variant="outlined"
+                          sx={{
+                            bgcolor: isPerfectMatch ? 'success.50' : 'grey.50',
+                            border: '1px solid',
+                            borderColor: isPerfectMatch ? 'success.200' : 'grey.200'
+                          }}
+                        >
+                          <CardContent sx={{ py: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Avatar sx={{ bgcolor: isPerfectMatch ? 'success.main' : 'pink.main', width: 32, height: 32 }}>
+                                  {isPerfectMatch ? <AutoAwesomeIcon sx={{ fontSize: 18 }} /> : <GroupsIcon sx={{ fontSize: 18 }} />}
+                                </Avatar>
+                                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                                  {pair.woman} + {pair.man}
+                                </Typography>
+                                {isPerfectMatch && <Chip label="Perfect Match" color="success" size="small" />}
+                              </Box>
+                              <Tooltip title="Paar entfernen">
+                                <IconButton size="small" color="error" onClick={() => removePairFromMatchingNight(index)}>
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
                   </Box>
-                </Box>
-              </Box>
-            </Box>
+                </CardContent>
+              </Card>
             )}
-
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {setMatchingNightDialog(false); resetMatchingNightForm();}}>Abbrechen</Button>
-          <Button 
-            onClick={saveMatchingNight} 
-            variant="contained" 
+          <Button onClick={() => { setMatchingNightDialog(false); resetMatchingNightForm(); }}>Abbrechen</Button>
+          <Button
+            onClick={saveMatchingNight}
+            variant="contained"
             startIcon={<SaveIcon />}
-            disabled={matchingNightForm.pairs.filter(pair => pair && pair.woman && pair.man).length !== 10}
+            disabled={matchingNightForm.pairs.length !== 10}
             sx={{
-              bgcolor: matchingNightForm.pairs.filter(pair => pair && pair.woman && pair.man).length === 10 
-                ? 'success.main' 
-                : 'grey.400',
-              '&:hover': {
-                bgcolor: matchingNightForm.pairs.filter(pair => pair && pair.woman && pair.man).length === 10 
-                  ? 'success.dark' 
-                  : 'grey.500'
-              }
+              bgcolor: matchingNightForm.pairs.length === 10 ? 'success.main' : 'grey.400',
+              '&:hover': { bgcolor: matchingNightForm.pairs.length === 10 ? 'success.dark' : 'grey.500' }
             }}
           >
-            {matchingNightForm.pairs.filter(pair => pair && pair.woman && pair.man).length === 10 
-              ? 'Erstellen (10/10)' 
-              : `Erstellen (${matchingNightForm.pairs.filter(pair => pair && pair.woman && pair.man).length}/10)`
-            }
+            {matchingNightForm.pairs.length === 10 ? 'Erstellen (10/10)' : `Erstellen (${matchingNightForm.pairs.length}/10)`}
           </Button>
         </DialogActions>
       </Dialog>
@@ -3241,11 +2504,11 @@ const OverviewMUI: React.FC = () => {
                           position: 'absolute',
                           top: -8,
                           right: -8,
-                          bgcolor: 'error.main',
+                          bgcolor: 'rgba(0,0,0,0.6)',
                           color: 'white',
                           width: 24,
                           height: 24,
-                          '&:hover': { bgcolor: 'error.dark' }
+                          '&:hover': { bgcolor: 'rgba(0,0,0,0.85)' }
                         }}
                       >
                         <Typography sx={{ fontSize: '14px', fontWeight: 'bold' }}>×</Typography>
@@ -3271,10 +2534,7 @@ const OverviewMUI: React.FC = () => {
                       <WomanIcon sx={{ fontSize: '2rem' }} />
                     </Avatar>
                     <Typography variant="h6" color="text.secondary">
-                      Frau hier hinziehen
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Drop Zone für Frauen
+                      Frau
                     </Typography>
                   </>
                 )}
@@ -3332,11 +2592,11 @@ const OverviewMUI: React.FC = () => {
                           position: 'absolute',
                           top: -8,
                           right: -8,
-                          bgcolor: 'error.main',
+                          bgcolor: 'rgba(0,0,0,0.6)',
                           color: 'white',
                           width: 24,
                           height: 24,
-                          '&:hover': { bgcolor: 'error.dark' }
+                          '&:hover': { bgcolor: 'rgba(0,0,0,0.85)' }
                         }}
                       >
                         <Typography sx={{ fontSize: '14px', fontWeight: 'bold' }}>×</Typography>
@@ -3362,10 +2622,7 @@ const OverviewMUI: React.FC = () => {
                       <ManIcon sx={{ fontSize: '2rem' }} />
                     </Avatar>
                     <Typography variant="h6" color="text.secondary">
-                      Mann hier hinziehen
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Drop Zone für Männer
+                      Mann
                     </Typography>
                   </>
                 )}
@@ -3377,10 +2634,10 @@ const OverviewMUI: React.FC = () => {
             <Typography variant="h6" sx={{ mt: 2 }}>{isMobile ? 'Kandidat*innen auswählen:' : 'Oder manuell auswählen:'}</Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <FormControl fullWidth>
-                <InputLabel>Frau auswählen</InputLabel>
+                <InputLabel>Frau</InputLabel>
                 <Select
                   value={matchboxForm.woman}
-                  label="Frau auswählen"
+                  label="Frau"
                   onChange={(e) => setMatchboxForm({...matchboxForm, woman: e.target.value})}
                 >
                   {availableWomen.map(woman => {
@@ -3408,10 +2665,10 @@ const OverviewMUI: React.FC = () => {
               </FormControl>
 
               <FormControl fullWidth>
-                <InputLabel>Mann auswählen</InputLabel>
+                <InputLabel>Mann</InputLabel>
                 <Select
                   value={matchboxForm.man}
-                  label="Mann auswählen"
+                  label="Mann"
                   onChange={(e) => setMatchboxForm({...matchboxForm, man: e.target.value})}
                 >
                   {availableMen.map(man => {

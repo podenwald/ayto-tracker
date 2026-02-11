@@ -154,6 +154,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
               <ListItemButton
                 onClick={() => {
                   onTabChange?.(item.value)
+                  setMobileOpen(false)
                 }}
                 sx={{
                   borderRadius: 1.5,

@@ -7,6 +7,7 @@
 
 import { db } from '@/lib/db'
 import type { Participant, MatchingNight, Matchbox, Penalty } from '@/types'
+import { getJsonDataSourcesNewestFirst } from '@/services/databaseUpdateService'
 
 export interface JsonDataState {
   participants: Participant[]
@@ -28,19 +29,14 @@ export interface JsonDataUpdateResult {
  */
 export async function loadJsonData(): Promise<JsonDataState> {
   try {
-    // Versuche verschiedene Datenquellen in Prioritätsreihenfolge
-    const dataSources = [
-      '/json/ayto-vip-2025.json',  // Primäre Datenquelle (korrekter Pfad)
-      '/ayto-vip-2025.json',  // Fallback-Pfad (Root)
-      '/json/ayto-vip-2024.json'  // Letzter Fallback
-    ]
-    
+    const dataSources = await getJsonDataSourcesNewestFirst()
+
     let lastError: Error | null = null
-    
+
     for (const source of dataSources) {
       try {
         console.log(`🔄 Lade JSON-Daten von: ${source}`)
-        
+
         const response = await fetch(source, {
           cache: 'no-store',
           headers: {

@@ -111,30 +111,72 @@ export async function checkForDatabaseUpdate(): Promise<DatabaseUpdateState> {
   }
 }
 
+const NO_CACHE_HEADERS = {
+  cache: 'no-cache' as RequestCache,
+  headers: {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  }
+}
+
 /**
- * Lädt die aktuellen Daten vom Server
+ * Lädt die Liste der JSON-Dateien aus public/json/index.json (dynamisch).
+ * Fallback auf feste Liste, wenn index.json fehlt oder fehlschlägt.
+ */
+export async function getJsonDataSources(): Promise<string[]> {
+  try {
+    const response = await fetch('/json/index.json', NO_CACHE_HEADERS)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const list = await response.json()
+    if (!Array.isArray(list) || list.length === 0) throw new Error('Leere oder ungültige index.json')
+    return list.map((name: string) => `/json/${name.replace(/^\/json\//, '')}`)
+  } catch (error) {
+    console.warn('⚠️ index.json nicht geladen, nutze Fallback:', error)
+    return ['/json/ayto2026.json']
+  }
+}
+
+/**
+ * Ermittelt für jede URL das Änderungsdatum per HTTP HEAD (Last-Modified oder Date)
+ * und gibt die URLs sortiert zurück (neueste zuerst).
+ * Bei Fehlern oder fehlendem Header: ursprüngliche Reihenfolge beibehalten.
+ */
+export async function getJsonDataSourcesNewestFirst(): Promise<string[]> {
+  const sources = await getJsonDataSources()
+  if (sources.length <= 1) return sources
+
+  const withDate = await Promise.all(
+    sources.map(async (url): Promise<{ url: string; date: number }> => {
+      try {
+        const res = await fetch(url, { method: 'HEAD', ...NO_CACHE_HEADERS })
+        const lastMod = res.headers.get('last-modified')
+        const dateStr = res.headers.get('date')
+        const date = lastMod || dateStr
+        const ts = date ? new Date(date).getTime() : 0
+        return { url, date: ts }
+      } catch {
+        return { url, date: 0 }
+      }
+    })
+  )
+
+  withDate.sort((a, b) => b.date - a.date)
+  return withDate.map((x) => x.url)
+}
+
+/**
+ * Lädt die aktuellen Daten vom Server (dynamisch aus public/json, neueste Datei zuerst)
  */
 export async function fetchLatestDatabaseData(): Promise<DatabaseImport> {
   try {
-    // Verwende immer die aktuellen Daten aus ayto-vip-2025.json
-    const dataSources = [
-      '/json/ayto-vip-2025.json',
-      '/ayto-vip-2025.json',
-      '/json/ayto-vip-2024.json'
-    ]
-    
+    const dataSources = await getJsonDataSourcesNewestFirst()
+
     let lastError: Error | null = null
-    
+
     for (const source of dataSources) {
       try {
-        const response = await fetch(source, {
-          cache: 'no-cache',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        })
+        const response = await fetch(source, NO_CACHE_HEADERS)
         
         if (response.ok) {
           const data: DatabaseImport = await response.json()
@@ -303,14 +345,11 @@ export async function preloadDatabaseData(): Promise<void> {
       
       // Manifest cachen
       await cache.add('/manifest.json')
-      
-      // Datenquellen cachen
-      const dataSources = [
-        '/json/ayto-vip-2025.json',
-        '/ayto-vip-2025.json',
-        '/json/ayto-vip-2024.json'
-      ]
-      
+
+      // Datenquellen dynamisch aus index.json, dann cachen
+      const dataSources = await getJsonDataSources()
+      await cache.add('/json/index.json')
+
       for (const source of dataSources) {
         try {
           await cache.add(source)

@@ -7,6 +7,7 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle, RefreshCw, Download, Database } from 'lucide-react'
+import { getJsonDataSourcesNewestFirst } from '@/services/databaseUpdateService'
 
 interface InitializationErrorProps {
   error: string
@@ -23,15 +24,25 @@ interface InitializationErrorProps {
  * - Handlungsoptionen für den Benutzer
  */
 export function InitializationError({ error, onRetry, onReload }: InitializationErrorProps) {
-  const handleDownloadData = () => {
-    // Erstelle einen Download-Link für die JSON-Dateien
-    const dataUrl = '/json/ayto-vip-2025.json'
-    const link = document.createElement('a')
-    link.href = dataUrl
-    link.download = 'ayto-vip-2025.json'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  const handleDownloadData = async () => {
+    try {
+      const sources = await getJsonDataSourcesNewestFirst()
+      const dataUrl = sources[0] ?? '/json/ayto2026.json'
+      const filename = dataUrl.replace(/^.*\//, '') || 'ayto-data.json'
+      const link = document.createElement('a')
+      link.href = dataUrl
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch {
+      const link = document.createElement('a')
+      link.href = '/json/ayto2026.json'
+      link.download = 'ayto2026.json'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    }
   }
 
   const handleClearStorage = () => {

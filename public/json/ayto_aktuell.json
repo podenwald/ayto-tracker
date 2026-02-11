@@ -1,0 +1,765 @@
+{
+  "participants": [
+    {
+      "name": "Adrianna",
+      "knownFrom": "",
+      "age": 24,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/0a/c2/3e/9a0e5258965761bf5236370a6d_cmUgODQwIDADMDI5ZTU2NmYzNzY=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "OP-Assistentin aus Berlin",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/adriannagrey/",
+      "freeProfilePhotoUrl": "",
+      "id": 1
+    },
+    {
+      "name": "Alicia",
+      "knownFrom": "",
+      "age": 22,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/4f/9b/bd/d52842f820c31b22a5be283e49_cmUgODQwIDADNGJkOGYwMTJiODQ=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Chef-Animateurin aus Fuerteventura",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/licijana/",
+      "freeProfilePhotoUrl": "",
+      "id": 2
+    },
+    {
+      "name": "Aurora",
+      "knownFrom": "",
+      "age": 26,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/e6/d3/e9/be0e97a8bd64bbff70237bb755_cmUgODQwIDADZTNiZWFkYmYyYjU=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Duale Studentin aus Lissabon / Stuttgart",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/aurora_ayto/",
+      "freeProfilePhotoUrl": "",
+      "id": 3
+    },
+    {
+      "name": "Elena",
+      "knownFrom": "",
+      "age": 29,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/0b/47/7c/cfb7edc58e648f744b9d8ed7e0_cmUgODQwIDADMDdjN2NlODQ5ZWU=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Studentin aus Hamburg",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/elena.charlo/",
+      "freeProfilePhotoUrl": "",
+      "id": 4
+    },
+    {
+      "name": "Ella",
+      "knownFrom": "",
+      "age": 24,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/85/5f/fe/69827e38d967428ed5871f00ef_cmUgODQwIDADOGY2MjM5NGU4ZmU=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Studentin aus München",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/goldslumberkisses/",
+      "freeProfilePhotoUrl": "",
+      "id": 5
+    },
+    {
+      "name": "Laura",
+      "knownFrom": "",
+      "age": 25,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/a3/08/42/d39b093ffee2c1ee262739a690_cmUgODQwIDADYThkYjNlY2UyOTk=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Medizinische Fachangestellte aus München",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/laura_ayto/",
+      "freeProfilePhotoUrl": "",
+      "id": 6
+    },
+    {
+      "name": "Linda",
+      "knownFrom": "",
+      "age": 23,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/d7/72/74/4e0ccfd8019d6a5ee960f8ef8e_cmUgODQwIDADZDI0Y2QxNmU2ODg=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Ordinationsassistentin aus Wien",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/linda_ayto/",
+      "freeProfilePhotoUrl": "",
+      "id": 7
+    },
+    {
+      "name": "Marla",
+      "knownFrom": "",
+      "age": 25,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/b6/0e/6c/fe8b24e8b5e208dcbc01f8185a_cmUgODQwIDADYmVmYmU1MGMwODU=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Friseurin aus Osnabrück",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/marla_slengard/",
+      "freeProfilePhotoUrl": "",
+      "id": 8
+    },
+    {
+      "name": "Michelle",
+      "knownFrom": "",
+      "age": 23,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/f8/b6/4c/6a22cd78bc209fe949707e9ba0_cmUgODQwIDADZjY2MjdjOTk3ZWE=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Zahnmedizinische Fachangestellte aus Berlin",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/michelle_ayto/",
+      "freeProfilePhotoUrl": "",
+      "id": 9
+    },
+    {
+      "name": "Tiziana",
+      "knownFrom": "",
+      "age": 24,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/52/55/a3/81a5423880a4b1568a94b461f2_cmUgODQwIDADNTU4NTMwYjY5NGY=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Versicherungskauffrau aus Baden-Baden",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/tiziana.adriana/",
+      "freeProfilePhotoUrl": "",
+      "id": 10
+    },
+    {
+      "name": "Tonia",
+      "knownFrom": "",
+      "age": 26,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/90/fb/23/164d0049de61e72a3c6e806796_cmUgODQwIDADOWIxZDRlZWE2MDk=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Sport- und Fitnesskauffrau aus Leverkusen",
+      "gender": "F",
+      "socialMediaAccount": "https://www.instagram.com/tnilmb/",
+      "freeProfilePhotoUrl": "",
+      "id": 11
+    },
+    {
+      "name": "Chris",
+      "knownFrom": "",
+      "age": 27,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/5e/7a/6a/9b22b9a39135f9cbd6082268ee_cmUgODQwIDADNWE5MmExZmIwMmU=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Selbstständiger Entrümpler aus Essen",
+      "gender": "M",
+      "socialMediaAccount": "https://www.instagram.com/chriskugathasan/",
+      "freeProfilePhotoUrl": "",
+      "id": 12
+    },
+    {
+      "name": "Ema",
+      "knownFrom": "",
+      "age": 26,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/18/15/48/59b20c2f488f0f850f538b7858_cmUgODQwIDADMTU1MjI4MDU1YjU=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Selbstständig im Außenhandel aus München",
+      "gender": "M",
+      "socialMediaAccount": "https://www.instagram.com/e.boateeng/",
+      "freeProfilePhotoUrl": "",
+      "id": 13
+    },
+    {
+      "name": "Evi",
+      "knownFrom": "",
+      "age": 22,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/f9/24/fe/e62d9008d2cfa424eb0a480281_cmUgODQwIDADZjRlZDAyYTQwODg=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Automobilkaufmann aus Heilbronn",
+      "gender": "M",
+      "socialMediaAccount": "https://www.instagram.com/evindartrn/",
+      "freeProfilePhotoUrl": "",
+      "id": 14
+    },
+    {
+      "name": "Jeronymo",
+      "knownFrom": "",
+      "age": 22,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/ca/fe/55/611097aa04fdf143a76f8f255b_cmUgODQwIDADY2U2MGE0ZjM2ZjU=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "IT-Spezialist aus Köln",
+      "gender": "M",
+      "socialMediaAccount": "https://www.instagram.com/1jeronymo/",
+      "freeProfilePhotoUrl": "",
+      "id": 15
+    },
+    {
+      "name": "Jerry",
+      "knownFrom": "",
+      "age": 30,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/23/66/24/40ad3f347b6eaded43b96e535a_cmUgODQwIDADMjY0ZDNiYWRiZTU=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Selbstständig in der Fitnessbranche aus Koblenz",
+      "gender": "M",
+      "socialMediaAccount": "https://www.instagram.com/jerryms.fit/",
+      "freeProfilePhotoUrl": "",
+      "id": 16
+    },
+    {
+      "name": "Julian M.",
+      "knownFrom": "",
+      "age": 24,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/12/56/ed/335610b867e579618bed82ad48_cmUgODQwIDADMTYzNmI3NzFlMjQ=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Elektroniker aus Bühl",
+      "gender": "M",
+      "socialMediaAccount": "https://www.instagram.com/julianmulas/",
+      "freeProfilePhotoUrl": "",
+      "id": 17
+    },
+    {
+      "name": "Julian S.",
+      "knownFrom": "",
+      "age": 22,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/8a/d9/df/f12a3fe85e65df6dfe331d96d2_cmUgODQwIDADODlmYWVlZGQzZGQ=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Selbstständig aus Wien",
+      "gender": "M",
+      "socialMediaAccount": "https://www.instagram.com/juliansolomon_/",
+      "freeProfilePhotoUrl": "",
+      "id": 18
+    },
+    {
+      "name": "Luke",
+      "knownFrom": "",
+      "age": 31,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/fe/2f/54/7e3463e86e9afa8c0f45460979_cmUgODQwIDADZmY3NGVlZmM0Njc=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Krankenpfleger aus Bottrop",
+      "gender": "M",
+      "socialMediaAccount": "https://www.instagram.com/luke_xzy/",
+      "freeProfilePhotoUrl": "",
+      "id": 19
+    },
+    {
+      "name": "Meji",
+      "knownFrom": "",
+      "age": 24,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/22/dd/ee/4a958028725a41c3ff364fabbe_cmUgODQwIDADMmQ0NTIyNDMzZmI=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Notfallsanitäter aus Frankfurt",
+      "gender": "M",
+      "socialMediaAccount": "https://www.instagram.com/its.meji_/",
+      "freeProfilePhotoUrl": "",
+      "id": 20
+    },
+    {
+      "name": "Noel",
+      "knownFrom": "",
+      "age": 27,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "https://static.kino.de/c5/1a/0e/085d02e66723db767209bf4270_cmUgODQwIDADY2EwZGU3ZDYwZjc=.jpg",
+      "source": "© RTL / Frank Beer",
+      "bio": "Kellner aus Essen",
+      "gender": "M",
+      "socialMediaAccount": "https://www.instagram.com/noel.z.4/",
+      "freeProfilePhotoUrl": "",
+      "id": 21
+    }
+  ],
+  "matchingNights": [
+    {
+      "name": "Matching Night #1",
+      "date": "2026-02-07",
+      "totalLights": 3,
+      "pairs": [
+        {
+          "woman": "Aurora",
+          "man": "Julian S."
+        },
+        {
+          "woman": "Adrianna",
+          "man": "Julian M."
+        },
+        {
+          "woman": "Elena",
+          "man": "Jerry"
+        },
+        {
+          "woman": "Tiziana",
+          "man": "Jeronymo"
+        },
+        {
+          "woman": "Marla",
+          "man": "Luke"
+        },
+        {
+          "woman": "Tonia",
+          "man": "Noel"
+        },
+        {
+          "woman": "Laura",
+          "man": "Evi"
+        },
+        {
+          "woman": "Michelle",
+          "man": "Ema"
+        },
+        {
+          "woman": "Ella",
+          "man": "Meji"
+        },
+        {
+          "woman": "Linda",
+          "man": "Chris"
+        }
+      ],
+      "ausstrahlungsdatum": "2026-01-27",
+      "ausstrahlungszeit": "21:00",
+      "createdAt": "2026-02-07T22:22:49.163Z",
+      "id": 1
+    },
+    {
+      "name": "Matching Night #2",
+      "date": "2026-02-09",
+      "totalLights": 2,
+      "pairs": [
+        {
+          "woman": "Tonia",
+          "man": "Chris"
+        },
+        {
+          "woman": "Tiziana",
+          "man": "Jeronymo"
+        },
+        {
+          "woman": "Adrianna",
+          "man": "Julian S."
+        },
+        {
+          "woman": "Ella",
+          "man": "Ema"
+        },
+        {
+          "woman": "Alicia",
+          "man": "Julian M."
+        },
+        {
+          "woman": "Linda",
+          "man": "Noel"
+        },
+        {
+          "woman": "Elena",
+          "man": "Meji"
+        },
+        {
+          "woman": "Marla",
+          "man": "Luke"
+        },
+        {
+          "woman": "Michelle",
+          "man": "Jerry"
+        },
+        {
+          "woman": "Laura",
+          "man": "Evi"
+        }
+      ],
+      "ausstrahlungsdatum": "2026-02-03",
+      "ausstrahlungszeit": "21:00",
+      "createdAt": "2026-02-09T21:21:00.380Z",
+      "id": 2
+    },
+    {
+      "name": "Matching Night #3",
+      "date": "2026-02-10",
+      "totalLights": 2,
+      "pairs": [
+        {
+          "woman": "Marla",
+          "man": "Luke"
+        },
+        {
+          "woman": "Alicia",
+          "man": "Julian S."
+        },
+        {
+          "woman": "Adrianna",
+          "man": "Julian M."
+        },
+        {
+          "woman": "Tonia",
+          "man": "Noel"
+        },
+        {
+          "woman": "Aurora",
+          "man": "Jerry"
+        },
+        {
+          "woman": "Elena",
+          "man": "Meji"
+        },
+        {
+          "woman": "Linda",
+          "man": "Chris"
+        },
+        {
+          "woman": "Michelle",
+          "man": "Ema"
+        },
+        {
+          "woman": "Laura",
+          "man": "Evi"
+        },
+        {
+          "woman": "Tiziana",
+          "man": "Jeronymo"
+        }
+      ],
+      "ausstrahlungsdatum": "2026-02-10",
+      "ausstrahlungszeit": "21:00",
+      "createdAt": "2026-02-10T21:48:34.909Z",
+      "id": 3
+    }
+  ],
+  "matchboxes": [
+    {
+      "id": 1,
+      "woman": "Tiziana",
+      "man": "Evi",
+      "matchType": "no-match",
+      "price": 0,
+      "buyer": "",
+      "ausstrahlungsdatum": "2026-01-27",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-01-31T21:47:12.281Z",
+      "updatedAt": "2026-01-31T21:47:12.281Z"
+    },
+    {
+      "id": 2,
+      "woman": "Laura",
+      "man": "Evi",
+      "matchType": "sold",
+      "price": 5000,
+      "buyer": "Aurora",
+      "ausstrahlungsdatum": "2026-02-03",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-02-09T20:31:49.690Z",
+      "updatedAt": "2026-02-09T20:31:49.690Z"
+    },
+    {
+      "id": 3,
+      "woman": "Linda",
+      "man": "Julian S.",
+      "matchType": "no-match",
+      "price": 0,
+      "buyer": "",
+      "ausstrahlungsdatum": "2026-02-10",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-02-10T21:01:33.992Z",
+      "updatedAt": "2026-02-10T21:01:33.992Z"
+    }
+  ],
+  "penalties": [],
+  "probabilityCache": [
+    {
+      "dataHash": "12il6fo",
+      "result": {
+        "probabilityMatrix": {
+          "Adrianna": {
+            "Chris": 0.07959977504920798,
+            "Ema": 0.07899053332083607,
+            "Evi": 0.06617302465085763,
+            "Jeronymo": 0.06104133470803262,
+            "Jerry": 0.07899053332083607,
+            "Julian M.": 0.2705033273971319,
+            "Julian S.": 0.13773549536038993,
+            "Luke": 0.06551691817414941,
+            "Meji": 0.07899053332083607,
+            "Noel": 0.08245852469772237
+          },
+          "Alicia": {
+            "Chris": 0.09949386071796794,
+            "Ema": 0.10026712906551692,
+            "Evi": 0.08426281750866998,
+            "Jeronymo": 0.07758459087074702,
+            "Jerry": 0.10026712906551692,
+            "Julian M.": 0.12175461617771112,
+            "Julian S.": 0.13187740181835222,
+            "Luke": 0.08304433405192614,
+            "Meji": 0.10026712906551692,
+            "Noel": 0.1011809916580748
+          },
+          "Elena": {
+            "Chris": 0.07955291030087168,
+            "Ema": 0.08114631174430594,
+            "Evi": 0.06905520667354016,
+            "Jeronymo": 0.0635720311181929,
+            "Jerry": 0.27765020151841785,
+            "Julian M.": 0.07903739806917237,
+            "Julian S.": 0.11388133845721249,
+            "Luke": 0.06825850595182303,
+            "Meji": 0.08527040959790046,
+            "Noel": 0.08257568656856312
+          },
+          "Ella": {
+            "Chris": 0.07955291030087168,
+            "Ema": 0.08527040959790046,
+            "Evi": 0.06905520667354016,
+            "Jeronymo": 0.0635720311181929,
+            "Jerry": 0.08114631174430594,
+            "Julian M.": 0.07903739806917237,
+            "Julian S.": 0.11388133845721249,
+            "Luke": 0.06825850595182303,
+            "Meji": 0.27765020151841785,
+            "Noel": 0.08257568656856312
+          },
+          "Laura": {
+            "Chris": 0.06115849657887337,
+            "Ema": 0.0635720311181929,
+            "Evi": 0.45027650201518415,
+            "Jeronymo": 0.04049114256256444,
+            "Jerry": 0.0635720311181929,
+            "Julian M.": 0.06169744118474084,
+            "Julian S.": 0.08688724341550286,
+            "Luke": 0.046044615240416156,
+            "Meji": 0.0635720311181929,
+            "Noel": 0.06272846564813947
+          },
+          "Linda": {
+            "Chris": 0.31045552535382887,
+            "Ema": 0.09316711969256725,
+            "Evi": 0.07599118942731277,
+            "Jeronymo": 0.0704611491236292,
+            "Jerry": 0.09316711969256725,
+            "Julian M.": 0.09281563408004499,
+            "Julian S.": 0,
+            "Luke": 0.07547567719561346,
+            "Meji": 0.09316711969256725,
+            "Noel": 0.09529946574186897
+          },
+          "Marla": {
+            "Chris": 0.06539975630330865,
+            "Ema": 0.06825850595182303,
+            "Evi": 0.04791920517386822,
+            "Jeronymo": 0.046044615240416156,
+            "Jerry": 0.06825850595182303,
+            "Julian M.": 0.06614959227668947,
+            "Julian S.": 0.09312025494423094,
+            "Luke": 0.4095276033367701,
+            "Meji": 0.06825850595182303,
+            "Noel": 0.06706345486924735
+          },
+          "Michelle": {
+            "Chris": 0.07955291030087168,
+            "Ema": 0.27765020151841785,
+            "Evi": 0.06905520667354016,
+            "Jeronymo": 0.0635720311181929,
+            "Jerry": 0.08527040959790046,
+            "Julian M.": 0.07903739806917237,
+            "Julian S.": 0.11388133845721249,
+            "Luke": 0.06825850595182303,
+            "Meji": 0.08114631174430594,
+            "Noel": 0.08257568656856312
+          },
+          "Tiziana": {
+            "Chris": 0.06591526853500797,
+            "Ema": 0.06905520667354016,
+            "Evi": 0,
+            "Jeronymo": 0.45027650201518415,
+            "Jerry": 0.06905520667354016,
+            "Julian M.": 0.06685256350173399,
+            "Julian S.": 0.09433873840097479,
+            "Luke": 0.04791920517386822,
+            "Meji": 0.06905520667354016,
+            "Noel": 0.06753210235261037
+          },
+          "Tonia": {
+            "Chris": 0.07931858655919018,
+            "Ema": 0.08262255131689943,
+            "Evi": 0.06821164120348673,
+            "Jeronymo": 0.06338457212484769,
+            "Jerry": 0.08262255131689943,
+            "Julian M.": 0.08311463117443059,
+            "Julian S.": 0.1143968506889118,
+            "Luke": 0.06769612897178742,
+            "Meji": 0.08262255131689943,
+            "Noel": 0.2760099353266473
+          }
+        },
+        "fixedPairs": [],
+        "totalValidMatchings": 42676,
+        "calculationTime": 8327.199999988079,
+        "limitReached": false
+      },
+      "createdAt": "2026-02-10T21:02:13.342Z",
+      "updatedAt": "2026-02-10T21:02:13.342Z",
+      "id": 1
+    },
+    {
+      "dataHash": "ar201a",
+      "result": {
+        "probabilityMatrix": {
+          "Adrianna": {
+            "Chris": 0.10381890236579801,
+            "Ema": 0.08622553140386693,
+            "Evi": 0.06947279932748888,
+            "Jeronymo": 0.06436892037948841,
+            "Jerry": 0.06340819022457067,
+            "Julian M.": 0.1810976342019935,
+            "Julian S.": 0.14332892998678995,
+            "Luke": 0.06923261678875946,
+            "Meji": 0.11522757295544614,
+            "Noel": 0.10381890236579801
+          },
+          "Alicia": {
+            "Chris": 0.12039149753812897,
+            "Ema": 0.11084424162363396,
+            "Evi": 0.08748648973219647,
+            "Jeronymo": 0.08046115047436052,
+            "Jerry": 0.05968536087426444,
+            "Julian M.": 0.20139305872463073,
+            "Julian S.": 0,
+            "Luke": 0.08712621592410232,
+            "Meji": 0.1357031343821304,
+            "Noel": 0.11690885072655217
+          },
+          "Aurora": {
+            "Chris": 0.06376846403266483,
+            "Ema": 0.06490933109162964,
+            "Evi": 0.054041071214122736,
+            "Jeronymo": 0.04911732917016933,
+            "Jerry": 0,
+            "Julian M.": 0.0545214362915816,
+            "Julian S.": 0.5281013570313439,
+            "Luke": 0.053080341059205,
+            "Meji": 0.07001321003963012,
+            "Noel": 0.06244746006965294
+          },
+          "Elena": {
+            "Chris": 0.08718626155878467,
+            "Ema": 0.0835234778431608,
+            "Evi": 0.06701092830551218,
+            "Jeronymo": 0.06124654737600577,
+            "Jerry": 0.4718986429686562,
+            "Julian M.": 0.07565749969977183,
+            "Julian S.": 0,
+            "Luke": 0.06629038068932389,
+            "Meji": 0,
+            "Noel": 0.08718626155878467
+          },
+          "Laura": {
+            "Chris": 0.07097394019454786,
+            "Ema": 0.0748168608142188,
+            "Evi": 0.4372523117569353,
+            "Jeronymo": 0.04239221808574516,
+            "Jerry": 0.0453944998198631,
+            "Julian M.": 0.06304791641647652,
+            "Julian S.": 0.05368079740602858,
+            "Luke": 0.048757055362075176,
+            "Meji": 0.09379128137384413,
+            "Noel": 0.0698931187702654
+          },
+          "Linda": {
+            "Chris": 0.17947640206556983,
+            "Ema": 0.11204515431728114,
+            "Evi": 0.083223249669749,
+            "Jeronymo": 0.07685841239341899,
+            "Jerry": 0.0698931187702654,
+            "Julian M.": 0.11492734478203434,
+            "Julian S.": 0,
+            "Luke": 0.08286297586165486,
+            "Meji": 0.13750450342260118,
+            "Noel": 0.14320883871742524
+          },
+          "Marla": {
+            "Chris": 0.07649813858532485,
+            "Ema": 0.08088146991713703,
+            "Evi": 0.04995796805572235,
+            "Jeronymo": 0.048757055362075176,
+            "Jerry": 0.04917737480485169,
+            "Julian M.": 0.06821184099915936,
+            "Julian S.": 0.05836435691125255,
+            "Luke": 0.3918578119370722,
+            "Meji": 0.10099675753572715,
+            "Noel": 0.07529722589167767
+          },
+          "Michelle": {
+            "Chris": 0.09655338056923261,
+            "Ema": 0.2040350666506545,
+            "Evi": 0.0740963131980305,
+            "Jeronymo": 0.06809174972979465,
+            "Jerry": 0.121232136423682,
+            "Julian M.": 0.07205476161883032,
+            "Julian S.": 0.07565749969977183,
+            "Luke": 0.07373603938993635,
+            "Meji": 0.11798967215083464,
+            "Noel": 0.09655338056923261
+          },
+          "Tiziana": {
+            "Chris": 0.07685841239341899,
+            "Ema": 0.08148192626396061,
+            "Evi": 0,
+            "Jeronymo": 0.4372523117569353,
+            "Jerry": 0.04941755734358112,
+            "Julian M.": 0.06821184099915936,
+            "Julian S.": 0.0587246307193467,
+            "Luke": 0.04995796805572235,
+            "Meji": 0.10243785276810376,
+            "Noel": 0.07565749969977183
+          },
+          "Tonia": {
+            "Chris": 0.12447460069652937,
+            "Ema": 0.10123694007445659,
+            "Evi": 0.07745886874024259,
+            "Jeronymo": 0.07145430527200672,
+            "Jerry": 0.0698931187702654,
+            "Julian M.": 0.10087666626636244,
+            "Julian S.": 0.08214242824546655,
+            "Luke": 0.07709859493214843,
+            "Meji": 0.1263360153716825,
+            "Noel": 0.16902846163083943
+          }
+        },
+        "fixedPairs": [],
+        "totalValidMatchings": 16654,
+        "calculationTime": 15912.800000011921,
+        "limitReached": false
+      },
+      "createdAt": "2026-02-11T21:21:47.991Z",
+      "updatedAt": "2026-02-11T21:21:47.991Z",
+      "id": 2
+    }
+  ],
+  "broadcastNotes": [],
+  "exportedAt": "2026-02-11T21:37:13.149Z",
+  "version": "1.2"
+}

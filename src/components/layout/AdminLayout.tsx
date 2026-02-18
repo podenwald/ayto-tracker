@@ -77,30 +77,38 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       const matchingNightsCount = matchingNights.length
       const matchboxesCount = matchboxes.length
       const perfectMatches = matchboxes.filter(mb => mb.matchType === 'perfect').length
-      const lastMN = matchingNights
-        .sort((a, b) => {
-          const dateA = a.ausstrahlungsdatum ? new Date(a.ausstrahlungsdatum).getTime() : new Date(a.createdAt).getTime()
-          const dateB = b.ausstrahlungsdatum ? new Date(b.ausstrahlungsdatum).getTime() : new Date(b.createdAt).getTime()
-          return dateB - dateA
-        })[0]
-      const currentLights = lastMN?.totalLights || 0
+      const sortedNights = [...matchingNights].sort((a, b) => {
+        const dateA = a.ausstrahlungsdatum ? new Date(a.ausstrahlungsdatum).getTime() : new Date(a.createdAt).getTime()
+        const dateB = b.ausstrahlungsdatum ? new Date(b.ausstrahlungsdatum).getTime() : new Date(b.createdAt).getTime()
+        return dateB - dateA
+      })
+      const lastMN = sortedNights[0]
+      const nightsWithLights = matchingNights.filter(mn => mn.matchType !== 'sold' && mn.totalLights !== undefined)
+      const latestWithLights = nightsWithLights.length > 0 ? [...nightsWithLights].sort((a, b) => {
+        const dateA = a.ausstrahlungsdatum ? new Date(a.ausstrahlungsdatum).getTime() : new Date(a.createdAt).getTime()
+        const dateB = b.ausstrahlungsdatum ? new Date(b.ausstrahlungsdatum).getTime() : new Date(b.createdAt).getTime()
+        return dateB - dateA
+      })[0] : null
+      const currentLights: number | 'V' = lastMN?.matchType === 'sold' && matchingNights.length > 0 ? 'V' : (latestWithLights?.totalLights ?? lastMN?.totalLights ?? 0)
       
       // Debug-Ausgabe für Lichter-Berechnung
       console.log('🔍 Admin Header Lichter-Debug:', {
         matchingNightsCount: matchingNights.length,
         lastMatchingNight: lastMN?.name,
-        lastMatchingNightLights: lastMN?.totalLights,
+        lastMatchingNightSold: lastMN?.matchType === 'sold',
         currentLights,
-        allMatchingNights: matchingNights.map(mn => ({ name: mn.name, lights: mn.totalLights, date: mn.createdAt || mn.date }))
+        allMatchingNights: matchingNights.map(mn => ({ name: mn.name, lights: mn.totalLights, sold: mn.matchType === 'sold', date: mn.createdAt || mn.date }))
       })
 
-      const sold = matchboxes.filter(mb => mb.matchType === 'sold' && typeof mb.price === 'number')
-      const totalRevenue = sold.reduce((sum, mb) => sum + (mb.price || 0), 0)
+      // Verkäufe: Plus = zum Budget hinzu, Minus = vom Budget ab (Matchbox + Matching Night)
+      const soldMatchboxes = matchboxes.filter(mb => mb.matchType === 'sold' && typeof mb.price === 'number')
+      const soldMatchingNights = matchingNights.filter(mn => mn.matchType === 'sold' && typeof mn.price === 'number')
+      const totalVerkauf = soldMatchboxes.reduce((sum, mb) => sum + (mb.price || 0), 0) + soldMatchingNights.reduce((sum, mn) => sum + (mn.price ?? 0), 0)
       const totalPenalties = penalties.reduce((sum, p) => (p.amount < 0 ? sum + Math.abs(p.amount) : sum), 0)
       const totalCredits = penalties.reduce((sum, p) => (p.amount > 0 ? sum + p.amount : sum), 0)
       const savedBudget = typeof window !== 'undefined' ? localStorage.getItem('ayto-starting-budget') : null
       const startingBudget = savedBudget ? parseInt(savedBudget, 10) : 200000
-      const currentBalance = startingBudget - totalRevenue - totalPenalties + totalCredits
+      const currentBalance = startingBudget + totalVerkauf - totalPenalties + totalCredits
 
       setStats({ activeParticipants, perfectMatches, currentLights, currentBalance, matchingNightsCount, matchboxesCount })
       

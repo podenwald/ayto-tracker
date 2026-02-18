@@ -39,7 +39,7 @@ interface MenuLayoutProps {
   onCreateMatchingNight?: () => void
   // Statistics data
   matchingNightsCount?: number
-  currentLights?: number
+  currentLights?: number | 'V'
   perfectMatchesCount?: number
   currentBalance?: number
   participantsCount?: number
@@ -52,7 +52,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
   onCreateMatchbox,
   onCreateMatchingNight,
   matchingNightsCount = 0,
-  currentLights = 0,
+  currentLights = 0 as number | 'V',
   perfectMatchesCount = 0,
   currentBalance = 0,
   participantsCount = 0

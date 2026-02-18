@@ -249,6 +249,9 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
         date: m.date,
         pairs: m.pairs,
         totalLights: m.totalLights,
+        matchType: m.matchType,
+        price: m.price,
+        buyer: m.buyer,
         createdAt: new Date(m.createdAt),
         ausstrahlungsdatum: m.ausstrahlungsdatum,
         ausstrahlungszeit: m.ausstrahlungszeit

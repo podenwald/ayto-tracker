@@ -373,16 +373,32 @@ const MatchingNightCard: React.FC<{
               </Avatar>
               <Box>
                 <Typography variant="h6">{matchingNight.name}</Typography>
+                {matchingNight.matchType === 'sold' && matchingNight.buyer && (
+                  <Typography variant="body2" color="text.secondary">
+                    Käufer: {matchingNight.buyer}
+                  </Typography>
+                )}
                 <Typography variant="body2" color="text.secondary">
-                  {matchingNight.ausstrahlungsdatum ? 
-                    `Ausstrahlung: ${new Date(matchingNight.ausstrahlungsdatum).toLocaleDateString('de-DE')}` :
-                    `Ausstrahlung: ${new Date(matchingNight.date).toLocaleDateString('de-DE')}`
+                  {matchingNight.ausstrahlungsdatum
+                    ? `Ausstrahlung: ${new Date(matchingNight.ausstrahlungsdatum).toLocaleDateString('de-DE')}${matchingNight.ausstrahlungszeit ? ` um ${matchingNight.ausstrahlungszeit} Uhr` : ''}`
+                    : `Ausstrahlung: ${new Date(matchingNight.date).toLocaleDateString('de-DE')}`
                   }
                 </Typography>
               </Box>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {matchingNight.totalLights !== undefined && (
+              {matchingNight.matchType === 'sold' ? (
+                <>
+                  <Chip label="Verkauft" color="info" size="small" />
+                  {matchingNight.price != null && typeof matchingNight.price === 'number' && (
+                    <Chip
+                      size="small"
+                      color={matchingNight.price >= 0 ? 'success' : 'error'}
+                      label={`${matchingNight.price >= 0 ? '+' : ''}${matchingNight.price.toLocaleString('de-DE')} €`}
+                    />
+                  )}
+                </>
+              ) : matchingNight.totalLights !== undefined && (
                 <Chip 
                   label={`${matchingNight.totalLights} Lichter`}
                   color="warning"
@@ -446,26 +462,39 @@ const calculateStatistics = (matchboxes: Matchbox[], matchingNights: MatchingNig
     return savedBudget ? parseInt(savedBudget, 10) : 200000
   }
   const startingBudget = getStartingBudget()
-  const soldMatchboxes = matchboxes.filter(mb => mb.matchType === 'sold')
-  const totalRevenue = soldMatchboxes.reduce((sum, mb) => sum + (mb.price || 0), 0)
-  const currentBalance = startingBudget - totalRevenue - totalPenalties + totalCredits
+  // Verkäufe: Pluswert = zum Budget hinzu, Minuswert = vom Budget ab
+  const soldMatchboxes = matchboxes.filter(mb => mb.matchType === 'sold' && typeof mb.price === 'number')
+  const soldMatchingNights = matchingNights.filter(mn => mn.matchType === 'sold' && typeof mn.price === 'number')
+  const totalVerkauf = soldMatchboxes.reduce((sum, mb) => sum + (mb.price ?? 0), 0) + soldMatchingNights.reduce((sum, mn) => sum + (mn.price ?? 0), 0)
+  const currentBalance = startingBudget + totalVerkauf - totalPenalties + totalCredits
 
-  // Get latest matching night lights
+  // Get latest matching night lights (nur Nights mit Lichter-Info, keine verkauften)
+  const matchingNightsWithLights = matchingNights.filter(mn => mn.matchType !== 'sold' && mn.totalLights !== undefined)
   const latestMatchingNight = matchingNights
     .sort((a, b) => {
       const dateA = a.ausstrahlungsdatum ? new Date(a.ausstrahlungsdatum).getTime() : new Date(a.createdAt).getTime()
       const dateB = b.ausstrahlungsdatum ? new Date(b.ausstrahlungsdatum).getTime() : new Date(b.createdAt).getTime()
       return dateB - dateA
     })[0]
-  const currentLights = latestMatchingNight?.totalLights || 0
+  const latestWithLights = matchingNightsWithLights
+    .sort((a, b) => {
+      const dateA = a.ausstrahlungsdatum ? new Date(a.ausstrahlungsdatum).getTime() : new Date(a.createdAt).getTime()
+      const dateB = b.ausstrahlungsdatum ? new Date(b.ausstrahlungsdatum).getTime() : new Date(b.createdAt).getTime()
+      return dateB - dateA
+    })[0]
+  // Wenn die letzte Matching Night verkauft ist: "V" anzeigen statt 0 (keine Lichter-Erkenntnis)
+  const currentLights: number | 'V' = latestMatchingNight?.matchType === 'sold' && matchingNights.length > 0
+    ? 'V'
+    : (latestWithLights?.totalLights ?? 0)
   
   // Debug-Ausgabe für Lichter-Berechnung
   console.log('🔍 Frontend Lichter-Debug:', {
     matchingNightsCount: matchingNights.length,
     latestMatchingNight: latestMatchingNight?.name,
-    latestMatchingNightLights: latestMatchingNight?.totalLights,
+    latestMatchingNightSold: latestMatchingNight?.matchType === 'sold',
+    latestWithLightsName: latestWithLights?.name,
     currentLights,
-    allMatchingNights: matchingNights.map(mn => ({ name: mn.name, lights: mn.totalLights, date: mn.ausstrahlungsdatum || mn.createdAt }))
+    allMatchingNights: matchingNights.map(mn => ({ name: mn.name, lights: mn.totalLights, sold: mn.matchType === 'sold', date: mn.ausstrahlungsdatum || mn.createdAt }))
   })
 
   return {
@@ -622,7 +651,10 @@ const OverviewMUI: React.FC = () => {
     totalLights: 0,
     pairs: [] as Array<{woman: string, man: string}>,
     ausstrahlungsdatum: '',
-    ausstrahlungszeit: ''
+    ausstrahlungszeit: '',
+    matchType: 'normal' as 'normal' | 'sold',
+    price: 0,
+    buyer: ''
   })
   const [matchingNightSelectedWoman, setMatchingNightSelectedWoman] = useState<string>('')
   const [matchingNightSelectedMan, setMatchingNightSelectedMan] = useState<string>('')
@@ -784,7 +816,8 @@ const OverviewMUI: React.FC = () => {
   // (entfernt) getOtherPartnerNights – Quadrate für andere Partner werden nicht mehr angezeigt
 
   // Helper: Find ALL matching nights where participants sat together (including before they became Perfect Match)
-  const getAllMatchingNightsTogether = (womanName: string, manName: string): { nightNumbers: number[], allLights: number[] } => {
+  // allLights: number = Lichter, 'V' = Verkauft (keine Erkenntnis)
+  const getAllMatchingNightsTogether = (womanName: string, manName: string): { nightNumbers: number[], allLights: (number | 'V')[] } => {
     const sortedNights = [...matchingNights].sort((a, b) => {
       const dateA = a.ausstrahlungsdatum ? new Date(a.ausstrahlungsdatum) : new Date(a.createdAt)
       const dateB = b.ausstrahlungsdatum ? new Date(b.ausstrahlungsdatum) : new Date(b.createdAt)
@@ -792,7 +825,7 @@ const OverviewMUI: React.FC = () => {
     })
     
     const nightNumbers: number[] = []
-    const allLights: number[] = []
+    const allLights: (number | 'V')[] = []
     
     for (let i = 0; i < sortedNights.length; i++) {
       const night = sortedNights[i]
@@ -801,7 +834,7 @@ const OverviewMUI: React.FC = () => {
       )
       if (pairExists) {
         nightNumbers.push(i + 1)
-        allLights.push(night.totalLights || 0)
+        allLights.push(night.matchType === 'sold' ? 'V' : (night.totalLights ?? 0))
       }
     }
     
@@ -811,9 +844,22 @@ const OverviewMUI: React.FC = () => {
   // Admin functions
   const saveMatchingNight = async () => {
     try {
-      if (matchingNightForm.totalLights > 10) {
-        setSnackbar({ open: true, message: 'Maximum 10 Lichter erlaubt!', severity: 'error' })
-        return
+      const isSold = matchingNightForm.matchType === 'sold'
+
+      if (isSold) {
+        if (matchingNightForm.price === undefined || matchingNightForm.price === null || (typeof matchingNightForm.price === 'number' && isNaN(matchingNightForm.price))) {
+          setSnackbar({ open: true, message: 'Bei verkauften Matching Nights muss ein Betrag angegeben werden (Plus = Einnahme, Minus = Ausgabe)!', severity: 'error' })
+          return
+        }
+        if (!matchingNightForm.buyer?.trim()) {
+          setSnackbar({ open: true, message: 'Bei verkauften Matching Nights muss ein Käufer angegeben werden!', severity: 'error' })
+          return
+        }
+      } else {
+        if (matchingNightForm.totalLights > 10) {
+          setSnackbar({ open: true, message: 'Maximum 10 Lichter erlaubt!', severity: 'error' })
+          return
+        }
       }
 
       // Check if all 10 pairs are complete
@@ -859,28 +905,30 @@ const OverviewMUI: React.FC = () => {
         })
         return
       }
-      
-      // Check if total lights is at least as many as Perfect Match lights
-      // Only count Perfect Matches that were aired BEFORE this matching night
-      const currentMatchingNightDate = new Date()
-      const perfectMatchLights = completePairs.filter(pair => 
-        matchboxes.some(mb => {
-          if (mb.matchType !== 'perfect' || mb.woman !== pair.woman || mb.man !== pair.man) {
-            return false
-          }
-          
-          // Use centralized broadcast utility
-          return getMatchboxBroadcastDateTime(mb).getTime() < currentMatchingNightDate.getTime()
-        })
-      ).length
 
-      if (matchingNightForm.totalLights < perfectMatchLights) {
-        setSnackbar({ 
-          open: true, 
-          message: `Gesamtlichter (${matchingNightForm.totalLights}) dürfen nicht weniger als sichere Lichter (${perfectMatchLights}) sein!`, 
-          severity: 'error' 
-        })
-        return
+      if (!isSold) {
+        // Check if total lights is at least as many as Perfect Match lights
+        // Only count Perfect Matches that were aired BEFORE this matching night
+        const currentMatchingNightDate = new Date()
+        const perfectMatchLights = completePairs.filter(pair => 
+          matchboxes.some(mb => {
+            if (mb.matchType !== 'perfect' || mb.woman !== pair.woman || mb.man !== pair.man) {
+              return false
+            }
+            
+            // Use centralized broadcast utility
+            return getMatchboxBroadcastDateTime(mb).getTime() < currentMatchingNightDate.getTime()
+          })
+        ).length
+
+        if (matchingNightForm.totalLights < perfectMatchLights) {
+          setSnackbar({ 
+            open: true, 
+            message: `Gesamtlichter (${matchingNightForm.totalLights}) dürfen nicht weniger als sichere Lichter (${perfectMatchLights}) sein!`, 
+            severity: 'error' 
+          })
+          return
+        }
       }
       
       if (completePairs.length !== 10) {
@@ -897,11 +945,12 @@ const OverviewMUI: React.FC = () => {
       await MatchingNightService.createMatchingNight({
         name: nameToUse,
         date: new Date().toISOString().split('T')[0],
-        totalLights: matchingNightForm.totalLights,
-        pairs: completePairs
+        totalLights: isSold ? undefined : matchingNightForm.totalLights,
+        pairs: completePairs,
+        ...(isSold ? { matchType: 'sold' as const, price: matchingNightForm.price, buyer: matchingNightForm.buyer } : {})
       })
 
-      setSnackbar({ open: true, message: `Matching Night "${nameToUse}" mit allen 10 Paaren wurde erfolgreich erstellt!`, severity: 'success' })
+      setSnackbar({ open: true, message: isSold ? `Matching Night "${nameToUse}" wurde als verkauft gespeichert.` : `Matching Night "${nameToUse}" mit allen 10 Paaren wurde erfolgreich erstellt!`, severity: 'success' })
       setMatchingNightDialog(false)
       resetMatchingNightForm()
       loadAllData()
@@ -932,11 +981,11 @@ const OverviewMUI: React.FC = () => {
       }
 
       if (matchboxForm.matchType === 'sold') {
-        if (!matchboxForm.price || matchboxForm.price <= 0) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matchboxes muss ein gültiger Preis angegeben werden!', severity: 'error' })
+        if (matchboxForm.price === undefined || matchboxForm.price === null || (typeof matchboxForm.price === 'number' && isNaN(matchboxForm.price))) {
+          setSnackbar({ open: true, message: 'Bei verkauften Matchboxes muss ein Betrag angegeben werden (Plus = Einnahme, Minus = Ausgabe)!', severity: 'error' })
           return
         }
-        if (!matchboxForm.buyer) {
+        if (!matchboxForm.buyer?.trim()) {
           setSnackbar({ open: true, message: 'Bei verkauften Matchboxes muss ein Käufer ausgewählt werden!', severity: 'error' })
           return
         }
@@ -965,7 +1014,10 @@ const OverviewMUI: React.FC = () => {
       totalLights: 0,
       pairs: [],
       ausstrahlungsdatum: '',
-      ausstrahlungszeit: ''
+      ausstrahlungszeit: '',
+      matchType: 'normal',
+      price: 0,
+      buyer: ''
     })
     setMatchingNightSelectedWoman('')
     setMatchingNightSelectedMan('')
@@ -1872,14 +1924,11 @@ const OverviewMUI: React.FC = () => {
                                     transition: 'all 0.2s ease',
                                     position: 'relative',
                                   }}
-                                  title={`${woman.name} & ${man.name}: ${isConfirmedPerfectMatch ? '100' : percentage}%${
-                                    isConfirmedPerfectMatch ? 
-                                      allMatchingNightsTogether.nightNumbers.length > 0 ?
-                                        ` (PERFECT MATCH ✓ - Matching Nights: ${allMatchingNightsTogether.nightNumbers.map((num: number, idx: number) => `#${num} (${allMatchingNightsTogether.allLights[idx]} Lichter)`).join(', ')})` :
-                                        ' (PERFECT MATCH ✓)' : 
-                                    isDefinitelyExcluded ? ' (DEFINITIV AUSGESCHLOSSEN ✗)' : 
-                                    allMatchingNightsTogether.nightNumbers.length > 0 ? ` (Matching Nights: ${allMatchingNightsTogether.nightNumbers.map((num: number, idx: number) => `#${num} (${allMatchingNightsTogether.allLights[idx]} Lichter)`).join(', ')})` : ''
-                                  }`}
+                                  title={(() => {
+                                    const lightsStr = (idx: number) => allMatchingNightsTogether.allLights[idx] === 'V' ? 'V' : String(allMatchingNightsTogether.allLights[idx]) + ' Lichter'
+                                    const nightsStr = allMatchingNightsTogether.nightNumbers.map((num: number, idx: number) => `#${num} (${lightsStr(idx)})`).join(', ')
+                                    return `${woman.name} & ${man.name}: ${isConfirmedPerfectMatch ? '100' : percentage}%${isConfirmedPerfectMatch ? (allMatchingNightsTogether.nightNumbers.length > 0 ? ` (PERFECT MATCH ✓ - Matching Nights: ${nightsStr})` : ' (PERFECT MATCH ✓)') : isDefinitelyExcluded ? ' (DEFINITIV AUSGESCHLOSSEN ✗)' : allMatchingNightsTogether.nightNumbers.length > 0 ? ` (Matching Nights: ${nightsStr})` : ''}`
+                                  })()}
                                 >
                                   {/* Oberer Teil: Symbol */}
                                   <Box sx={{ 
@@ -1914,7 +1963,7 @@ const OverviewMUI: React.FC = () => {
                                         textAlign: 'center'
                                       }}>
                                         {allMatchingNightsTogether.nightNumbers.map((nightNum: number, idx: number) => 
-                                          `#${nightNum}(${allMatchingNightsTogether.allLights[idx]})`
+                                          `#${nightNum}(${allMatchingNightsTogether.allLights[idx] === 'V' ? 'V' : allMatchingNightsTogether.allLights[idx]})`
                                         ).join(' ')}
                                       </Typography>
                                     </Box>
@@ -1960,9 +2009,9 @@ const OverviewMUI: React.FC = () => {
                           px: 0.5,
                           py: 0.25
                         }}>
-                          #0(0)
+                          #1(0) / #2(V)
                         </Typography>
-                        <Typography variant="caption">Matching Night (Night & Lichter)</Typography>
+                        <Typography variant="caption">Matching Night (Night & Lichter, V = Verkauft)</Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box sx={{ width: 20, height: 20, border: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', color: 'text.secondary', fontWeight: 'bold' }}>
@@ -2243,6 +2292,39 @@ const OverviewMUI: React.FC = () => {
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: '16px', textAlign: 'center' }}>
                 {matchingNightForm.name}
               </Typography>
+
+              <FormControl fullWidth>
+                <InputLabel>Match-Typ</InputLabel>
+                <Select
+                  value={matchingNightForm.matchType}
+                  label="Match-Typ"
+                  onChange={(e) => setMatchingNightForm({ ...matchingNightForm, matchType: e.target.value as 'normal' | 'sold' })}
+                >
+                  <MenuItem value="normal">Lichter bekannt</MenuItem>
+                  <MenuItem value="sold">Verkauft</MenuItem>
+                </Select>
+              </FormControl>
+
+              {matchingNightForm.matchType === 'sold' && (
+                <>
+                  <TextField
+                    fullWidth
+                    label="Betrag (€)"
+                    type="number"
+                    value={matchingNightForm.price}
+                    onChange={(e) => setMatchingNightForm({ ...matchingNightForm, price: parseFloat(e.target.value) || 0 })}
+                    helperText="Plus = Einnahme (zum Budget hinzu), Minus = Ausgabe (vom Budget ab)"
+                  />
+                  <TextField
+                    fullWidth
+                    label="Käufer"
+                    value={matchingNightForm.buyer}
+                    onChange={(e) => setMatchingNightForm({ ...matchingNightForm, buyer: e.target.value })}
+                  />
+                </>
+              )}
+
+              {matchingNightForm.matchType === 'normal' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-start' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Lichter:</Typography>
@@ -2300,6 +2382,7 @@ const OverviewMUI: React.FC = () => {
                   </Box>
                 </Box>
               </Box>
+              )}
             </Box>
 
             {/* Paar hinzufügen (wie im Admin: Select Frau, Select Mann, Hinzufügen) */}
@@ -2713,10 +2796,11 @@ const OverviewMUI: React.FC = () => {
               <>
                 <TextField
                   fullWidth
-                  label="Preis (€)"
+                  label="Betrag (€)"
                   type="number"
                   value={matchboxForm.price}
                   onChange={(e) => setMatchboxForm({...matchboxForm, price: parseFloat(e.target.value) || 0})}
+                  helperText="Plus = Einnahme (zum Budget hinzu), Minus = Ausgabe (vom Budget ab)"
                 />
                 <TextField
                   fullWidth

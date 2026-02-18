@@ -126,8 +126,8 @@ export class MatchboxService {
     }
 
     if (matchbox.matchType === 'sold') {
-      if (!matchbox.price || matchbox.price <= 0) {
-        errors.push('Preis ist für verkaufte Matchboxes erforderlich')
+      if (matchbox.price === undefined || matchbox.price === null || typeof matchbox.price !== 'number') {
+        errors.push('Betrag ist für verkaufte Matchboxes erforderlich (Plus = Einnahme, Minus = Ausgabe)')
       }
       if (!matchbox.buyer?.trim()) {
         errors.push('Käufer ist für verkaufte Matchboxes erforderlich')

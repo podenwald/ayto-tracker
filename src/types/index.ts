@@ -31,12 +31,19 @@ export interface Participant {
   freeProfilePhotoLicense?: string
 }
 
+/** Bei "sold" wurde die Matching Night verkauft – keine Lichter-Erkenntnis. */
+export type MatchingNightMatchType = 'normal' | 'sold'
+
 export interface MatchingNight {
   id?: number
   name: string
   date: string
   pairs: Array<{ woman: string; man: string }>
   totalLights?: number
+  /** Bei "sold": Matching Night verkauft, totalLights unbekannt. */
+  matchType?: MatchingNightMatchType
+  price?: number
+  buyer?: string
   createdAt: Date
   ausstrahlungsdatum?: string
   ausstrahlungszeit?: string
@@ -97,6 +104,9 @@ export interface MatchingNightDTO {
   date: string
   pairs: Array<{ woman: string; man: string }>
   totalLights?: number
+  matchType?: MatchingNightMatchType
+  price?: number
+  buyer?: string
   createdAt: string // ISO string für JSON
   ausstrahlungsdatum?: string
   ausstrahlungszeit?: string

@@ -155,7 +155,7 @@ const BroadcastManagement: React.FC<BroadcastManagementProps> = ({
           id: `mn-${mn.id}`,
           type: 'matching-night',
           title: mn.name,
-          description: `Matching Night mit ${mn.pairs.length} Paaren und ${mn.totalLights || 0} Lichtern`,
+          description: `Matching Night mit ${mn.pairs.length} Paaren und ${mn.matchType === 'sold' ? 'V (Verkauft)' : (mn.totalLights ?? 0) + ' Lichter'}`,
           ausstrahlungsdatum,
           ausstrahlungszeit,
           data: mn,
@@ -382,7 +382,7 @@ const BroadcastManagement: React.FC<BroadcastManagementProps> = ({
                                           icon={<GroupIcon />}
                                         />
                                         <Chip 
-                                          label={`${(event.data as MatchingNight).totalLights || 0} Lichter`}
+                                          label={`${(event.data as MatchingNight).matchType === 'sold' ? 'V' : ((event.data as MatchingNight).totalLights ?? 0)} ${(event.data as MatchingNight).matchType === 'sold' ? '(Verkauft)' : 'Lichter'}`}
                                           size="small"
                                           color="warning"
                                         />

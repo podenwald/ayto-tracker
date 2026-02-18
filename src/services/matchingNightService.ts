@@ -86,8 +86,17 @@ export class MatchingNightService {
       }
     }
 
-    if (matchingNight.totalLights !== undefined && (matchingNight.totalLights < 0 || matchingNight.totalLights > 10)) {
-      errors.push('Gesamtlichter müssen zwischen 0 und 10 liegen')
+    if (matchingNight.matchType !== 'sold') {
+      if (matchingNight.totalLights !== undefined && (matchingNight.totalLights < 0 || matchingNight.totalLights > 10)) {
+        errors.push('Gesamtlichter müssen zwischen 0 und 10 liegen')
+      }
+    } else {
+      if (matchingNight.price === undefined || matchingNight.price === null || typeof matchingNight.price !== 'number') {
+        errors.push('Bei verkaufter Matching Night ist ein Betrag erforderlich (Plus = Einnahme, Minus = Ausgabe)')
+      }
+      if (!matchingNight.buyer?.trim()) {
+        errors.push('Bei verkaufter Matching Night ist ein Käufer erforderlich')
+      }
     }
 
     // Validiere Broadcast-Zeit falls vorhanden

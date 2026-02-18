@@ -94,9 +94,17 @@ function convertToProbabilityInput(
     alleStatus: participants.map(p => ({ name: p.name, status: p.status, active: p.active }))
   })
   
+  // Verkaufte Matching Nights liefern keine Lichter-Erkenntnis → nicht in die Berechnung einbeziehen
+  const matchingNightsSorted = [...matchingNights].sort((a, b) => {
+    const dateA = a.ausstrahlungsdatum ? new Date(a.ausstrahlungsdatum).getTime() : new Date(a.createdAt).getTime()
+    const dateB = b.ausstrahlungsdatum ? new Date(b.ausstrahlungsdatum).getTime() : new Date(b.createdAt).getTime()
+    return dateA - dateB
+  })
+  const nightsForCalculation = matchingNightsSorted.filter(mn => mn.matchType !== 'sold')
+  
   // DEBUG: Welche Kandidat*innen kommen in den Zeremonien vor?
   const participantsInCeremonies = new Set<string>()
-  matchingNights.forEach(night => {
+  nightsForCalculation.forEach(night => {
     night.pairs.forEach(pair => {
       participantsInCeremonies.add(pair.woman)
       participantsInCeremonies.add(pair.man)
@@ -123,12 +131,11 @@ function convertToProbabilityInput(
     }
   }
   
-  // KRITISCH: Nur Kandidat*innen aus der LETZTEN Matching Night
-  // Das sind die Kandidat*innen, die noch auf der Suche sind
-  const lastNight = matchingNights[matchingNights.length - 1]
+  // KRITISCH: Nur Kandidat*innen aus der LETZTEN Matching Night (mit Lichter-Info, keine verkauften)
+  const lastNight = nightsForCalculation[nightsForCalculation.length - 1]
   
   if (!lastNight) {
-    console.warn('⚠️ Keine Matching Nights vorhanden!')
+    console.warn('⚠️ Keine Matching Nights mit Lichter-Info vorhanden!')
     return {
       men: [],
       women: [],
@@ -155,9 +162,8 @@ function convertToProbabilityInput(
     hinweis: 'Ausgeschlossene haben bereits ihr Perfect Match gefunden'
   })
   
-  // Konvertiere Matching Nights zu Constraints
-  // WICHTIG: Berücksichtige zeitliche Reihenfolge von Perfect Matches!
-  const ceremonies: CeremonyConstraint[] = matchingNights.map(night => {
+  // Konvertiere Matching Nights zu Constraints (nur Nights mit Lichter-Info, keine verkauften)
+  const ceremonies: CeremonyConstraint[] = nightsForCalculation.map(night => {
     // Ermittle Perfect Matches die VOR dieser Matching Night bekannt waren
     const nightDate = night.ausstrahlungsdatum 
       ? new Date(`${night.ausstrahlungsdatum}T${night.ausstrahlungszeit || '00:00'}`)

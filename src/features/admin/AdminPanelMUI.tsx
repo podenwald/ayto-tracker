@@ -45,7 +45,6 @@ import {
   Upload as UploadIcon,
   Cancel as CancelIcon,
   Save as SaveIcon,
-  Euro as EuroIcon,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   HeartBroken as HeartBrokenIcon,
@@ -772,8 +771,9 @@ const MatchboxManagement: React.FC<{
 
   const perfectMatches = matchboxes.filter(mb => mb.matchType === 'perfect').length
   const noMatches = matchboxes.filter(mb => mb.matchType === 'no-match').length
-  const totalRevenue = matchboxes
-    .filter(mb => mb.matchType === 'sold' && mb.price && typeof mb.price === 'number')
+  // Verkäufe: Plus = Einnahme, Minus = Ausgabe
+  const totalVerkaufMatchboxes = matchboxes
+    .filter(mb => mb.matchType === 'sold' && typeof mb.price === 'number')
     .reduce((sum, mb) => sum + (mb.price || 0), 0)
 
   const resetForm = () => {
@@ -812,11 +812,11 @@ const MatchboxManagement: React.FC<{
       }
 
       if (matchboxForm.matchType === 'sold') {
-        if (!matchboxForm.price || matchboxForm.price <= 0) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matchboxes muss ein gültiger Preis angegeben werden!', severity: 'error' })
+        if (matchboxForm.price === undefined || matchboxForm.price === null || typeof matchboxForm.price !== 'number') {
+          setSnackbar({ open: true, message: 'Bei verkauften Matchboxes muss ein Betrag angegeben werden (Plus = Einnahme, Minus = Ausgabe)!', severity: 'error' })
           return
         }
-        if (!matchboxForm.buyer) {
+        if (!matchboxForm.buyer?.trim()) {
           setSnackbar({ open: true, message: 'Bei verkauften Matchboxes muss ein Käufer ausgewählt werden!', severity: 'error' })
           return
         }
@@ -896,7 +896,7 @@ const MatchboxManagement: React.FC<{
         </Button>
         <Chip icon={<FavoriteIcon />} label={`${perfectMatches}`} color="success" size="small" />
         <Chip icon={<HeartBrokenIcon />} label={`${noMatches}`} color="error" size="small" />
-        <Chip icon={<AttachMoneyIcon />} label={`${totalRevenue.toLocaleString('de-DE')} €`} sx={{ bgcolor: '#9c27b0', color: 'white', '& .MuiChip-icon': { color: 'white' } }} size="small" />
+        <Chip icon={<AttachMoneyIcon />} label={`${totalVerkaufMatchboxes >= 0 ? '+' : ''}${totalVerkaufMatchboxes.toLocaleString('de-DE')} €`} sx={{ bgcolor: '#9c27b0', color: 'white', '& .MuiChip-icon': { color: 'white' } }} size="small" />
         {editingMatchbox && (
           <Button variant="outlined" onClick={resetForm}>
             Bearbeitung abbrechen
@@ -952,12 +952,11 @@ const MatchboxManagement: React.FC<{
                               }
                               size="small"
                             />
-                            {matchbox.matchType === 'sold' && matchbox.price && (
+                            {matchbox.matchType === 'sold' && matchbox.price != null && typeof matchbox.price === 'number' && (
                               <Chip 
-                                label={`€${matchbox.price}`}
-                                color="primary"
+                                label={`${matchbox.price >= 0 ? '+' : ''}${matchbox.price.toLocaleString('de-DE')} €`}
+                                color={matchbox.price >= 0 ? 'success' : 'error'}
                                 size="small"
-                                icon={<EuroIcon />}
                               />
                             )}
                           </Box>
@@ -1097,15 +1096,16 @@ const MatchboxManagement: React.FC<{
               }}>
                 <TextField
                   fullWidth
-                  label="Preis (€)"
+                  label="Betrag (€)"
                   type="number"
-                  inputProps={{ min: 0, step: 0.01 }}
-                  value={matchboxForm.price || ''}
+                  inputProps={{ step: 0.01 }}
+                  value={matchboxForm.price ?? ''}
                   onChange={(e) => {
                     const value = parseFloat(e.target.value)
                     setMatchboxForm({...matchboxForm, price: isNaN(value) ? undefined : value})
                   }}
-                  placeholder="0.00"
+                  placeholder="0.00 (Plus = Einnahme, Minus = Ausgabe)"
+                  helperText="Plus = zum Budget hinzu, Minus = vom Budget ab"
                 />
 
                 <FormControl fullWidth>
@@ -1181,10 +1181,16 @@ const MatchingNightManagement: React.FC<{
     name: string;
     totalLights: number;
     pairs: Array<{woman: string, man: string}>;
+    matchType: 'normal' | 'sold';
+    price: number;
+    buyer: string;
   }>({
     name: '',
     totalLights: 0,
-    pairs: []
+    pairs: [],
+    matchType: 'normal',
+    price: 0,
+    buyer: ''
   })
   const [selectedWoman, setSelectedWoman] = useState<string>('')
   const [selectedMan, setSelectedMan] = useState<string>('')
@@ -1243,7 +1249,10 @@ const MatchingNightManagement: React.FC<{
     setMatchingNightForm({
       name: '',
       totalLights: 0,
-      pairs: []
+      pairs: [],
+      matchType: 'normal',
+      price: 0,
+      buyer: ''
     })
     setSelectedWoman('')
     setSelectedMan('')
@@ -1254,8 +1263,11 @@ const MatchingNightManagement: React.FC<{
     setEditingMatchingNight(matchingNight)
     setMatchingNightForm({
       name: matchingNight.name,
-      totalLights: matchingNight.totalLights || 0,
-      pairs: [...matchingNight.pairs]
+      totalLights: matchingNight.totalLights ?? 0,
+      pairs: [...matchingNight.pairs],
+      matchType: matchingNight.matchType === 'sold' ? 'sold' : 'normal',
+      price: matchingNight.price ?? 0,
+      buyer: matchingNight.buyer ?? ''
     })
   }
 
@@ -1280,10 +1292,22 @@ const MatchingNightManagement: React.FC<{
 
   const saveMatchingNight = async () => {
     try {
-      // Validierung: Maximum 10 Lichter erlaubt
-      if (matchingNightForm.totalLights > 10) {
-        setSnackbar({ open: true, message: 'Maximum 10 Lichter erlaubt!', severity: 'error' })
-        return
+      const isSold = matchingNightForm.matchType === 'sold'
+
+      if (isSold) {
+        if (matchingNightForm.price === undefined || matchingNightForm.price === null || (typeof matchingNightForm.price === 'number' && isNaN(matchingNightForm.price))) {
+          setSnackbar({ open: true, message: 'Bei verkauften Matching Nights muss ein Betrag angegeben werden (Plus = Einnahme, Minus = Ausgabe)!', severity: 'error' })
+          return
+        }
+        if (!matchingNightForm.buyer?.trim()) {
+          setSnackbar({ open: true, message: 'Bei verkauften Matching Nights muss ein Käufer angegeben werden!', severity: 'error' })
+          return
+        }
+      } else {
+        if (matchingNightForm.totalLights > 10) {
+          setSnackbar({ open: true, message: 'Maximum 10 Lichter erlaubt!', severity: 'error' })
+          return
+        }
       }
 
       // Validierung: Alle 10 Paare müssen vollständig sein
@@ -1313,29 +1337,29 @@ const MatchingNightManagement: React.FC<{
         })
         return
       }
-      
-      // Validierung: Gesamtlichter dürfen nicht weniger als Perfect Match Lichter sein
-      // Erstelle temporäres Matching Night Objekt für die Validierung
-      const tempMatchingNight = {
-        id: 0,
-        name: 'temp',
-        date: new Date().toISOString().split('T')[0],
-        pairs: [],
-        createdAt: new Date()
-      }
-      
-      const validPerfectMatches = getValidPerfectMatchesForMatchingNight(matchboxes, tempMatchingNight)
-      const perfectMatchLights = completePairs.filter(pair => 
-        validPerfectMatches.some(pm => pm.woman === pair.woman && pm.man === pair.man)
-      ).length
 
-      if (matchingNightForm.totalLights < perfectMatchLights) {
-        setSnackbar({ 
-          open: true, 
-          message: `Gesamtlichter (${matchingNightForm.totalLights}) dürfen nicht weniger als sichere Lichter (${perfectMatchLights}) sein!`, 
-          severity: 'error' 
-        })
-        return
+      if (!isSold) {
+        // Validierung: Gesamtlichter dürfen nicht weniger als Perfect Match Lichter sein
+        const tempMatchingNight = {
+          id: 0,
+          name: 'temp',
+          date: new Date().toISOString().split('T')[0],
+          pairs: [],
+          createdAt: new Date()
+        }
+        const validPerfectMatches = getValidPerfectMatchesForMatchingNight(matchboxes, tempMatchingNight)
+        const perfectMatchLights = completePairs.filter(pair => 
+          validPerfectMatches.some(pm => pm.woman === pair.woman && pm.man === pair.man)
+        ).length
+
+        if (matchingNightForm.totalLights < perfectMatchLights) {
+          setSnackbar({ 
+            open: true, 
+            message: `Gesamtlichter (${matchingNightForm.totalLights}) dürfen nicht weniger als sichere Lichter (${perfectMatchLights}) sein!`, 
+            severity: 'error' 
+          })
+          return
+        }
       }
 
       if (!editingMatchingNight) {
@@ -1346,8 +1370,10 @@ const MatchingNightManagement: React.FC<{
       const result = await updateMatchingNightInJson({
         ...editingMatchingNight,
         name: matchingNightForm.name,
-        totalLights: matchingNightForm.totalLights,
-        pairs: matchingNightForm.pairs
+        totalLights: isSold ? undefined : matchingNightForm.totalLights,
+        pairs: matchingNightForm.pairs,
+        matchType: isSold ? 'sold' : 'normal',
+        ...(isSold ? { price: matchingNightForm.price, buyer: matchingNightForm.buyer } : { price: undefined, buyer: undefined })
       })
 
       if (!result.success) {
@@ -1435,7 +1461,18 @@ const MatchingNightManagement: React.FC<{
                               size="small"
                               icon={<GroupsIcon />}
                             />
-                            {matchingNight.totalLights !== undefined && (
+                            {matchingNight.matchType === 'sold' ? (
+                              <>
+                                <Chip label="Verkauft" color="info" size="small" />
+                                {matchingNight.price != null && typeof matchingNight.price === 'number' && (
+                                  <Chip
+                                    size="small"
+                                    color={matchingNight.price >= 0 ? 'success' : 'error'}
+                                    label={`${matchingNight.price >= 0 ? '+' : ''}${matchingNight.price.toLocaleString('de-DE')} €`}
+                                  />
+                                )}
+                              </>
+                            ) : matchingNight.totalLights !== undefined && (
                               <Chip 
                                 label={`${matchingNight.totalLights} Lichter`}
                                 color="warning"
@@ -1460,8 +1497,14 @@ const MatchingNightManagement: React.FC<{
                       </Box>
                     </Box>
                     
-                    {matchingNight.ausstrahlungsdatum && (
+                    {matchingNight.matchType === 'sold' && matchingNight.buyer && (
                       <Typography variant="body2" color="text.secondary">
+                        Käufer: {matchingNight.buyer}
+                      </Typography>
+                    )}
+                    
+                    {matchingNight.ausstrahlungsdatum && (
+                      <Typography variant="caption" color="text.secondary">
                         Ausstrahlung: {new Date(matchingNight.ausstrahlungsdatum).toLocaleDateString('de-DE')}
                         {matchingNight.ausstrahlungszeit && ` um ${matchingNight.ausstrahlungszeit} Uhr`}
                       </Typography>
@@ -1481,36 +1524,65 @@ const MatchingNightManagement: React.FC<{
         </DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 2 }}>
-            {/* Name und Lichter */}
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-              gap: 2
-            }}>
-              <TextField
-                fullWidth
-                label="Name"
-                value={matchingNightForm.name}
-                onChange={(e) => setMatchingNightForm({...matchingNightForm, name: e.target.value})}
-                placeholder="z.B. Episode 1, Matching Night 1..."
-              />
-              <TextField
-                fullWidth
-                label="Gesamtlichter aus der Show"
-                type="number"
-                inputProps={{ min: 0, max: 11 }}
-                value={matchingNightForm.totalLights}
-                onChange={(e) => setMatchingNightForm({...matchingNightForm, totalLights: parseInt(e.target.value) || 0})}
-                placeholder="0"
-              />
-            </Box>
+            {/* Name */}
+            <TextField
+              fullWidth
+              label="Name"
+              value={matchingNightForm.name}
+              onChange={(e) => setMatchingNightForm({...matchingNightForm, name: e.target.value})}
+              placeholder="z.B. Episode 1, Matching Night 1..."
+            />
+
+            {/* Match-Typ: Lichter bekannt / Verkauft */}
+            <FormControl fullWidth>
+              <InputLabel>Match-Typ</InputLabel>
+              <Select
+                value={matchingNightForm.matchType}
+                label="Match-Typ"
+                onChange={(e) => setMatchingNightForm({ ...matchingNightForm, matchType: e.target.value as 'normal' | 'sold' })}
+              >
+                <MenuItem value="normal">Lichter bekannt</MenuItem>
+                <MenuItem value="sold">Verkauft</MenuItem>
+              </Select>
+            </FormControl>
+
+            {matchingNightForm.matchType === 'sold' && (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                <TextField
+                  fullWidth
+                  label="Betrag (€)"
+                  type="number"
+                  value={matchingNightForm.price}
+                  onChange={(e) => setMatchingNightForm({ ...matchingNightForm, price: parseFloat(e.target.value) || 0 })}
+                  helperText="Plus = zum Budget hinzu, Minus = vom Budget ab"
+                />
+                <TextField
+                  fullWidth
+                  label="Käufer"
+                  value={matchingNightForm.buyer}
+                  onChange={(e) => setMatchingNightForm({ ...matchingNightForm, buyer: e.target.value })}
+                />
+              </Box>
+            )}
+
+            {matchingNightForm.matchType === 'normal' && (
+            <TextField
+              fullWidth
+              label="Gesamtlichter aus der Show"
+              type="number"
+              inputProps={{ min: 0, max: 11 }}
+              value={matchingNightForm.totalLights}
+              onChange={(e) => setMatchingNightForm({...matchingNightForm, totalLights: parseInt(e.target.value) || 0})}
+              placeholder="0"
+            />
+            )}
 
             <Alert severity="info" icon={<ScheduleIcon />}>
               Die Ausstrahlungszeiten werden zentral über den <strong>Ausstrahlungsplan</strong> verwaltet.
             </Alert>
 
-            {/* Lichter-Analyse */}
-            {matchingNightForm.totalLights > 0 && (
+            {/* Lichter-Analyse (nur bei "Lichter bekannt") */}
+            {matchingNightForm.matchType === 'normal' && matchingNightForm.totalLights > 0 && (
               <Card sx={{ bgcolor: 'warning.50', border: '1px solid', borderColor: 'warning.200' }}>
                 <CardContent>
                   <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -2706,16 +2778,18 @@ Alle Daten gehen unwiderruflich verloren!`)
   }
 
   // ** Budget Calculations **
-  const soldMatchboxes = matchboxes.filter(mb => mb.matchType === 'sold' && mb.price && typeof mb.price === 'number')
-  const totalRevenue = soldMatchboxes.reduce((sum, mb) => sum + (mb.price || 0), 0)
-  // Separate penalties (negative amounts) and credits (positive amounts)  
+  // Verkäufe: Plus = zum Budget hinzu, Minus = vom Budget ab (Matchbox + Matching Night)
+  const soldMatchboxes = matchboxes.filter(mb => mb.matchType === 'sold' && typeof mb.price === 'number')
+  const soldMatchingNights = matchingNights.filter(mn => mn.matchType === 'sold' && typeof mn.price === 'number')
+  const totalVerkauf = soldMatchboxes.reduce((sum, mb) => sum + (mb.price || 0), 0) + soldMatchingNights.reduce((sum, mn) => sum + (mn.price ?? 0), 0)
+  // Separate penalties (negative amounts) and credits (positive amounts)
   const totalPenalties = penalties.reduce((sum, penalty) => {
     return penalty.amount < 0 ? sum + Math.abs(penalty.amount) : sum
   }, 0)
   const totalCredits = penalties.reduce((sum, penalty) => {
     return penalty.amount > 0 ? sum + penalty.amount : sum
   }, 0)
-  const currentBalance = budgetSettings.startingBudget - totalRevenue - totalPenalties + totalCredits
+  const currentBalance = budgetSettings.startingBudget + totalVerkauf - totalPenalties + totalCredits
 
 
   const exportItems = [
@@ -2784,34 +2858,80 @@ Alle Daten gehen unwiderruflich verloren!`)
                     variant="outlined"
                   />
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2">Verkaufte Matchboxes:</Typography>
-                  <Chip 
-                    label={`-${totalRevenue.toLocaleString('de-DE')} €`} 
-                    color="info" 
-                    variant="outlined"
-                  />
+                <Box>
+                  <Typography variant="body2" sx={{ mb: 1 }}>Verkäufe:</Typography>
+                  {soldMatchboxes.length === 0 && soldMatchingNights.length === 0 ? (
+                    <Typography variant="caption" color="text.secondary">Keine Verkäufe</Typography>
+                  ) : (
+                    <Stack spacing={0.5} sx={{ mb: 1 }}>
+                      {soldMatchboxes.map((mb) => (
+                        <Box key={`mb-${mb.id}`} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, minWidth: 0 }}>
+                            Matchbox: {mb.woman} + {mb.man}
+                            {mb.buyer ? ` (${mb.buyer})` : ''}
+                          </Typography>
+                          <Chip size="small" variant="outlined" color="info" label={`${(mb.price ?? 0) >= 0 ? '+' : ''}${(mb.price ?? 0).toLocaleString('de-DE')} €`} />
+                        </Box>
+                      ))}
+                      {soldMatchingNights.map((mn) => (
+                        <Box key={`mn-${mn.id}`} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, minWidth: 0 }}>
+                            Matching Night: {mn.name}
+                            {mn.buyer ? ` (${mn.buyer})` : ''}
+                          </Typography>
+                          <Chip size="small" variant="outlined" color="info" label={`${(mn.price ?? 0) >= 0 ? '+' : ''}${(mn.price ?? 0).toLocaleString('de-DE')} €`} />
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
+                  {(soldMatchboxes.length > 0 || soldMatchingNights.length > 0) && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5, py: 0.5, px: 1, borderRadius: 1, bgcolor: totalVerkauf >= 0 ? 'success.50' : 'error.50' }}>
+                      <Typography variant="body2" fontWeight={700}>Summe Verkäufe:</Typography>
+                      <Chip size="small" variant="filled" color={totalVerkauf >= 0 ? 'success' : 'error'} label={`${totalVerkauf >= 0 ? '+' : ''}${totalVerkauf.toLocaleString('de-DE')} €`} sx={{ fontWeight: 700 }} />
+                    </Box>
+                  )}
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2">Strafen:</Typography>
-                  <Chip 
-                    label={`-${totalPenalties.toLocaleString('de-DE')} €`} 
-                    color="error" 
-                    variant="outlined"
-                  />
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2">Gutschriften:</Typography>
-                  <Chip 
-                    label={`+${totalCredits.toLocaleString('de-DE')} €`} 
-                    color="success" 
-                    variant="outlined"
-                  />
+                <Box>
+                  <Typography variant="body2" sx={{ mb: 1 }}>Strafen / Gutschriften:</Typography>
+                  {penalties.length === 0 ? (
+                    <Typography variant="caption" color="text.secondary">Keine Einträge</Typography>
+                  ) : (
+                    <Stack spacing={0.5} sx={{ mb: 1 }}>
+                      {penalties
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .map((p) => (
+                        <Box key={p.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, minWidth: 0 }}>
+                            {p.participantName}: {p.reason}
+                          </Typography>
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            color={p.amount >= 0 ? 'success' : 'error'}
+                            label={`${p.amount >= 0 ? '+' : ''}${p.amount.toLocaleString('de-DE')} €`}
+                          />
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
+                  {penalties.length > 0 && (
+                    <>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5, py: 0.5, px: 1, borderRadius: 1, bgcolor: 'error.50' }}>
+                        <Typography variant="body2" fontWeight={700}>Summe Strafen:</Typography>
+                        <Chip size="small" variant="filled" color="error" label={`-${totalPenalties.toLocaleString('de-DE')} €`} sx={{ fontWeight: 700 }} />
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5, py: 0.5, px: 1, borderRadius: 1, bgcolor: 'success.50' }}>
+                        <Typography variant="body2" fontWeight={700}>Summe Gutschriften:</Typography>
+                        <Chip size="small" variant="filled" color="success" label={`+${totalCredits.toLocaleString('de-DE')} €`} sx={{ fontWeight: 700 }} />
+                      </Box>
+                    </>
+                  )}
                 </Box>
                 <Divider />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>Aktueller Kontostand:</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, px: 1, borderRadius: 1, bgcolor: currentBalance >= 0 ? 'success.50' : 'error.50' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 700 }}>Aktueller Kontostand:</Typography>
                   <Chip 
+                    variant="filled"
                     label={`${currentBalance.toLocaleString('de-DE')} €`} 
                     color={currentBalance >= 0 ? 'success' : 'error'}
                     sx={{ fontWeight: 700 }}
@@ -3417,7 +3537,7 @@ Alle Daten gehen unwiderruflich verloren!`)
           <Alert severity="info">
             <Typography variant="body2">
               <strong>Aktuelle Startsumme:</strong> {budgetSettings.startingBudget.toLocaleString('de-DE')} €<br />
-              <strong>Verkaufte Matchboxes:</strong> {totalRevenue.toLocaleString('de-DE')} €<br />
+              <strong>Verkäufe (Matchbox + Matching Night):</strong> {totalVerkauf >= 0 ? '+' : ''}{totalVerkauf.toLocaleString('de-DE')} €<br />
               <strong>Aktueller Kontostand:</strong> {currentBalance.toLocaleString('de-DE')} €
             </Typography>
           </Alert>

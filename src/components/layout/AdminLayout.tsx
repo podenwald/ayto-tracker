@@ -54,7 +54,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   const [mobileOpen, setMobileOpen] = useState(false)
 
   // Stats für Menüleiste
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<{
+    activeParticipants: number
+    perfectMatches: number
+    currentLights: number | 'V'
+    currentBalance: number
+    matchingNightsCount: number
+    matchboxesCount: number
+  }>({
     activeParticipants: 0,
     perfectMatches: 0,
     currentLights: 0,

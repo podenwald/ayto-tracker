@@ -56,9 +56,12 @@ try {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
   const version = packageJson.version || '0.0.0';
 
+  // In CI/Production oft kein Tag verfügbar (shallow clone). Fallback: package.json als "v1.0.4"
+  const effectiveTag = gitTag || (version ? `v${version}` : null);
+
   const versionInfo = {
     version,
-    gitTag,
+    gitTag: effectiveTag,
     gitCommit,
     buildDate,
     isProduction
@@ -95,7 +98,7 @@ export function getFullVersionInfo(): string {
   writeFileSync(versionPath, versionCode);
 
   const shortCommit = gitCommit ? gitCommit.substring(0, 7) : 'no-git';
-  console.log(`✅ Version info updated: ${gitTag || 'Beta'} (${shortCommit})`);
+  console.log(`✅ Version info updated: ${effectiveTag || 'Beta'} (${shortCommit})`);
 } catch (error) {
   console.warn('⚠️  Could not determine git version:', error);
 }

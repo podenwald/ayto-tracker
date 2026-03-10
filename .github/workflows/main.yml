@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Tags mitladen, damit generate-version.cjs den Git-Tag (z. B. v1.0.4) auslesen kann
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

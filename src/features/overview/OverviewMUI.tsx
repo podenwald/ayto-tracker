@@ -514,6 +514,7 @@ const OverviewMUI: React.FC = () => {
   const [penalties, setPenalties] = useState<Penalty[]>([])
   const [activeTab, setActiveTab] = useState(0)
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false)
+  const [herleitungExpanded, setHerleitungExpanded] = useState(false)
   const [expandedMatchingNights, setExpandedMatchingNights] = useState<Set<number>>(new Set())
   
   // Wahrscheinlichkeits-Berechnung Hook
@@ -1715,12 +1716,49 @@ const OverviewMUI: React.FC = () => {
                 
                 {/* Calculation Info */}
                 {probabilityResult && !probabilityStatus.isCalculating && (
-                  <Alert severity="info" sx={{ mx: 2, mt: 2 }}>
-                    Berechnung abgeschlossen: {probabilityResult.totalValidMatchings.toLocaleString()} gültige Kombinationen gefunden 
-                    in {(probabilityResult.calculationTime / 1000).toFixed(2)}s
-                    {probabilityResult.limitReached && ' (Limit erreicht)'}
-                    {probabilityResult.fixedPairs.length > 0 && ` • ${probabilityResult.fixedPairs.length} fixierte Paare`}
-                  </Alert>
+                  <>
+                    <Alert severity="info" sx={{ mx: 2, mt: 2 }}>
+                      Berechnung abgeschlossen: {probabilityResult.totalValidMatchings.toLocaleString()} gültige Kombinationen gefunden 
+                      in {(probabilityResult.calculationTime / 1000).toFixed(2)}s
+                      {probabilityResult.limitReached && ' (Limit erreicht)'}
+                      {probabilityResult.fixedPairs.length > 0 && ` • ${probabilityResult.fixedPairs.length} fixierte Paare`}
+                    </Alert>
+                    {/* Herleitung: Warum 100% / Herz? */}
+                    <Box sx={{ mx: 2, mt: 1, mb: 0 }}>
+                      <Button
+                        size="small"
+                        startIcon={herleitungExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                        onClick={() => setHerleitungExpanded(!herleitungExpanded)}
+                        sx={{ textTransform: 'none', color: 'text.secondary' }}
+                      >
+                        Wie kommt das Ergebnis zustande? (Herleitung)
+                      </Button>
+                      <Collapse in={herleitungExpanded}>
+                        <Box component="ol" sx={{ pl: 2.5, pr: 1, py: 1, bgcolor: 'grey.50', borderRadius: 1, mt: 0.5 }}>
+                          <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                            <strong>Schritt 1:</strong> Es werden alle theoretisch möglichen Gesamt-Matchings erzeugt (wer mit wem ein Paar sein könnte).
+                          </Typography>
+                          <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                            <strong>Schritt 2:</strong> Es bleiben nur die Matchings übrig, die zu allen <strong>Matching Nights</strong> passen: In jeder Night muss die Anzahl der „richtigen“ Paare (Lichter) exakt der eingegebenen Lichter-Anzahl entsprechen.
+                          </Typography>
+                          <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                            <strong>Schritt 3:</strong> Von diesen werden nur noch die Matchings behalten, die alle <strong>Matchbox-Entscheidungen</strong> erfüllen: Jedes als Perfect Match bestätigte Paar muss im Matching vorkommen, jedes als No-Match markierte Paar darf nicht vorkommen.
+                          </Typography>
+                          <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                            <strong>Schritt 4:</strong> Aus den verbleibenden Matchings wird die Wahrscheinlichkeit pro Paar berechnet: <em>Anzahl der Matchings, in denen das Paar vorkommt</em> ÷ <em>Anzahl aller verbleibenden Matchings</em>.
+                          </Typography>
+                          <Typography component="li" variant="body2" sx={{ mb: 1 }}>
+                            <strong>Ergebnis:</strong> Es gibt aktuell <strong>{probabilityResult.totalValidMatchings.toLocaleString()}</strong> gültige Gesamtlösungen. Ein Paar erhält 100 % (💚), wenn es in <strong>allen</strong> diesen Lösungen vorkommt – dann ist es eindeutig bestimmt.
+                            {probabilityResult.fixedPairs.length > 0 && (
+                              <>
+                                {' '}Das sind die fixierten Paare: {probabilityResult.fixedPairs.map(p => `${p.woman} & ${p.man}`).join(', ')}.
+                              </>
+                            )}
+                          </Typography>
+                        </Box>
+                      </Collapse>
+                    </Box>
+                  </>
                 )}
                 
                 <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>

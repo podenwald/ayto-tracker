@@ -448,6 +448,161 @@
       "ausstrahlungszeit": "21:00",
       "createdAt": "2026-02-10T21:48:34.909Z",
       "id": 3
+    },
+    {
+      "name": "Matching Night #4",
+      "date": "2026-02-18",
+      "pairs": [
+        {
+          "woman": "Aurora",
+          "man": "Chris"
+        },
+        {
+          "woman": "Tonia",
+          "man": "Luke"
+        },
+        {
+          "woman": "Laura",
+          "man": "Meji"
+        },
+        {
+          "woman": "Elena",
+          "man": "Jerry"
+        },
+        {
+          "woman": "Ella",
+          "man": "Evi"
+        },
+        {
+          "woman": "Michelle",
+          "man": "Ema"
+        },
+        {
+          "woman": "Linda",
+          "man": "Jeronymo"
+        },
+        {
+          "woman": "Alicia",
+          "man": "Julian S."
+        },
+        {
+          "woman": "Adrianna",
+          "man": "Noel"
+        },
+        {
+          "woman": "Marla",
+          "man": "Julian M."
+        }
+      ],
+      "ausstrahlungsdatum": "2026-02-17",
+      "ausstrahlungszeit": "21:00",
+      "createdAt": "2026-02-18T19:46:53.352Z",
+      "id": 4,
+      "matchType": "sold",
+      "price": 55000,
+      "buyer": "Team"
+    },
+    {
+      "name": "Matching Night #5",
+      "date": "2026-02-24",
+      "totalLights": 5,
+      "pairs": [
+        {
+          "woman": "Ella",
+          "man": "Meji"
+        },
+        {
+          "woman": "Marla",
+          "man": "Julian M."
+        },
+        {
+          "woman": "Tonia",
+          "man": "Noel"
+        },
+        {
+          "woman": "Aurora",
+          "man": "Evi"
+        },
+        {
+          "woman": "Adrianna",
+          "man": "Julian S."
+        },
+        {
+          "woman": "Laura",
+          "man": "Luke"
+        },
+        {
+          "woman": "Elena",
+          "man": "Jerry"
+        },
+        {
+          "woman": "Michelle",
+          "man": "Ema"
+        },
+        {
+          "woman": "Tiziana",
+          "man": "Jeronymo"
+        },
+        {
+          "woman": "Linda",
+          "man": "Chris"
+        }
+      ],
+      "ausstrahlungsdatum": "2026-02-24",
+      "ausstrahlungszeit": "21:00",
+      "createdAt": "2026-02-24T21:38:44.857Z",
+      "id": 5
+    },
+    {
+      "name": "Matching Night #6",
+      "date": "2026-03-03",
+      "totalLights": 4,
+      "pairs": [
+        {
+          "woman": "Tonia",
+          "man": "Noel"
+        },
+        {
+          "woman": "Marla",
+          "man": "Julian M."
+        },
+        {
+          "woman": "Tiziana",
+          "man": "Julian S."
+        },
+        {
+          "woman": "Michelle",
+          "man": "Ema"
+        },
+        {
+          "woman": "Adrianna",
+          "man": "Luke"
+        },
+        {
+          "woman": "Linda",
+          "man": "Evi"
+        },
+        {
+          "woman": "Laura",
+          "man": "Jeronymo"
+        },
+        {
+          "woman": "Aurora",
+          "man": "Meji"
+        },
+        {
+          "woman": "Elena",
+          "man": "Jerry"
+        },
+        {
+          "woman": "Ella",
+          "man": "Chris"
+        }
+      ],
+      "ausstrahlungsdatum": "2026-03-03",
+      "ausstrahlungszeit": "21:00",
+      "createdAt": "2026-03-03T20:53:11.901Z",
+      "id": 6
     }
   ],
   "matchboxes": [
@@ -468,12 +623,12 @@
       "woman": "Laura",
       "man": "Evi",
       "matchType": "sold",
-      "price": 5000,
+      "price": -5000,
       "buyer": "Aurora",
       "ausstrahlungsdatum": "2026-02-03",
       "ausstrahlungszeit": "20:15",
       "createdAt": "2026-02-09T20:31:49.690Z",
-      "updatedAt": "2026-02-09T20:31:49.690Z"
+      "updatedAt": "2026-02-18T20:10:19.320Z"
     },
     {
       "id": 3,
@@ -486,280 +641,207 @@
       "ausstrahlungszeit": "20:15",
       "createdAt": "2026-02-10T21:01:33.992Z",
       "updatedAt": "2026-02-10T21:01:33.992Z"
+    },
+    {
+      "id": 4,
+      "woman": "Marla",
+      "man": "Julian M.",
+      "matchType": "perfect",
+      "price": 0,
+      "buyer": "",
+      "ausstrahlungsdatum": "2026-02-17",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-02-17T20:28:59.434Z",
+      "updatedAt": "2026-02-17T20:28:59.434Z"
+    },
+    {
+      "id": 5,
+      "woman": "Aurora",
+      "man": "Chris",
+      "matchType": "no-match",
+      "price": 0,
+      "buyer": "",
+      "ausstrahlungsdatum": "2026-02-24",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-02-24T20:55:05.876Z",
+      "updatedAt": "2026-02-24T20:55:05.876Z"
+    },
+    {
+      "id": 6,
+      "woman": "Elena",
+      "man": "Jerry",
+      "matchType": "sold",
+      "price": -20000,
+      "buyer": "Tonia",
+      "ausstrahlungsdatum": "2026-03-03",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-03-03T20:10:36.502Z",
+      "updatedAt": "2026-03-03T20:12:26.887Z"
+    },
+    {
+      "id": 7,
+      "woman": "Tonia",
+      "man": "Noel",
+      "matchType": "perfect",
+      "price": 0,
+      "buyer": "",
+      "ausstrahlungsdatum": "2026-03-10",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-03-10T19:37:30.411Z",
+      "updatedAt": "2026-03-10T19:37:30.411Z"
     }
   ],
   "penalties": [],
   "probabilityCache": [
     {
-      "dataHash": "12il6fo",
+      "dataHash": "19uiowc",
       "result": {
         "probabilityMatrix": {
           "Adrianna": {
-            "Chris": 0.07959977504920798,
-            "Ema": 0.07899053332083607,
-            "Evi": 0.06617302465085763,
-            "Jeronymo": 0.06104133470803262,
-            "Jerry": 0.07899053332083607,
-            "Julian M.": 0.2705033273971319,
-            "Julian S.": 0.13773549536038993,
-            "Luke": 0.06551691817414941,
-            "Meji": 0.07899053332083607,
-            "Noel": 0.08245852469772237
-          },
-          "Alicia": {
-            "Chris": 0.09949386071796794,
-            "Ema": 0.10026712906551692,
-            "Evi": 0.08426281750866998,
-            "Jeronymo": 0.07758459087074702,
-            "Jerry": 0.10026712906551692,
-            "Julian M.": 0.12175461617771112,
-            "Julian S.": 0.13187740181835222,
-            "Luke": 0.08304433405192614,
-            "Meji": 0.10026712906551692,
-            "Noel": 0.1011809916580748
-          },
-          "Elena": {
-            "Chris": 0.07955291030087168,
-            "Ema": 0.08114631174430594,
-            "Evi": 0.06905520667354016,
-            "Jeronymo": 0.0635720311181929,
-            "Jerry": 0.27765020151841785,
-            "Julian M.": 0.07903739806917237,
-            "Julian S.": 0.11388133845721249,
-            "Luke": 0.06825850595182303,
-            "Meji": 0.08527040959790046,
-            "Noel": 0.08257568656856312
-          },
-          "Ella": {
-            "Chris": 0.07955291030087168,
-            "Ema": 0.08527040959790046,
-            "Evi": 0.06905520667354016,
-            "Jeronymo": 0.0635720311181929,
-            "Jerry": 0.08114631174430594,
-            "Julian M.": 0.07903739806917237,
-            "Julian S.": 0.11388133845721249,
-            "Luke": 0.06825850595182303,
-            "Meji": 0.27765020151841785,
-            "Noel": 0.08257568656856312
-          },
-          "Laura": {
-            "Chris": 0.06115849657887337,
-            "Ema": 0.0635720311181929,
-            "Evi": 0.45027650201518415,
-            "Jeronymo": 0.04049114256256444,
-            "Jerry": 0.0635720311181929,
-            "Julian M.": 0.06169744118474084,
-            "Julian S.": 0.08688724341550286,
-            "Luke": 0.046044615240416156,
-            "Meji": 0.0635720311181929,
-            "Noel": 0.06272846564813947
-          },
-          "Linda": {
-            "Chris": 0.31045552535382887,
-            "Ema": 0.09316711969256725,
-            "Evi": 0.07599118942731277,
-            "Jeronymo": 0.0704611491236292,
-            "Jerry": 0.09316711969256725,
-            "Julian M.": 0.09281563408004499,
-            "Julian S.": 0,
-            "Luke": 0.07547567719561346,
-            "Meji": 0.09316711969256725,
-            "Noel": 0.09529946574186897
-          },
-          "Marla": {
-            "Chris": 0.06539975630330865,
-            "Ema": 0.06825850595182303,
-            "Evi": 0.04791920517386822,
-            "Jeronymo": 0.046044615240416156,
-            "Jerry": 0.06825850595182303,
-            "Julian M.": 0.06614959227668947,
-            "Julian S.": 0.09312025494423094,
-            "Luke": 0.4095276033367701,
-            "Meji": 0.06825850595182303,
-            "Noel": 0.06706345486924735
-          },
-          "Michelle": {
-            "Chris": 0.07955291030087168,
-            "Ema": 0.27765020151841785,
-            "Evi": 0.06905520667354016,
-            "Jeronymo": 0.0635720311181929,
-            "Jerry": 0.08527040959790046,
-            "Julian M.": 0.07903739806917237,
-            "Julian S.": 0.11388133845721249,
-            "Luke": 0.06825850595182303,
-            "Meji": 0.08114631174430594,
-            "Noel": 0.08257568656856312
-          },
-          "Tiziana": {
-            "Chris": 0.06591526853500797,
-            "Ema": 0.06905520667354016,
+            "Chris": 0,
+            "Ema": 0,
             "Evi": 0,
-            "Jeronymo": 0.45027650201518415,
-            "Jerry": 0.06905520667354016,
-            "Julian M.": 0.06685256350173399,
-            "Julian S.": 0.09433873840097479,
-            "Luke": 0.04791920517386822,
-            "Meji": 0.06905520667354016,
-            "Noel": 0.06753210235261037
-          },
-          "Tonia": {
-            "Chris": 0.07931858655919018,
-            "Ema": 0.08262255131689943,
-            "Evi": 0.06821164120348673,
-            "Jeronymo": 0.06338457212484769,
-            "Jerry": 0.08262255131689943,
-            "Julian M.": 0.08311463117443059,
-            "Julian S.": 0.1143968506889118,
-            "Luke": 0.06769612897178742,
-            "Meji": 0.08262255131689943,
-            "Noel": 0.2760099353266473
-          }
-        },
-        "fixedPairs": [],
-        "totalValidMatchings": 42676,
-        "calculationTime": 8327.199999988079,
-        "limitReached": false
-      },
-      "createdAt": "2026-02-10T21:02:13.342Z",
-      "updatedAt": "2026-02-10T21:02:13.342Z",
-      "id": 1
-    },
-    {
-      "dataHash": "ar201a",
-      "result": {
-        "probabilityMatrix": {
-          "Adrianna": {
-            "Chris": 0.10381890236579801,
-            "Ema": 0.08622553140386693,
-            "Evi": 0.06947279932748888,
-            "Jeronymo": 0.06436892037948841,
-            "Jerry": 0.06340819022457067,
-            "Julian M.": 0.1810976342019935,
-            "Julian S.": 0.14332892998678995,
-            "Luke": 0.06923261678875946,
-            "Meji": 0.11522757295544614,
-            "Noel": 0.10381890236579801
-          },
-          "Alicia": {
-            "Chris": 0.12039149753812897,
-            "Ema": 0.11084424162363396,
-            "Evi": 0.08748648973219647,
-            "Jeronymo": 0.08046115047436052,
-            "Jerry": 0.05968536087426444,
-            "Julian M.": 0.20139305872463073,
-            "Julian S.": 0,
-            "Luke": 0.08712621592410232,
-            "Meji": 0.1357031343821304,
-            "Noel": 0.11690885072655217
+            "Jeronymo": 0,
+            "Jerry": 0,
+            "Julian M.": 0,
+            "Julian S.": 0.8181818181818182,
+            "Luke": 0.18181818181818182,
+            "Meji": 0,
+            "Noel": 0
           },
           "Aurora": {
-            "Chris": 0.06376846403266483,
-            "Ema": 0.06490933109162964,
-            "Evi": 0.054041071214122736,
-            "Jeronymo": 0.04911732917016933,
+            "Chris": 0,
+            "Ema": 0.2727272727272727,
+            "Evi": 0.18181818181818182,
+            "Jeronymo": 0,
             "Jerry": 0,
-            "Julian M.": 0.0545214362915816,
-            "Julian S.": 0.5281013570313439,
-            "Luke": 0.053080341059205,
-            "Meji": 0.07001321003963012,
-            "Noel": 0.06244746006965294
+            "Julian M.": 0,
+            "Julian S.": 0,
+            "Luke": 0.2727272727272727,
+            "Meji": 0.2727272727272727,
+            "Noel": 0
           },
           "Elena": {
-            "Chris": 0.08718626155878467,
-            "Ema": 0.0835234778431608,
-            "Evi": 0.06701092830551218,
-            "Jeronymo": 0.06124654737600577,
-            "Jerry": 0.4718986429686562,
-            "Julian M.": 0.07565749969977183,
+            "Chris": 0,
+            "Ema": 0,
+            "Evi": 0,
+            "Jeronymo": 0,
+            "Jerry": 1,
+            "Julian M.": 0,
             "Julian S.": 0,
-            "Luke": 0.06629038068932389,
+            "Luke": 0,
             "Meji": 0,
-            "Noel": 0.08718626155878467
+            "Noel": 0
+          },
+          "Ella": {
+            "Chris": 0.2727272727272727,
+            "Ema": 0.2727272727272727,
+            "Evi": 0.18181818181818182,
+            "Jeronymo": 0,
+            "Jerry": 0,
+            "Julian M.": 0,
+            "Julian S.": 0,
+            "Luke": 0.2727272727272727,
+            "Meji": 0,
+            "Noel": 0
           },
           "Laura": {
-            "Chris": 0.07097394019454786,
-            "Ema": 0.0748168608142188,
-            "Evi": 0.4372523117569353,
-            "Jeronymo": 0.04239221808574516,
-            "Jerry": 0.0453944998198631,
-            "Julian M.": 0.06304791641647652,
-            "Julian S.": 0.05368079740602858,
-            "Luke": 0.048757055362075176,
-            "Meji": 0.09379128137384413,
-            "Noel": 0.0698931187702654
+            "Chris": 0.36363636363636365,
+            "Ema": 0.18181818181818182,
+            "Evi": 0,
+            "Jeronymo": 0.09090909090909091,
+            "Jerry": 0,
+            "Julian M.": 0,
+            "Julian S.": 0.09090909090909091,
+            "Luke": 0,
+            "Meji": 0.2727272727272727,
+            "Noel": 0
           },
           "Linda": {
-            "Chris": 0.17947640206556983,
-            "Ema": 0.11204515431728114,
-            "Evi": 0.083223249669749,
-            "Jeronymo": 0.07685841239341899,
-            "Jerry": 0.0698931187702654,
-            "Julian M.": 0.11492734478203434,
+            "Chris": 0.09090909090909091,
+            "Ema": 0.2727272727272727,
+            "Evi": 0.18181818181818182,
+            "Jeronymo": 0,
+            "Jerry": 0,
+            "Julian M.": 0,
             "Julian S.": 0,
-            "Luke": 0.08286297586165486,
-            "Meji": 0.13750450342260118,
-            "Noel": 0.14320883871742524
+            "Luke": 0.18181818181818182,
+            "Meji": 0.2727272727272727,
+            "Noel": 0
           },
           "Marla": {
-            "Chris": 0.07649813858532485,
-            "Ema": 0.08088146991713703,
-            "Evi": 0.04995796805572235,
-            "Jeronymo": 0.048757055362075176,
-            "Jerry": 0.04917737480485169,
-            "Julian M.": 0.06821184099915936,
-            "Julian S.": 0.05836435691125255,
-            "Luke": 0.3918578119370722,
-            "Meji": 0.10099675753572715,
-            "Noel": 0.07529722589167767
+            "Chris": 0,
+            "Ema": 0,
+            "Evi": 0,
+            "Jeronymo": 0,
+            "Jerry": 0,
+            "Julian M.": 1,
+            "Julian S.": 0,
+            "Luke": 0,
+            "Meji": 0,
+            "Noel": 0
           },
           "Michelle": {
-            "Chris": 0.09655338056923261,
-            "Ema": 0.2040350666506545,
-            "Evi": 0.0740963131980305,
-            "Jeronymo": 0.06809174972979465,
-            "Jerry": 0.121232136423682,
-            "Julian M.": 0.07205476161883032,
-            "Julian S.": 0.07565749969977183,
-            "Luke": 0.07373603938993635,
-            "Meji": 0.11798967215083464,
-            "Noel": 0.09655338056923261
+            "Chris": 0.2727272727272727,
+            "Ema": 0,
+            "Evi": 0.45454545454545453,
+            "Jeronymo": 0,
+            "Jerry": 0,
+            "Julian M.": 0,
+            "Julian S.": 0.09090909090909091,
+            "Luke": 0.09090909090909091,
+            "Meji": 0.09090909090909091,
+            "Noel": 0
           },
           "Tiziana": {
-            "Chris": 0.07685841239341899,
-            "Ema": 0.08148192626396061,
+            "Chris": 0,
+            "Ema": 0,
             "Evi": 0,
-            "Jeronymo": 0.4372523117569353,
-            "Jerry": 0.04941755734358112,
-            "Julian M.": 0.06821184099915936,
-            "Julian S.": 0.0587246307193467,
-            "Luke": 0.04995796805572235,
-            "Meji": 0.10243785276810376,
-            "Noel": 0.07565749969977183
+            "Jeronymo": 0.9090909090909091,
+            "Jerry": 0,
+            "Julian M.": 0,
+            "Julian S.": 0,
+            "Luke": 0,
+            "Meji": 0.09090909090909091,
+            "Noel": 0
           },
           "Tonia": {
-            "Chris": 0.12447460069652937,
-            "Ema": 0.10123694007445659,
-            "Evi": 0.07745886874024259,
-            "Jeronymo": 0.07145430527200672,
-            "Jerry": 0.0698931187702654,
-            "Julian M.": 0.10087666626636244,
-            "Julian S.": 0.08214242824546655,
-            "Luke": 0.07709859493214843,
-            "Meji": 0.1263360153716825,
-            "Noel": 0.16902846163083943
+            "Chris": 0,
+            "Ema": 0,
+            "Evi": 0,
+            "Jeronymo": 0,
+            "Jerry": 0,
+            "Julian M.": 0,
+            "Julian S.": 0,
+            "Luke": 0,
+            "Meji": 0,
+            "Noel": 1
           }
         },
-        "fixedPairs": [],
-        "totalValidMatchings": 16654,
-        "calculationTime": 15912.800000011921,
+        "fixedPairs": [
+          {
+            "woman": "Elena",
+            "man": "Jerry"
+          },
+          {
+            "woman": "Marla",
+            "man": "Julian M."
+          },
+          {
+            "woman": "Tonia",
+            "man": "Noel"
+          }
+        ],
+        "totalValidMatchings": 11,
+        "calculationTime": 9921.800000011921,
         "limitReached": false
       },
-      "createdAt": "2026-02-11T21:21:47.991Z",
-      "updatedAt": "2026-02-11T21:21:47.991Z",
-      "id": 2
+      "createdAt": "2026-03-10T19:39:46.359Z",
+      "updatedAt": "2026-03-10T19:39:46.359Z",
+      "id": 7
     }
   ],
   "broadcastNotes": [],
-  "exportedAt": "2026-02-11T21:37:13.149Z",
-  "version": "1.2"
+  "exportedAt": "2026-03-10T19:46:49.145Z",
+  "version": "1.3"
 }

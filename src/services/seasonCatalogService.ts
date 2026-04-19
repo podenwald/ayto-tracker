@@ -28,19 +28,39 @@ export interface SeasonCatalogFile {
   entries: SeasonCatalogEntry[]
 }
 
-export async function fetchSeasonCatalog(): Promise<SeasonCatalogFile | null> {
+/**
+ * Erwartet JSON; liefert eine verständliche Meldung, wenn stattdessen HTML (SPA-Fallback) kommt.
+ */
+async function parseJsonBody<T>(res: Response, label: string): Promise<T> {
+  const text = await res.text()
+  const trimmed = text.trimStart()
+  if (trimmed.startsWith('<')) {
+    throw new Error(
+      `${label}: Es wurde HTML statt JSON geliefert. Häufig fehlt die Datei im Build oder eine SPA-Weiterleitung liefert index.html (z. B. seasons.json / json-Datei prüfen, Netlify _redirects).`
+    )
+  }
   try {
-    const res = await fetch('/seasons.json', {
+    return JSON.parse(text) as T
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    throw new Error(`${label}: Ungültiges JSON (${msg})`)
+  }
+}
+
+export async function fetchSeasonCatalog(): Promise<SeasonCatalogFile | null> {
+  let res: Response
+  try {
+    res = await fetch('/seasons.json', {
       cache: 'no-store',
       headers: { 'Cache-Control': 'no-cache' }
     })
-    if (!res.ok) return null
-    const data = (await res.json()) as SeasonCatalogFile
-    if (!data.entries || !Array.isArray(data.entries)) return null
-    return data
   } catch {
     return null
   }
+  if (!res.ok) return null
+  const data = await parseJsonBody<SeasonCatalogFile>(res, 'seasons.json')
+  if (!data.entries || !Array.isArray(data.entries)) return null
+  return data
 }
 
 /**
@@ -82,7 +102,7 @@ export async function activateCatalogEntry(entry: SeasonCatalogEntry): Promise<v
   if (!res.ok) {
     throw new Error(`Daten konnten nicht geladen werden (${entry.dataUrl}): ${res.status}`)
   }
-  const raw: unknown = await res.json()
+  const raw: unknown = await parseJsonBody<unknown>(res, entry.dataUrl)
   await importJsonBundleForSeason(seasonId, raw, {
     skipWritableCheck: entry.readOnly === true
   })

@@ -7,17 +7,29 @@ import {
   Button,
   Typography,
   List,
+  ListItem,
   ListItemButton,
   ListItemText,
+  IconButton,
+  Tooltip,
   Divider,
   Alert,
   CircularProgress,
   Box,
-  Chip
+  Chip,
+  TextField,
+  Stack
 } from '@mui/material'
-import { Lock as LockIcon, Tv as TvIcon, Add as AddIcon, Cloud as CloudIcon } from '@mui/icons-material'
+import {
+  Lock as LockIcon,
+  Tv as TvIcon,
+  Add as AddIcon,
+  Cloud as CloudIcon,
+  DeleteOutline as DeleteOutlineIcon,
+  EditOutlined as EditOutlinedIcon
+} from '@mui/icons-material'
 import { db, type Season } from '@/lib/db'
-import { getActiveSeasonId, setActiveSeasonId } from '@/services/seasonService'
+import { deleteSeasonCompletely, getActiveSeasonId, setActiveSeasonId, updateSeasonTitle } from '@/services/seasonService'
 import {
   type SeasonCatalogEntry,
   fetchSeasonCatalog,
@@ -38,6 +50,10 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
   const [localSeasons, setLocalSeasons] = useState<Season[]>([])
   const [activeId, setActiveId] = useState<number | null>(null)
   const [catalog, setCatalog] = useState<SeasonCatalogEntry[]>([])
+  const [newSeasonTitle, setNewSeasonTitle] = useState('')
+  /** Staffel, die gerade umbenannt wird (zweiter Dialog) */
+  const [renameTarget, setRenameTarget] = useState<Season | null>(null)
+  const [renameTitleDraft, setRenameTitleDraft] = useState('')
 
   const refreshLocal = useCallback(async () => {
     const [rows, aid] = await Promise.all([db.seasons.orderBy('id').toArray(), getActiveSeasonId()])
@@ -67,6 +83,10 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
       cancelled = true
     }
   }, [open, refreshLocal])
+
+  useEffect(() => {
+    if (open) setNewSeasonTitle('')
+  }, [open])
 
   const handleActivateLocal = async (seasonId: number) => {
     if (seasonId === activeId) {
@@ -103,11 +123,67 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
     }
   }
 
-  const handleNewSeason = async () => {
+  const handleOpenRename = (s: Season, e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    if (s.readOnly || s.id == null) return
+    setRenameTarget(s)
+    setRenameTitleDraft(s.title)
+  }
+
+  const handleSaveRename = async () => {
+    if (renameTarget?.id == null) return
+    const t = renameTitleDraft.trim()
+    if (!t) {
+      setError('Bitte einen Namen eingeben.')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      await createAndActivateEmptySeason()
+      await updateSeasonTitle(renameTarget.id, t)
+      setRenameTarget(null)
+      await refreshLocal()
+      onApplied()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Umbenennen fehlgeschlagen')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteSeason = async (s: Season, e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    if (s.id == null || localSeasons.length <= 1) return
+    const ok = window.confirm(
+      `Staffel „${s.title}“ samt allen zugehörigen Daten unwiderruflich löschen?\n\nDies betrifft nur dieses Gerät / diesen Browser.`
+    )
+    if (!ok) return
+    setLoading(true)
+    setError(null)
+    try {
+      await deleteSeasonCompletely(s.id)
+      await refreshLocal()
+      setActiveId(await getActiveSeasonId())
+      onApplied()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Löschen fehlgeschlagen')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleNewSeason = async () => {
+    const title = newSeasonTitle.trim()
+    if (!title) {
+      setError('Bitte einen Namen für die neue Staffel eingeben.')
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      await createAndActivateEmptySeason(title)
       await refreshLocal()
       setActiveId(await getActiveSeasonId())
       onApplied()
@@ -120,6 +196,7 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
   }
 
   return (
+    <>
     <Dialog open={open} onClose={loading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Staffel wählen</DialogTitle>
       <DialogContent>
@@ -152,24 +229,69 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
             </Box>
           )}
           {localSeasons.map(s => (
-            <ListItemButton
+            <ListItem
               key={s.id}
-              selected={s.id === activeId}
-              onClick={() => s.id != null && handleActivateLocal(s.id)}
-              disabled={loading}
+              disablePadding
+              secondaryAction={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pr: 0.5 }}>
+                  <Tooltip
+                    title={s.readOnly ? 'Abgeschlossene Staffeln können nicht umbenannt werden' : 'Namen bearbeiten'}
+                  >
+                    <span>
+                      <IconButton
+                        size="small"
+                        aria-label={`Staffel ${s.title} umbenennen`}
+                        disabled={loading || s.readOnly === true}
+                        onClick={e => handleOpenRename(s, e)}
+                      >
+                        <EditOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip
+                    title={
+                      localSeasons.length <= 1
+                        ? 'Mindestens eine Staffel muss erhalten bleiben'
+                        : 'Staffel löschen'
+                    }
+                  >
+                    <span>
+                      <IconButton
+                        size="small"
+                        aria-label={`Staffel ${s.title} löschen`}
+                        disabled={loading || localSeasons.length <= 1}
+                        onClick={e => handleDeleteSeason(s, e)}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  {s.readOnly && (
+                    <Chip
+                      icon={<LockIcon sx={{ fontSize: '1rem !important' }} />}
+                      label="Nur Lesen"
+                      size="small"
+                      sx={{ flexShrink: 0 }}
+                    />
+                  )}
+                  {s.id === activeId && (
+                    <Chip label="Aktiv" color="primary" size="small" sx={{ flexShrink: 0 }} />
+                  )}
+                </Box>
+              }
             >
-              <ListItemText
-                primary={s.title}
-                secondary={s.slug}
-                primaryTypographyProps={{ fontWeight: s.id === activeId ? 600 : 400 }}
-              />
-              {s.readOnly && (
-                <Chip icon={<LockIcon sx={{ fontSize: '1rem !important' }} />} label="Nur Lesen" size="small" sx={{ ml: 1 }} />
-              )}
-              {s.id === activeId && (
-                <Chip label="Aktiv" color="primary" size="small" sx={{ ml: 1 }} />
-              )}
-            </ListItemButton>
+              <ListItemButton
+                selected={s.id === activeId}
+                onClick={() => s.id != null && handleActivateLocal(s.id)}
+                disabled={loading}
+              >
+                <ListItemText
+                  primary={s.title}
+                  secondary={s.slug}
+                  primaryTypographyProps={{ fontWeight: s.id === activeId ? 600 : 400 }}
+                />
+              </ListItemButton>
+            </ListItem>
           ))}
         </List>
 
@@ -177,7 +299,7 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
 
         <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
           <CloudIcon sx={{ fontSize: '1rem', verticalAlign: 'text-bottom', mr: 0.5 }} />
-          Vom Server (seasons.json)
+          auf dem Server gespeichert
         </Typography>
         {catalog.length === 0 && !loading && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -203,16 +325,33 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
           </List>
         )}
 
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={handleNewSeason}
-          disabled={loading}
-          sx={{ mt: 1 }}
-        >
-          Neue leere Staffel anlegen
-        </Button>
+        <Stack spacing={1.5} sx={{ mt: 1 }}>
+          <TextField
+            label="Name der neuen Staffel"
+            value={newSeasonTitle}
+            onChange={e => setNewSeasonTitle(e.target.value)}
+            fullWidth
+            size="small"
+            disabled={loading}
+            placeholder="z. B. AYTO 2027"
+            onKeyDown={e => {
+              if (e.key === 'Enter' && newSeasonTitle.trim() && !loading) {
+                e.preventDefault()
+                void handleNewSeason()
+              }
+            }}
+            autoComplete="off"
+          />
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={handleNewSeason}
+            disabled={loading || !newSeasonTitle.trim()}
+          >
+            Neue leere Staffel anlegen
+          </Button>
+        </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={loading}>
@@ -220,6 +359,41 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
         </Button>
       </DialogActions>
     </Dialog>
+
+    <Dialog
+      open={renameTarget !== null}
+      onClose={() => !loading && setRenameTarget(null)}
+      maxWidth="xs"
+      fullWidth
+    >
+      <DialogTitle>Staffel umbenennen</DialogTitle>
+      <DialogContent>
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Name"
+          fullWidth
+          value={renameTitleDraft}
+          onChange={e => setRenameTitleDraft(e.target.value)}
+          disabled={loading}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && renameTitleDraft.trim() && !loading) {
+              e.preventDefault()
+              void handleSaveRename()
+            }
+          }}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setRenameTarget(null)} disabled={loading}>
+          Abbrechen
+        </Button>
+        <Button onClick={() => void handleSaveRename()} variant="contained" disabled={loading || !renameTitleDraft.trim()}>
+          Speichern
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   )
 }
 

@@ -116,3 +116,47 @@ export async function clearAllDataForSeason(seasonId: number): Promise<void> {
     }
   )
 }
+
+/**
+ * Entfernt eine Staffel inkl. aller zugehörigen Daten. Mindestens eine Staffel bleibt bestehen.
+ * Ist die Staffel aktiv, wird auf eine andere umgeschaltet.
+ */
+/**
+ * Anzeigenamen einer Staffel ändern (technischer Slug bleibt unverändert).
+ */
+export async function updateSeasonTitle(seasonId: number, newTitle: string): Promise<void> {
+  const trimmed = newTitle.trim()
+  if (!trimmed) {
+    throw new Error('Der Name darf nicht leer sein.')
+  }
+  const s = await getSeason(seasonId)
+  if (!s) {
+    throw new Error('Staffel nicht gefunden.')
+  }
+  if (s.readOnly) {
+    throw new Error('Abgeschlossene Staffeln können nicht umbenannt werden.')
+  }
+  await db.seasons.update(seasonId, {
+    title: trimmed,
+    updatedAt: new Date()
+  })
+}
+
+export async function deleteSeasonCompletely(seasonId: number): Promise<void> {
+  const all = await db.seasons.orderBy('id').toArray()
+  if (all.length <= 1) {
+    throw new Error('Mindestens eine Staffel muss erhalten bleiben.')
+  }
+
+  const active = await getActiveSeasonId()
+  if (seasonId === active) {
+    const other = all.find(s => s.id !== undefined && s.id !== seasonId)
+    if (!other?.id) {
+      throw new Error('Keine andere Staffel zum Umschalten.')
+    }
+    await setActiveSeasonId(other.id)
+  }
+
+  await clearAllDataForSeason(seasonId)
+  await db.seasons.delete(seasonId)
+}

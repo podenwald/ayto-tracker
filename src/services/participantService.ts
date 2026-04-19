@@ -8,14 +8,22 @@
 import { db } from '@/lib/db'
 import type { Participant, ParticipantDTO } from '@/types'
 import { withErrorHandling, validateRequired, validateStringLength, validateNumberRange } from '@/utils/errorHandling'
+import { assertSeasonWritable, getActiveSeasonId } from '@/services/seasonService'
 
 export class ParticipantService {
+  private static async sid(): Promise<number> {
+    return getActiveSeasonId()
+  }
+
   /**
-   * Lädt alle Teilnehmer aus der Datenbank
+   * Lädt alle Teilnehmer der aktiven Staffel aus der Datenbank
    */
   static async getAllParticipants(): Promise<Participant[]> {
     return await withErrorHandling(
-      () => db.participants.toArray(),
+      async () => {
+        const seasonId = await this.sid()
+        return db.participants.where('seasonId').equals(seasonId).toArray()
+      },
       'Fehler beim Laden der Teilnehmer'
     )
   }
@@ -24,7 +32,12 @@ export class ParticipantService {
    * Lädt Teilnehmer nach Geschlecht
    */
   static async getParticipantsByGender(gender: 'F' | 'M'): Promise<Participant[]> {
-    return await db.participants.where('gender').equals(gender).toArray()
+    const seasonId = await this.sid()
+    return db.participants
+      .where('seasonId')
+      .equals(seasonId)
+      .filter(p => p.gender === gender)
+      .toArray()
   }
 
   /**
@@ -32,7 +45,14 @@ export class ParticipantService {
    */
   static async getActiveParticipants(): Promise<Participant[]> {
     return await withErrorHandling(
-      () => db.participants.where('active').equals(1).toArray(),
+      async () => {
+        const seasonId = await this.sid()
+        return db.participants
+          .where('seasonId')
+          .equals(seasonId)
+          .filter(p => p.active === true || (p as unknown as { active?: number }).active === 1)
+          .toArray()
+      },
       'Fehler beim Laden der aktiven Teilnehmer'
     )
   }
@@ -53,14 +73,22 @@ export class ParticipantService {
   /**
    * Erstellt einen neuen Teilnehmer
    */
-  static async createParticipant(participant: Omit<Participant, 'id'>): Promise<number> {
-    return await db.participants.add(participant)
+  static async createParticipant(participant: Omit<Participant, 'id' | 'seasonId'>): Promise<number> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    return db.participants.add({ ...participant, seasonId })
   }
 
   /**
    * Aktualisiert einen Teilnehmer
    */
   static async updateParticipant(id: number, updates: Partial<Participant>): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    const existing = await db.participants.get(id)
+    if (!existing || existing.seasonId !== seasonId) {
+      throw new Error('Teilnehmer gehört nicht zur aktiven Staffel.')
+    }
     await db.participants.update(id, updates)
   }
 
@@ -68,6 +96,12 @@ export class ParticipantService {
    * Löscht einen Teilnehmer
    */
   static async deleteParticipant(id: number): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    const existing = await db.participants.get(id)
+    if (!existing || existing.seasonId !== seasonId) {
+      throw new Error('Teilnehmer gehört nicht zur aktiven Staffel.')
+    }
     await db.participants.delete(id)
   }
 
@@ -75,8 +109,12 @@ export class ParticipantService {
    * Konvertiert DTO zu Domain-Objekt
    */
   static fromDTO(dto: ParticipantDTO): Participant {
+    if (dto.seasonId == null) {
+      throw new Error('ParticipantDTO.seasonId ist erforderlich')
+    }
     return {
       ...dto,
+      seasonId: dto.seasonId,
       status: dto.status as Participant['status'],
       // Zusätzliche Validierung/Transformation falls nötig
     }

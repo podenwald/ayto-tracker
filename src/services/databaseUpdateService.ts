@@ -10,6 +10,7 @@
 
 import { DatabaseUtils, db, type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
 import type { DatabaseImport, ParticipantDTO, MatchingNightDTO, MatchboxDTO, PenaltyDTO } from '@/types'
+import { assertSeasonWritable, clearAllDataForSeason, getActiveSeasonId } from '@/services/seasonService'
 
 // Manifest-Interface
 export interface DatabaseManifest {
@@ -215,19 +216,16 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
     
     console.log(`📥 Neue Daten geladen (Version ${manifest.version}, Hash ${manifest.dataHash})`)
     
-    // 2. Atomares Update: Neue Daten zuerst in temporäre Struktur
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
+    await clearAllDataForSeason(seasonId)
+
+    // 2. Atomares Update nur für die aktive Staffel
     await db.transaction('rw', [db.participants, db.matchingNights, db.matchboxes, db.penalties, db.meta], async () => {
-      // Alle bestehenden Daten löschen
-      await Promise.all([
-        db.participants.clear(),
-        db.matchingNights.clear(),
-        db.matchboxes.clear(),
-        db.penalties.clear()
-      ])
-      
       // DTO -> Domain Mapping mit Typ-Konvertierungen
       const mapParticipant = (p: ParticipantDTO): Participant => ({
         id: p.id,
+        seasonId,
         name: p.name,
         knownFrom: p.knownFrom,
         age: p.age,
@@ -245,6 +243,7 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
 
       const mapMatchingNight = (m: MatchingNightDTO): MatchingNight => ({
         id: m.id,
+        seasonId,
         name: m.name,
         date: m.date,
         pairs: m.pairs,
@@ -259,6 +258,7 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
 
       const mapMatchbox = (m: MatchboxDTO): Matchbox => ({
         id: m.id,
+        seasonId,
         woman: m.woman,
         man: m.man,
         matchType: m.matchType,
@@ -272,6 +272,7 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
 
       const mapPenalty = (p: PenaltyDTO): Penalty => ({
         id: p.id,
+        seasonId,
         participantName: p.participantName,
         reason: p.reason,
         amount: p.amount,

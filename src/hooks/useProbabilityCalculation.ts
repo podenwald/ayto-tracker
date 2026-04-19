@@ -255,11 +255,14 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
       
       console.log('📊 Lade Daten aus Datenbank...')
       
-      // Schritt 1: Daten aus Datenbank laden
+      const { getActiveSeasonId } = await import('@/services/seasonService')
+      const seasonId = await getActiveSeasonId()
+
+      // Schritt 1: Daten der aktiven Staffel laden
       const [participants, matchingNights, matchboxes] = await Promise.all([
-        db.participants.toArray(),
-        db.matchingNights.toArray(),
-        db.matchboxes.toArray()
+        db.participants.where('seasonId').equals(seasonId).toArray(),
+        db.matchingNights.where('seasonId').equals(seasonId).toArray(),
+        db.matchboxes.where('seasonId').equals(seasonId).toArray()
       ])
       
       console.log('✅ Daten geladen:', {
@@ -347,6 +350,7 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
       
       // Schritt 5: Ergebnis im Cache speichern
       await DatabaseUtils.saveProbabilityCache({
+        seasonId,
         dataHash,
         result: calculationResult,
         createdAt: new Date(),

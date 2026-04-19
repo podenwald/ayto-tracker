@@ -8,13 +8,19 @@
 import { db } from '@/lib/db'
 import type { MatchingNight, MatchingNightDTO, Pair } from '@/types'
 import { createBroadcastDateTime, sortBroadcastsChronologically, ensureMatchingNightBroadcastData } from '@/utils/broadcastUtils'
+import { assertSeasonWritable, getActiveSeasonId } from '@/services/seasonService'
 
 export class MatchingNightService {
+  private static async sid(): Promise<number> {
+    return getActiveSeasonId()
+  }
+
   /**
-   * Lädt alle Matching Nights aus der Datenbank
+   * Lädt alle Matching Nights der aktiven Staffel aus der Datenbank
    */
   static async getAllMatchingNights(): Promise<MatchingNight[]> {
-    return await db.matchingNights.toArray()
+    const seasonId = await this.sid()
+    return await db.matchingNights.where('seasonId').equals(seasonId).toArray()
   }
 
   /**
@@ -32,7 +38,9 @@ export class MatchingNightService {
   /**
    * Erstellt eine neue Matching Night
    */
-  static async createMatchingNight(matchingNight: Omit<MatchingNight, 'id' | 'createdAt'>): Promise<number> {
+  static async createMatchingNight(matchingNight: Omit<MatchingNight, 'id' | 'createdAt' | 'seasonId'>): Promise<number> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
     const now = new Date()
     
     // Stelle sicher, dass Ausstrahlungsdaten gesetzt sind
@@ -40,6 +48,7 @@ export class MatchingNightService {
     
     const newMatchingNight: Omit<MatchingNight, 'id'> = {
       ...matchingNightWithBroadcastData,
+      seasonId,
       createdAt: now
     }
     
@@ -51,6 +60,12 @@ export class MatchingNightService {
    * Aktualisiert eine Matching Night
    */
   static async updateMatchingNight(id: number, updates: Partial<MatchingNight>): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    const existing = await db.matchingNights.get(id)
+    if (!existing || existing.seasonId !== seasonId) {
+      throw new Error('Matching Night gehört nicht zur aktiven Staffel.')
+    }
     await db.matchingNights.update(id, updates)
   }
 
@@ -58,6 +73,12 @@ export class MatchingNightService {
    * Löscht eine Matching Night
    */
   static async deleteMatchingNight(id: number): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    const existing = await db.matchingNights.get(id)
+    if (!existing || existing.seasonId !== seasonId) {
+      throw new Error('Matching Night gehört nicht zur aktiven Staffel.')
+    }
     await db.matchingNights.delete(id)
   }
 
@@ -118,8 +139,12 @@ export class MatchingNightService {
    * Konvertiert DTO zu Domain-Objekt
    */
   static fromDTO(dto: MatchingNightDTO): MatchingNight {
+    if (dto.seasonId == null) {
+      throw new Error('MatchingNightDTO.seasonId ist erforderlich')
+    }
     return {
       ...dto,
+      seasonId: dto.seasonId,
       createdAt: new Date(dto.createdAt)
     }
   }
@@ -165,4 +190,3 @@ export class MatchingNightService {
     return errors
   }
 }
-

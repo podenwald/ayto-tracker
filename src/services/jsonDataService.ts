@@ -8,6 +8,7 @@
 import { db } from '@/lib/db'
 import type { Participant, MatchingNight, Matchbox, Penalty } from '@/types'
 import { getJsonDataSourcesNewestFirst } from '@/services/databaseUpdateService'
+import { assertSeasonWritable, clearAllDataForSeason, getActiveSeasonId } from '@/services/seasonService'
 
 export interface JsonDataState {
   participants: Participant[]
@@ -92,26 +93,43 @@ export async function loadJsonData(): Promise<JsonDataState> {
 export async function syncJsonToIndexedDB(jsonData: JsonDataState): Promise<void> {
   try {
     console.log('🔄 Synchronisiere JSON-Daten mit IndexedDB...')
-    
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
+    await clearAllDataForSeason(seasonId)
+
     await db.transaction('rw', [db.participants, db.matchingNights, db.matchboxes, db.penalties], async () => {
-      // Alle Tabellen leeren
-      await db.participants.clear()
-      await db.matchingNights.clear()
-      await db.matchboxes.clear()
-      await db.penalties.clear()
-      
-      // Neue Daten einfügen
       if (jsonData.participants.length > 0) {
-        await db.participants.bulkPut(jsonData.participants)
+        await db.participants.bulkPut(
+          jsonData.participants.map(p => ({ ...p, seasonId }))
+        )
       }
       if (jsonData.matchingNights.length > 0) {
-        await db.matchingNights.bulkPut(jsonData.matchingNights)
+        await db.matchingNights.bulkPut(
+          jsonData.matchingNights.map(m => ({
+            ...m,
+            seasonId,
+            createdAt: m.createdAt instanceof Date ? m.createdAt : new Date(m.createdAt as unknown as string)
+          }))
+        )
       }
       if (jsonData.matchboxes.length > 0) {
-        await db.matchboxes.bulkPut(jsonData.matchboxes)
+        await db.matchboxes.bulkPut(
+          jsonData.matchboxes.map(m => ({
+            ...m,
+            seasonId,
+            createdAt: m.createdAt instanceof Date ? m.createdAt : new Date(m.createdAt as unknown as string),
+            updatedAt: m.updatedAt instanceof Date ? m.updatedAt : new Date(m.updatedAt as unknown as string)
+          }))
+        )
       }
       if (jsonData.penalties.length > 0) {
-        await db.penalties.bulkPut(jsonData.penalties)
+        await db.penalties.bulkPut(
+          jsonData.penalties.map(p => ({
+            ...p,
+            seasonId,
+            createdAt: p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt as unknown as string)
+          }))
+        )
       }
     })
     
@@ -136,12 +154,12 @@ export async function loadAndSyncJsonData(): Promise<JsonDataState> {
  */
 export async function updateParticipantInJson(participant: Participant): Promise<JsonDataUpdateResult> {
   try {
-    // KRITISCH: Direkt in IndexedDB speichern, ohne JSON-Dateien vom Server zu laden
-    // Die JSON-Dateien existieren nur im Production-Build, nicht im Dev-Modus
-    await db.participants.put(participant)
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
+    await db.participants.put({ ...participant, seasonId })
     
     console.log(`✅ Teilnehmer ${participant.name} in IndexedDB aktualisiert`)
-    console.log('📊 Aktuelle Teilnehmer-Daten:', await db.participants.toArray())
+    console.log('📊 Aktuelle Teilnehmer-Daten:', await db.participants.where('seasonId').equals(seasonId).toArray())
     
     return {
       success: true,
@@ -161,18 +179,17 @@ export async function updateParticipantInJson(participant: Participant): Promise
  */
 export async function addParticipantToJson(participant: Participant): Promise<JsonDataUpdateResult> {
   try {
-    // KRITISCH: Direkt in IndexedDB speichern, ohne JSON-Dateien vom Server zu laden
-    // Die JSON-Dateien existieren nur im Production-Build, nicht im Dev-Modus
-    
-    // Generiere neue ID basierend auf vorhandenen Teilnehmern in IndexedDB
-    const existingParticipants = await db.participants.toArray()
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
+
+    const existingParticipants = await db.participants.where('seasonId').equals(seasonId).toArray()
     const maxId = Math.max(0, ...existingParticipants.map(p => p.id || 0))
     const newParticipant = {
       ...participant,
+      seasonId,
       id: maxId + 1
     }
     
-    // Füge zur IndexedDB hinzu
     await db.participants.add(newParticipant)
     
     console.log(`✅ Neuer Teilnehmer ${newParticipant.name} zur IndexedDB hinzugefügt`)
@@ -195,11 +212,14 @@ export async function addParticipantToJson(participant: Participant): Promise<Js
  */
 export async function deleteParticipantFromJson(participantId: number): Promise<JsonDataUpdateResult> {
   try {
-    // Lade aktuellen Teilnehmer für Fehlermeldung
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
     const participant = await db.participants.get(participantId)
+    if (participant && participant.seasonId !== seasonId) {
+      return { success: false, message: 'Teilnehmer gehört nicht zur aktiven Staffel.' }
+    }
     const participantName = participant?.name || `ID ${participantId}`
     
-    // Lösche aus IndexedDB
     await db.participants.delete(participantId)
     
     console.log(`✅ Teilnehmer ${participantName} aus JSON-Datenquelle gelöscht`)
@@ -241,11 +261,12 @@ export async function loadAllJsonData(): Promise<{
     
     // Fallback: Lade aus IndexedDB
     console.log('🔄 Fallback: Lade Daten aus IndexedDB...')
+    const seasonId = await getActiveSeasonId()
     const [participants, matchboxes, matchingNights, penalties] = await Promise.all([
-      db.participants.toArray(),
-      db.matchboxes.toArray(),
-      db.matchingNights.toArray(),
-      db.penalties.toArray()
+      db.participants.where('seasonId').equals(seasonId).toArray(),
+      db.matchboxes.where('seasonId').equals(seasonId).toArray(),
+      db.matchingNights.where('seasonId').equals(seasonId).toArray(),
+      db.penalties.where('seasonId').equals(seasonId).toArray()
     ])
     
     return { participants, matchboxes, matchingNights, penalties }
@@ -257,11 +278,12 @@ export async function loadAllJsonData(): Promise<{
  */
 export async function updateMatchboxInJson(matchbox: Matchbox): Promise<JsonDataUpdateResult> {
   try {
-    // Aktualisiere in IndexedDB
-    await db.matchboxes.put(matchbox)
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
+    await db.matchboxes.put({ ...matchbox, seasonId })
     
     console.log(`✅ Matchbox ${matchbox.woman} + ${matchbox.man} in JSON-Datenquelle aktualisiert`)
-    console.log('📊 Aktuelle Matchbox-Daten:', await db.matchboxes.toArray())
+    console.log('📊 Aktuelle Matchbox-Daten:', await db.matchboxes.where('seasonId').equals(seasonId).toArray())
     
     return {
       success: true,
@@ -281,11 +303,14 @@ export async function updateMatchboxInJson(matchbox: Matchbox): Promise<JsonData
  */
 export async function deleteMatchboxFromJson(matchboxId: number): Promise<JsonDataUpdateResult> {
   try {
-    // Lade aktuelle Matchbox für Fehlermeldung
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
     const matchbox = await db.matchboxes.get(matchboxId)
+    if (matchbox && matchbox.seasonId !== seasonId) {
+      return { success: false, message: 'Matchbox gehört nicht zur aktiven Staffel.' }
+    }
     const matchboxName = matchbox ? `${matchbox.woman} + ${matchbox.man}` : `ID ${matchboxId}`
     
-    // Lösche aus IndexedDB
     await db.matchboxes.delete(matchboxId)
     
     console.log(`✅ Matchbox ${matchboxName} aus JSON-Datenquelle gelöscht`)
@@ -308,8 +333,9 @@ export async function deleteMatchboxFromJson(matchboxId: number): Promise<JsonDa
  */
 export async function updateMatchingNightInJson(matchingNight: MatchingNight): Promise<JsonDataUpdateResult> {
   try {
-    // Aktualisiere in IndexedDB
-    await db.matchingNights.put(matchingNight)
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
+    await db.matchingNights.put({ ...matchingNight, seasonId })
     
     console.log(`✅ Matching Night ${matchingNight.name} in JSON-Datenquelle aktualisiert`)
     
@@ -331,11 +357,14 @@ export async function updateMatchingNightInJson(matchingNight: MatchingNight): P
  */
 export async function deleteMatchingNightFromJson(matchingNightId: number): Promise<JsonDataUpdateResult> {
   try {
-    // Lade aktuelle Matching Night für Fehlermeldung
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
     const matchingNight = await db.matchingNights.get(matchingNightId)
+    if (matchingNight && matchingNight.seasonId !== seasonId) {
+      return { success: false, message: 'Matching Night gehört nicht zur aktiven Staffel.' }
+    }
     const matchingNightName = matchingNight?.name || `ID ${matchingNightId}`
     
-    // Lösche aus IndexedDB
     await db.matchingNights.delete(matchingNightId)
     
     console.log(`✅ Matching Night ${matchingNightName} aus JSON-Datenquelle gelöscht`)
@@ -358,11 +387,12 @@ export async function deleteMatchingNightFromJson(matchingNightId: number): Prom
  */
 export async function updatePenaltyInJson(penalty: Penalty): Promise<JsonDataUpdateResult> {
   try {
-    // Aktualisiere in IndexedDB
-    await db.penalties.put(penalty)
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
+    await db.penalties.put({ ...penalty, seasonId })
     
     console.log(`✅ Strafe für ${penalty.participantName} in JSON-Datenquelle aktualisiert`)
-    console.log('📊 Aktuelle Penalty-Daten:', await db.penalties.toArray())
+    console.log('📊 Aktuelle Penalty-Daten:', await db.penalties.where('seasonId').equals(seasonId).toArray())
     
     return {
       success: true,
@@ -380,10 +410,11 @@ export async function updatePenaltyInJson(penalty: Penalty): Promise<JsonDataUpd
 /**
  * Fügt eine neue Strafe zur JSON-Datenquelle hinzu
  */
-export async function addPenaltyToJson(penalty: Penalty): Promise<JsonDataUpdateResult> {
+export async function addPenaltyToJson(penalty: Omit<Penalty, 'seasonId' | 'id'>): Promise<JsonDataUpdateResult> {
   try {
-    // Füge zur IndexedDB hinzu
-    await db.penalties.add(penalty)
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
+    await db.penalties.add({ ...penalty, seasonId })
     
     console.log(`✅ Neue Strafe für ${penalty.participantName} zur JSON-Datenquelle hinzugefügt`)
     
@@ -405,11 +436,14 @@ export async function addPenaltyToJson(penalty: Penalty): Promise<JsonDataUpdate
  */
 export async function deletePenaltyFromJson(penaltyId: number): Promise<JsonDataUpdateResult> {
   try {
-    // Lade aktuelle Strafe für Fehlermeldung
+    const seasonId = await getActiveSeasonId()
+    await assertSeasonWritable(seasonId)
     const penalty = await db.penalties.get(penaltyId)
+    if (penalty && penalty.seasonId !== seasonId) {
+      return { success: false, message: 'Strafe gehört nicht zur aktiven Staffel.' }
+    }
     const penaltyName = penalty ? `${penalty.participantName} - ${penalty.reason}` : `ID ${penaltyId}`
     
-    // Lösche aus IndexedDB
     await db.penalties.delete(penaltyId)
     
     console.log(`✅ Strafe ${penaltyName} aus JSON-Datenquelle gelöscht`)
@@ -435,11 +469,12 @@ export async function debugJsonData() {
   try {
     console.log('🔍 === JSON-DATEN DEBUG ===')
     
+    const seasonId = await getActiveSeasonId()
     const [participants, matchboxes, matchingNights, penalties] = await Promise.all([
-      db.participants.toArray(),
-      db.matchboxes.toArray(),
-      db.matchingNights.toArray(),
-      db.penalties.toArray()
+      db.participants.where('seasonId').equals(seasonId).toArray(),
+      db.matchboxes.where('seasonId').equals(seasonId).toArray(),
+      db.matchingNights.where('seasonId').equals(seasonId).toArray(),
+      db.penalties.where('seasonId').equals(seasonId).toArray()
     ])
     
     console.log('👥 Teilnehmer:', participants.length, participants)

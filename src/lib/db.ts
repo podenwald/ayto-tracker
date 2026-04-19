@@ -6,7 +6,8 @@ import type {
   Penalty,
   ProbabilityCache,
   BroadcastNote,
-  DatabaseCounts 
+  DatabaseCounts,
+  Season
 } from '@/types'
 
 // Meta Store Interface für Datenbank-Versionierung
@@ -24,10 +25,13 @@ export type {
   Penalty,
   ProbabilityCache,
   DatabaseCounts,
-  BroadcastNote
+  BroadcastNote,
+  Season,
+  SeasonKind
 } from '@/types'
 
 export class AytoDB extends Dexie {
+  seasons!: Table<Season, number>
   participants!: Table<Participant, number>
   matchingNights!: Table<MatchingNight, number>
   matchboxes!: Table<Matchbox, number>
@@ -150,6 +154,53 @@ export class AytoDB extends Dexie {
       broadcastNotes: '++id, date, notes, createdAt, updatedAt',
       meta: 'key, value, updatedAt'
     })
+
+    // Version 15: Staffeln (seasons) + seasonId auf allen Entitätstabellen
+    this.version(15).stores({
+      seasons: '++id, slug, kind, readOnly, createdAt, updatedAt',
+      participants: '++id, seasonId, name, gender, status, active, socialMediaAccount, freeProfilePhotoUrl',
+      matchingNights: '++id, seasonId, name, date, pairs, totalLights, createdAt, ausstrahlungsdatum, ausstrahlungszeit',
+      matchboxes: '++id, seasonId, woman, man, matchType, price, buyer, createdAt, updatedAt, ausstrahlungsdatum, ausstrahlungszeit',
+      penalties: '++id, seasonId, participantName, reason, amount, date, createdAt',
+      probabilityCache: '++id, seasonId, dataHash, createdAt, updatedAt',
+      broadcastNotes: '++id, seasonId, date, notes, createdAt, updatedAt',
+      meta: 'key, value, updatedAt'
+    }).upgrade(async tx => {
+      const now = new Date()
+      const sid = (await tx.table('seasons').add({
+        slug: 'legacy',
+        title: 'Meine Staffel',
+        kind: 'custom',
+        readOnly: false,
+        createdAt: now,
+        updatedAt: now
+      })) as number
+
+      await tx.table('meta').put({
+        key: 'activeSeasonId',
+        value: sid,
+        updatedAt: now
+      })
+
+      await tx.table('participants').toCollection().modify((p: { seasonId?: number }) => {
+        p.seasonId = sid
+      })
+      await tx.table('matchingNights').toCollection().modify((m: { seasonId?: number }) => {
+        m.seasonId = sid
+      })
+      await tx.table('matchboxes').toCollection().modify((m: { seasonId?: number }) => {
+        m.seasonId = sid
+      })
+      await tx.table('penalties').toCollection().modify((p: { seasonId?: number }) => {
+        p.seasonId = sid
+      })
+      await tx.table('probabilityCache').toCollection().modify((c: { seasonId?: number }) => {
+        c.seasonId = sid
+      })
+      await tx.table('broadcastNotes').toCollection().modify((n: { seasonId?: number }) => {
+        n.seasonId = sid
+      })
+    })
   }
 }
 
@@ -159,17 +210,23 @@ export const db = new AytoDB()
  * Utility-Funktionen für die Datenbank
  */
 export class DatabaseUtils {
+  private static async activeSeasonId(): Promise<number> {
+    const { getActiveSeasonId } = await import('@/services/seasonService')
+    return getActiveSeasonId()
+  }
+
   /**
-   * Zählt alle Einträge in der Datenbank
+   * Zählt alle Einträge der aktiven Staffel
    */
   static async getCounts(): Promise<DatabaseCounts> {
+    const sid = await this.activeSeasonId()
     const [participants, matchingNights, matchboxes, penalties] = await Promise.all([
-      db.participants.count(),
-      db.matchingNights.count(),
-      db.matchboxes.count(),
-      db.penalties.count()
+      db.participants.where('seasonId').equals(sid).count(),
+      db.matchingNights.where('seasonId').equals(sid).count(),
+      db.matchboxes.where('seasonId').equals(sid).count(),
+      db.penalties.where('seasonId').equals(sid).count()
     ])
-    
+
     return {
       participants,
       matchingNights,
@@ -179,59 +236,73 @@ export class DatabaseUtils {
   }
 
   /**
-   * Holt den aktuellen Wahrscheinlichkeits-Cache basierend auf dem Data-Hash
+   * Holt den Wahrscheinlichkeits-Cache für die aktive Staffel und den Data-Hash
    */
   static async getProbabilityCache(dataHash: string): Promise<ProbabilityCache | undefined> {
-    return await db.probabilityCache.where('dataHash').equals(dataHash).first()
+    const sid = await this.activeSeasonId()
+    return await db.probabilityCache
+      .where('seasonId')
+      .equals(sid)
+      .filter(c => c.dataHash === dataHash)
+      .first()
   }
 
   /**
-   * Speichert oder aktualisiert den Wahrscheinlichkeits-Cache
+   * Speichert oder aktualisiert den Wahrscheinlichkeits-Cache (pro Staffel)
    */
   static async saveProbabilityCache(cache: ProbabilityCache): Promise<number> {
-    const existing = await this.getProbabilityCache(cache.dataHash)
-    
+    const sid = cache.seasonId
+    const existing = await db.probabilityCache
+      .where('seasonId')
+      .equals(sid)
+      .filter(c => c.dataHash === cache.dataHash)
+      .first()
+
     if (existing && existing.id) {
-      // Update existing cache
       cache.id = existing.id
       cache.updatedAt = new Date()
       await db.probabilityCache.put(cache)
       return existing.id
-    } else {
-      // Create new cache
-      cache.createdAt = new Date()
-      cache.updatedAt = new Date()
-      return await db.probabilityCache.add(cache)
     }
+    cache.createdAt = new Date()
+    cache.updatedAt = new Date()
+    return await db.probabilityCache.add(cache)
   }
 
   /**
-   * Löscht alle Wahrscheinlichkeits-Cache-Einträge
+   * Löscht alle Cache-Einträge der aktiven Staffel
    */
   static async clearProbabilityCache(): Promise<void> {
-    await db.probabilityCache.clear()
+    const sid = await this.activeSeasonId()
+    await db.probabilityCache.where('seasonId').equals(sid).delete()
   }
 
   /**
-   * Broadcast Notes Funktionen
+   * Broadcast Notes Funktionen (aktive Staffel)
    */
   static async getBroadcastNoteByDate(date: string): Promise<BroadcastNote | undefined> {
-    return await db.broadcastNotes.where('date').equals(date).first()
+    const sid = await this.activeSeasonId()
+    return await db.broadcastNotes
+      .where('seasonId')
+      .equals(sid)
+      .filter(n => n.date === date)
+      .first()
   }
 
   static async saveBroadcastNote(note: BroadcastNote): Promise<number> {
-    const existing = await this.getBroadcastNoteByDate(note.date)
-    
+    const sid = await this.activeSeasonId()
+    const merged: BroadcastNote = { ...note, seasonId: note.seasonId ?? sid }
+    const existing = await this.getBroadcastNoteByDate(merged.date)
+
     if (existing && existing.id) {
-      note.id = existing.id
-      note.updatedAt = new Date()
-      await db.broadcastNotes.put(note)
+      merged.id = existing.id
+      merged.updatedAt = new Date()
+      await db.broadcastNotes.put(merged)
       return existing.id
-    } else {
-      note.createdAt = new Date()
-      note.updatedAt = new Date()
-      return await db.broadcastNotes.add(note)
     }
+    merged.createdAt = new Date()
+    merged.updatedAt = new Date()
+    return await db.broadcastNotes.add(merged)
   }
 
   static async deleteBroadcastNote(id: number): Promise<void> {
@@ -239,11 +310,12 @@ export class DatabaseUtils {
   }
 
   static async getAllBroadcastNotes(): Promise<BroadcastNote[]> {
-    return await db.broadcastNotes.toArray()
+    const sid = await this.activeSeasonId()
+    return await db.broadcastNotes.where('seasonId').equals(sid).toArray()
   }
 
   /**
-   * Prüft, ob die Datenbank leer ist
+   * Prüft, ob die aktive Staffel keine Teilnehmer-/Spieldaten hat
    */
   static async isEmpty(): Promise<boolean> {
     const counts = await this.getCounts()
@@ -251,23 +323,16 @@ export class DatabaseUtils {
   }
 
   /**
-   * Leert alle Tabellen atomar
+   * Leert alle Entitätsdaten der aktiven Staffel (nicht die Staffel-Zeile selbst)
    */
   static async clearAll(): Promise<void> {
-    // Dexie erlaubt maximal 6 Tabellen in einer Transaktion
-    // Daher führen wir die Löschungen sequentiell aus
-    await Promise.all([
-      db.participants.clear(),
-      db.matchingNights.clear(),
-      db.matchboxes.clear(),
-      db.penalties.clear(),
-      db.probabilityCache.clear(),
-      db.broadcastNotes.clear()
-    ])
+    const { clearAllDataForSeason, getActiveSeasonId } = await import('@/services/seasonService')
+    const sid = await getActiveSeasonId()
+    await clearAllDataForSeason(sid)
   }
 
   /**
-   * Importiert Daten atomar in die Datenbank
+   * Importiert Daten in die aktive Staffel (seasonId wird gesetzt)
    */
   static async importData(data: {
     participants: Participant[]
@@ -277,30 +342,30 @@ export class DatabaseUtils {
     probabilityCache?: ProbabilityCache[]
     broadcastNotes?: BroadcastNote[]
   }): Promise<void> {
-    // Dexie erlaubt maximal 6 Tabellen in einer Transaktion
-    // Daher importieren wir in zwei separaten Transaktionen
+    const sid = await this.activeSeasonId()
+    const withSid = <T extends { seasonId: number }>(rows: T[]): T[] =>
+      rows.map(row => ({ ...row, seasonId: sid }))
+
     await db.transaction('rw', db.participants, db.matchingNights, db.matchboxes, db.penalties, async () => {
       await Promise.all([
-        db.participants.bulkPut(data.participants),
-        db.matchingNights.bulkPut(data.matchingNights),
-        db.matchboxes.bulkPut(data.matchboxes),
-        db.penalties.bulkPut(data.penalties)
+        db.participants.bulkPut(withSid(data.participants)),
+        db.matchingNights.bulkPut(withSid(data.matchingNights)),
+        db.matchboxes.bulkPut(withSid(data.matchboxes)),
+        db.penalties.bulkPut(withSid(data.penalties))
       ])
     })
-    
-    // Probability Cache separat importieren
+
     if (data.probabilityCache && data.probabilityCache.length > 0) {
-      await db.probabilityCache.bulkPut(data.probabilityCache)
+      await db.probabilityCache.bulkPut(withSid(data.probabilityCache))
     }
-    
-    // Broadcast Notes separat importieren
+
     if (data.broadcastNotes && data.broadcastNotes.length > 0) {
-      await db.broadcastNotes.bulkPut(data.broadcastNotes)
+      await db.broadcastNotes.bulkPut(withSid(data.broadcastNotes))
     }
   }
 
   /**
-   * Exportiert alle Daten aus der Datenbank
+   * Exportiert alle Daten der aktiven Staffel
    */
   static async exportData(): Promise<{
     participants: Participant[]
@@ -310,13 +375,14 @@ export class DatabaseUtils {
     probabilityCache: ProbabilityCache[]
     broadcastNotes: BroadcastNote[]
   }> {
+    const sid = await this.activeSeasonId()
     const [participants, matchingNights, matchboxes, penalties, probabilityCache, broadcastNotes] = await Promise.all([
-      db.participants.toArray(),
-      db.matchingNights.toArray(),
-      db.matchboxes.toArray(),
-      db.penalties.toArray(),
-      db.probabilityCache.toArray(),
-      db.broadcastNotes.toArray()
+      db.participants.where('seasonId').equals(sid).toArray(),
+      db.matchingNights.where('seasonId').equals(sid).toArray(),
+      db.matchboxes.where('seasonId').equals(sid).toArray(),
+      db.penalties.where('seasonId').equals(sid).toArray(),
+      db.probabilityCache.where('seasonId').equals(sid).toArray(),
+      db.broadcastNotes.where('seasonId').equals(sid).toArray()
     ])
 
     return {

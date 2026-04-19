@@ -49,6 +49,7 @@ import {
 } from '@mui/icons-material'
 import ThemeProvider from '@/theme/ThemeProvider'
 import { db, type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
+import { getActiveSeasonId } from '@/services/seasonService'
 import { 
   isPairConfirmedAsPerfectMatch,
   getMatchboxBroadcastDateTime
@@ -58,7 +59,9 @@ import { MatchboxService } from '@/services/matchboxService'
 import { MatchingNightService } from '@/services/matchingNightService'
 import ParticipantsView from '@/components/ParticipantsView'
 import SeasonFinaleDialog from '@/components/SeasonFinaleDialog'
+import SeasonPickerDialog from '@/components/SeasonPickerDialog'
 import { computeSeasonFinale, type SeasonFinaleResult } from '@/utils/seasonFinale'
+import { getActiveSeasonSummary } from '@/services/seasonCatalogService'
 
 // ** Tab Panel Component
 interface TabPanelProps {
@@ -518,6 +521,9 @@ const OverviewMUI: React.FC = () => {
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false)
   const [herleitungExpanded, setHerleitungExpanded] = useState(false)
   const [expandedMatchingNights, setExpandedMatchingNights] = useState<Set<number>>(new Set())
+  const [seasonPickerOpen, setSeasonPickerOpen] = useState(false)
+  const [activeSeasonLabel, setActiveSeasonLabel] = useState<string | undefined>()
+  const [activeSeasonReadOnly, setActiveSeasonReadOnly] = useState(false)
   
   // Wahrscheinlichkeits-Berechnung Hook
   const { result: probabilityResult, status: probabilityStatus, triggerCalculation, clearCache: clearProbabilityCache } = useProbabilityCalculation()
@@ -581,12 +587,12 @@ const OverviewMUI: React.FC = () => {
 
   const loadAllData = async () => {
     try {
-      // Lade Daten direkt aus IndexedDB
+      const sid = await getActiveSeasonId()
       const [participantsData, matchingNightsData, matchboxesData, penaltiesData] = await Promise.all([
-        db.participants.toArray(),
-        db.matchingNights.toArray(),
-        db.matchboxes.toArray(),
-        db.penalties.toArray()
+        db.participants.where('seasonId').equals(sid).toArray(),
+        db.matchingNights.where('seasonId').equals(sid).toArray(),
+        db.matchboxes.where('seasonId').equals(sid).toArray(),
+        db.penalties.where('seasonId').equals(sid).toArray()
       ])
       
       setParticipants(participantsData)
@@ -594,6 +600,10 @@ const OverviewMUI: React.FC = () => {
       setMatchboxes(matchboxesData)
       setPenalties(penaltiesData)
       
+      const summary = await getActiveSeasonSummary()
+      setActiveSeasonLabel(summary?.title)
+      setActiveSeasonReadOnly(summary?.readOnly ?? false)
+
       console.log('✅ Frontend: Daten direkt aus IndexedDB geladen')
     } catch (error) {
       console.error('❌ Fehler beim Laden der Frontend-Daten aus IndexedDB:', error)
@@ -960,10 +970,11 @@ const OverviewMUI: React.FC = () => {
         ...(isSold ? { matchType: 'sold' as const, price: matchingNightForm.price, buyer: matchingNightForm.buyer } : {})
       })
 
+      const sid = await getActiveSeasonId()
       const [nightsAfter, boxesAfter, participantsAfter] = await Promise.all([
-        db.matchingNights.toArray(),
-        db.matchboxes.toArray(),
-        db.participants.toArray()
+        db.matchingNights.where('seasonId').equals(sid).toArray(),
+        db.matchboxes.where('seasonId').equals(sid).toArray(),
+        db.participants.where('seasonId').equals(sid).toArray()
       ])
       if (nightsAfter.length === 10) {
         const tenthNight = nightsAfter.find(n => n.id === newMatchingNightId)
@@ -1177,10 +1188,11 @@ const OverviewMUI: React.FC = () => {
 
   const handleOpenSeasonFinale = useCallback(async () => {
     try {
+      const sid = await getActiveSeasonId()
       const [nightsArr, boxesArr, participantsArr] = await Promise.all([
-        db.matchingNights.toArray(),
-        db.matchboxes.toArray(),
-        db.participants.toArray()
+        db.matchingNights.where('seasonId').equals(sid).toArray(),
+        db.matchboxes.where('seasonId').equals(sid).toArray(),
+        db.participants.where('seasonId').equals(sid).toArray()
       ])
       if (nightsArr.length < 10) {
         setSnackbar({
@@ -1220,6 +1232,8 @@ const OverviewMUI: React.FC = () => {
       onCreateMatchbox={handleCreateMatchbox}
       onCreateMatchingNight={handleCreateMatchingNight}
       onOpenSeasonFinale={handleOpenSeasonFinale}
+      onOpenSeasonPicker={() => setSeasonPickerOpen(true)}
+      activeSeasonTitle={activeSeasonLabel}
       matchingNightsCount={statistics.matchingNightsCount}
       currentLights={statistics.currentLights}
       perfectMatchesCount={statistics.perfectMatchesCount}
@@ -1229,6 +1243,12 @@ const OverviewMUI: React.FC = () => {
 
         {/* Main Content */}
         <Box sx={{ maxWidth: isMobile ? '100%' : '1200px', mx: isMobile ? 0 : 'auto', p: isMobile ? 2 : 3 }}>
+          {activeSeasonReadOnly && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Diese Staffel ist <strong>abgeschlossen</strong> – Anzeige nur zur Ansicht. Zum Mitspielen eine andere
+              Staffel unter „Staffel wählen“ aktivieren.
+            </Alert>
+          )}
           <Card sx={{ mb: 4 }}>
           {/* Overview Tab */}
           <TabPanel value={activeTab} index={0}>
@@ -2912,6 +2932,17 @@ const OverviewMUI: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <SeasonPickerDialog
+        open={seasonPickerOpen}
+        onClose={() => setSeasonPickerOpen(false)}
+        onApplied={() => {
+          void (async () => {
+            await clearProbabilityCache()
+            await loadAllData()
+          })()
+        }}
+      />
 
       <SeasonFinaleDialog
         open={seasonFinaleOpen}

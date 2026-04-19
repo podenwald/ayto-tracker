@@ -69,7 +69,8 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import { VERSION_INFO } from '@/utils/version'
 import BroadcastManagement from './BroadcastManagement'
 import JsonImportManagement from './JsonImportManagement'
-import { db, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
+import { db, DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
+import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
 import { updateParticipantInJson, addParticipantToJson, deleteParticipantFromJson, updateMatchboxInJson, deleteMatchboxFromJson, updateMatchingNightInJson, deleteMatchingNightFromJson, updatePenaltyInJson, addPenaltyToJson, deletePenaltyFromJson } from '@/services/jsonDataService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
 import { MatchboxService } from '@/services/matchboxService'
@@ -93,6 +94,7 @@ const ParticipantForm: React.FC<{
   onCancel?: () => void
 }> = ({ initial, onSaved, onCancel }) => {
   const [form, setForm] = useState<Participant>(initial ?? {
+    seasonId: 0,
     name: '', knownFrom: '', age: undefined, status: 'Aktiv', photoUrl: '', source: '', bio: '', gender: 'F', socialMediaAccount: ''
   })
 
@@ -116,24 +118,21 @@ const ParticipantForm: React.FC<{
          return
        }
 
-      // Wenn der Name geändert wurde, referenzierte Einträge mitziehen
+      // Wenn der Name geändert wurde, referenzierte Einträge mitziehen (nur aktive Staffel)
       if (oldName && oldName !== newName) {
-        // Matchboxes: woman/man Felder aktualisieren
-        await db.matchboxes.where('woman').equals(oldName).modify({ woman: newName })
-        await db.matchboxes.where('man').equals(oldName).modify({ man: newName })
+        const seasonId = await getActiveSeasonId()
+        await db.matchboxes.where('seasonId').equals(seasonId).modify((mb: any) => {
+          if (mb.woman === oldName) mb.woman = newName
+          if (mb.man === oldName) mb.man = newName
+        })
 
-        // Matching Nights: Paare innerhalb der Arrays aktualisieren
-        await db.matchingNights.toCollection().modify((mn: any) => {
+        await db.matchingNights.where('seasonId').equals(seasonId).modify((mn: any) => {
           if (!Array.isArray(mn.pairs)) return
-          let changed = false
           mn.pairs = mn.pairs.map((p: any) => {
-            if (p?.woman === oldName) { changed = true; return { ...p, woman: newName } }
-            if (p?.man === oldName) { changed = true; return { ...p, man: newName } }
+            if (p?.woman === oldName) return { ...p, woman: newName }
+            if (p?.man === oldName) return { ...p, man: newName }
             return p
           })
-          if (changed) {
-            // no-op; Dexie persist happens via modify
-          }
         })
       }
       onSaved()
@@ -742,7 +741,7 @@ const MatchboxManagement: React.FC<{
   onUpdate: () => void
 }> = ({ participants, matchboxes, onUpdate }) => {
   const [editingMatchbox, setEditingMatchbox] = useState<Matchbox | undefined>(undefined)
-  const [matchboxForm, setMatchboxForm] = useState<Omit<Matchbox, 'id' | 'createdAt' | 'updatedAt'>>({
+  const [matchboxForm, setMatchboxForm] = useState<Omit<Matchbox, 'id' | 'createdAt' | 'updatedAt' | 'seasonId'>>({
     woman: '',
     man: '',
     matchType: 'no-match',
@@ -838,8 +837,10 @@ const MatchboxManagement: React.FC<{
          }
         // Wenn Perfect Match, setze beide Kandidat*innen auf inaktiv
         if (matchboxForm.matchType === 'perfect') {
-          await db.participants.where('name').equals(matchboxForm.woman).modify({ active: false })
-          await db.participants.where('name').equals(matchboxForm.man).modify({ active: false })
+          const seasonId = await getActiveSeasonId()
+          await db.participants.where('seasonId').equals(seasonId).modify((p: any) => {
+            if (p.name === matchboxForm.woman || p.name === matchboxForm.man) p.active = false
+          })
         }
         setSnackbar({ open: true, message: 'Matchbox wurde erfolgreich aktualisiert!', severity: 'success' })
       } else {
@@ -849,8 +850,10 @@ const MatchboxManagement: React.FC<{
         })
         // Wenn Perfect Match, setze beide Kandidat*innen auf inaktiv
         if (matchboxForm.matchType === 'perfect') {
-          await db.participants.where('name').equals(matchboxForm.woman).modify({ active: false })
-          await db.participants.where('name').equals(matchboxForm.man).modify({ active: false })
+          const seasonId = await getActiveSeasonId()
+          await db.participants.where('seasonId').equals(seasonId).modify((p: any) => {
+            if (p.name === matchboxForm.woman || p.name === matchboxForm.man) p.active = false
+          })
         }
         setSnackbar({ open: true, message: 'Matchbox wurde erfolgreich erstellt!', severity: 'success' })
       }
@@ -1213,8 +1216,9 @@ const MatchingNightManagement: React.FC<{
   }
   
   // Für die Lichter-Berechnung: Verwende die aktuell bearbeitete Matching Night
-  const currentMatchingNight = editingMatchingNight || {
+  const currentMatchingNight: MatchingNight = editingMatchingNight || {
     id: 0,
+    seasonId: 0,
     name: 'temp',
     date: new Date().toISOString().split('T')[0],
     pairs: [],
@@ -1340,8 +1344,9 @@ const MatchingNightManagement: React.FC<{
 
       if (!isSold) {
         // Validierung: Gesamtlichter dürfen nicht weniger als Perfect Match Lichter sein
-        const tempMatchingNight = {
+        const tempMatchingNight: MatchingNight = {
           id: 0,
+          seasonId: 0,
           name: 'temp',
           date: new Date().toISOString().split('T')[0],
           pairs: [],
@@ -2016,7 +2021,8 @@ const SettingsManagement: React.FC<{
   // ** Export Functions **
   const exportParticipants = async () => {
     try {
-      const data = await db.participants.toArray()
+      const sid = await getActiveSeasonId()
+      const data = await db.participants.where('seasonId').equals(sid).toArray()
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -2033,7 +2039,8 @@ const SettingsManagement: React.FC<{
 
   const exportMatchingNights = async () => {
     try {
-      const data = await db.matchingNights.toArray()
+      const sid = await getActiveSeasonId()
+      const data = await db.matchingNights.where('seasonId').equals(sid).toArray()
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -2050,7 +2057,8 @@ const SettingsManagement: React.FC<{
 
   const exportMatchboxes = async () => {
     try {
-      const data = await db.matchboxes.toArray()
+      const sid = await getActiveSeasonId()
+      const data = await db.matchboxes.where('seasonId').equals(sid).toArray()
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -2067,7 +2075,8 @@ const SettingsManagement: React.FC<{
 
   const exportPenalties = async () => {
     try {
-      const data = await db.penalties.toArray()
+      const sid = await getActiveSeasonId()
+      const data = await db.penalties.where('seasonId').equals(sid).toArray()
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -2084,13 +2093,14 @@ const SettingsManagement: React.FC<{
 
   const exportAllData = async () => {
     try {
+      const sid = await getActiveSeasonId()
       const [participantsData, matchingNightsData, matchboxesData, penaltiesData, probabilityCacheData, broadcastNotesData] = await Promise.all([
-        db.participants.toArray(),
-        db.matchingNights.toArray(),
-        db.matchboxes.toArray(),
-        db.penalties.toArray(),
-        db.probabilityCache.toArray(),
-        db.broadcastNotes.toArray()
+        db.participants.where('seasonId').equals(sid).toArray(),
+        db.matchingNights.where('seasonId').equals(sid).toArray(),
+        db.matchboxes.where('seasonId').equals(sid).toArray(),
+        db.penalties.where('seasonId').equals(sid).toArray(),
+        db.probabilityCache.where('seasonId').equals(sid).toArray(),
+        db.broadcastNotes.where('seasonId').equals(sid).toArray()
       ])
       
       // Matchbox-Daten für Export verwenden (keine Transformation mehr nötig)
@@ -2138,22 +2148,27 @@ const SettingsManagement: React.FC<{
     try {
       setIsLoading(true)
       
-      // Alle aktuellen Daten laden
+      const sid = await getActiveSeasonId()
       const [participantsData, rawMatchingNights, rawMatchboxes, penaltiesData, probabilityCacheData, broadcastNotesData] = await Promise.all([
-        db.participants.toArray(),
-        db.matchingNights.toArray(),
-        db.matchboxes.toArray(),
-        db.penalties.toArray(),
-        db.probabilityCache.toArray(),
-        db.broadcastNotes.toArray()
+        db.participants.where('seasonId').equals(sid).toArray(),
+        db.matchingNights.where('seasonId').equals(sid).toArray(),
+        db.matchboxes.where('seasonId').equals(sid).toArray(),
+        db.penalties.where('seasonId').equals(sid).toArray(),
+        db.probabilityCache.where('seasonId').equals(sid).toArray(),
+        db.broadcastNotes.where('seasonId').equals(sid).toArray()
       ])
 
-      // Export-Normalisierung: Nur Ausstrahlungsfelder übernehmen; keine legacy date/createdAt
+      // Export-Normalisierung: DTO-kompatibel inkl. verkaufte MN (matchType, price, buyer, date, createdAt)
       const matchingNightsData = rawMatchingNights.map(m => ({
         id: m.id,
         name: m.name,
+        date: m.date,
         pairs: m.pairs,
         totalLights: m.totalLights,
+        matchType: m.matchType,
+        price: m.price,
+        buyer: m.buyer,
+        createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : String(m.createdAt),
         ausstrahlungsdatum: m.ausstrahlungsdatum,
         ausstrahlungszeit: m.ausstrahlungszeit
       }))
@@ -2171,8 +2186,10 @@ const SettingsManagement: React.FC<{
         updatedAt: m.updatedAt
       }))
 
-      // Validierung: Ausstrahlungsdaten müssen vollständig sein
-      const invalidMN = matchingNightsData.filter(m => !m.ausstrahlungsdatum || !m.ausstrahlungszeit)
+      // Validierung: Ausstrahlungsdaten vollständig (verkaufte MN optional – oft nur im Ausstrahlungsplan gepflegt)
+      const invalidMN = matchingNightsData.filter(
+        m => m.matchType !== 'sold' && (!m.ausstrahlungsdatum || !m.ausstrahlungszeit)
+      )
       const invalidMB = matchboxesData.filter(m => !m.ausstrahlungsdatum || !m.ausstrahlungszeit)
       if (invalidMN.length > 0 || invalidMB.length > 0) {
         setSnackbar({
@@ -2276,7 +2293,8 @@ const SettingsManagement: React.FC<{
       onConfirm: async () => {
         try {
           setIsLoading(true)
-          await db.participants.clear()
+          const sid = await getActiveSeasonId()
+          await db.participants.where('seasonId').equals(sid).delete()
           await onUpdate()
           setSnackbar({ open: true, message: 'Alle Kandidat*innen wurden erfolgreich gelöscht!', severity: 'success' })
         } catch (error) {
@@ -2298,7 +2316,8 @@ const SettingsManagement: React.FC<{
       onConfirm: async () => {
         try {
           setIsLoading(true)
-          await db.matchingNights.clear()
+          const sid = await getActiveSeasonId()
+          await db.matchingNights.where('seasonId').equals(sid).delete()
           await onUpdate()
           setSnackbar({ open: true, message: 'Alle Matching Nights wurden erfolgreich gelöscht!', severity: 'success' })
         } catch (error) {
@@ -2320,7 +2339,8 @@ const SettingsManagement: React.FC<{
       onConfirm: async () => {
         try {
           setIsLoading(true)
-          await db.matchboxes.clear()
+          const sid = await getActiveSeasonId()
+          await db.matchboxes.where('seasonId').equals(sid).delete()
           await onUpdate()
           setSnackbar({ open: true, message: 'Alle Matchboxes wurden erfolgreich gelöscht!', severity: 'success' })
         } catch (error) {
@@ -2344,10 +2364,10 @@ const SettingsManagement: React.FC<{
           setIsLoading(true)
           console.log('🔧 Starte Matching Nights Korrektur...')
           
-          // Lade alle Daten
+          const sid = await getActiveSeasonId()
           const [allParticipants, allMatchingNights] = await Promise.all([
-            db.participants.toArray(),
-            db.matchingNights.toArray()
+            db.participants.where('seasonId').equals(sid).toArray(),
+            db.matchingNights.where('seasonId').equals(sid).toArray()
           ])
           
           // Extrahiere Männer- und Frauen-Listen
@@ -2417,10 +2437,10 @@ const SettingsManagement: React.FC<{
           setIsLoading(true)
           console.log('📅 Starte Zeitstempel-Korrektur...')
           
-          // Lade alle Daten
+          const sid = await getActiveSeasonId()
           const [allMatchingNights, allMatchboxes] = await Promise.all([
-            db.matchingNights.toArray(),
-            db.matchboxes.toArray()
+            db.matchingNights.where('seasonId').equals(sid).toArray(),
+            db.matchboxes.where('seasonId').equals(sid).toArray()
           ])
           
           let nightsUpdated = 0
@@ -2593,13 +2613,7 @@ Alle Daten gehen unwiderruflich verloren!`)
       setIsLoading(true)
       console.log('Starte kompletten Datenbank-Reset...')
       
-      // Alle Tabellen leeren
-      await Promise.all([
-        db.participants.clear(),
-        db.matchingNights.clear(),
-        db.matchboxes.clear(),
-        db.penalties.clear()
-      ])
+      await DatabaseUtils.clearAll()
       
       console.log('Datenbank erfolgreich geleert, lade Daten neu...')
       await onUpdate()
@@ -2634,6 +2648,7 @@ Alle Daten gehen unwiderruflich verloren!`)
       setIsLoading(true)
       const text = await file.text()
       const arr = JSON.parse(text)
+      const seasonId = await getActiveSeasonId()
       
       // Daten normalisieren und Gender-Mapping durchführen
       const normalizedParticipants = arr.map((participant: any) => {
@@ -2647,6 +2662,7 @@ Alle Daten gehen unwiderruflich verloren!`)
         
         // Sicherstellen, dass alle erforderlichen Felder vorhanden sind
         return {
+          seasonId,
           name: participant.name || 'Unbekannt',
           knownFrom: participant.knownFrom || '',
           age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
@@ -2665,8 +2681,9 @@ Alle Daten gehen unwiderruflich verloren!`)
         severity: 'warning',
         onConfirm: async () => {
           try {
+            await assertSeasonWritable(seasonId)
             await db.transaction('rw', db.participants, async () => {
-              await db.participants.clear()
+              await db.participants.where('seasonId').equals(seasonId).delete()
               await db.participants.bulkPut(normalizedParticipants)
             })
             
@@ -2709,45 +2726,40 @@ Alle Daten gehen unwiderruflich verloren!`)
         severity: 'warning',
         onConfirm: async () => {
           try {
-            // Alle Daten in einer Transaktion importieren
+            const seasonId = await getActiveSeasonId()
+            await assertSeasonWritable(seasonId)
+            await clearAllDataForSeason(seasonId)
             await db.transaction('rw', [db.participants, db.matchingNights, db.matchboxes, db.penalties], async () => {
-              // Alle Tabellen löschen
-              await db.participants.clear()
-              await db.matchingNights.clear()
-              await db.matchboxes.clear()
-              await db.penalties.clear()
-              
-              // Neue Daten einfügen
               if (data.participants.length > 0) {
-                await db.participants.bulkPut(data.participants)
+                await db.participants.bulkPut(
+                  data.participants.map((p: any) => ({ ...p, seasonId }))
+                )
               }
               if (data.matchingNights.length > 0) {
-                // Transformiere Matching Night-Daten
                 const transformedMatchingNights = data.matchingNights.map((matchingNight: any) => ({
                   ...matchingNight,
+                  seasonId,
                   createdAt: matchingNight.createdAt ? new Date(matchingNight.createdAt) : new Date()
                 }))
                 await db.matchingNights.bulkPut(transformedMatchingNights)
               }
               if (data.matchboxes.length > 0) {
-                // Transformiere Matchbox-Daten: womanId/manId -> woman/man
                 const transformedMatchboxes = data.matchboxes.map((matchbox: any) => ({
                   ...matchbox,
+                  seasonId,
                   woman: matchbox.womanId || matchbox.woman,
                   man: matchbox.manId || matchbox.man,
-                  // Entferne die alten Felder
                   womanId: undefined,
                   manId: undefined,
-                  // Stelle sicher, dass createdAt und updatedAt gesetzt sind
                   createdAt: matchbox.createdAt ? new Date(matchbox.createdAt) : new Date(),
                   updatedAt: matchbox.updatedAt ? new Date(matchbox.updatedAt) : new Date()
                 }))
                 await db.matchboxes.bulkPut(transformedMatchboxes)
               }
               if (data.penalties && data.penalties.length > 0) {
-                // Transformiere Penalty-Daten
                 const transformedPenalties = data.penalties.map((penalty: any) => ({
                   ...penalty,
+                  seasonId,
                   createdAt: penalty.createdAt ? new Date(penalty.createdAt) : new Date()
                 }))
                 await db.penalties.bulkPut(transformedPenalties)
@@ -3613,12 +3625,12 @@ const AdminPanelMUI: React.FC = () => {
 
   const loadAllData = async () => {
     try {
-      // Lade Daten direkt aus IndexedDB
+      const sid = await getActiveSeasonId()
       const [participantsData, matchboxesData, matchingNightsData, penaltiesData] = await Promise.all([
-        db.participants.toArray(),
-        db.matchboxes.toArray(),
-        db.matchingNights.toArray(),
-        db.penalties.toArray()
+        db.participants.where('seasonId').equals(sid).toArray(),
+        db.matchboxes.where('seasonId').equals(sid).toArray(),
+        db.matchingNights.where('seasonId').equals(sid).toArray(),
+        db.penalties.where('seasonId').equals(sid).toArray()
       ])
       
       setParticipants(participantsData)
@@ -3676,9 +3688,10 @@ const AdminPanelMUI: React.FC = () => {
         return
       }
       
-      // Daten normalisieren und Gender-Mapping durchführen
+      const seasonId = await getActiveSeasonId()
+      await assertSeasonWritable(seasonId)
+
       const normalizedParticipants = participantsArray.map((participant: any) => {
-        // Gender-Mapping: w/m -> F/M
         let gender = participant.gender
         if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
           gender = 'F'
@@ -3686,7 +3699,6 @@ const AdminPanelMUI: React.FC = () => {
           gender = 'M'
         }
         
-        // Status normalisieren
         let status = participant.status
         if (status === 'aktiv' || status === 'Aktiv') {
           status = 'Aktiv'
@@ -3695,6 +3707,7 @@ const AdminPanelMUI: React.FC = () => {
         }
         
         return {
+          seasonId,
           name: participant.name || 'Unbekannt',
           knownFrom: participant.knownFrom || '',
           age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
@@ -3719,7 +3732,7 @@ const AdminPanelMUI: React.FC = () => {
       
       try {
         await db.transaction('rw', db.participants, async () => {
-          await db.participants.clear()
+          await db.participants.where('seasonId').equals(seasonId).delete()
           await db.participants.bulkPut(normalizedParticipants)
         })
         

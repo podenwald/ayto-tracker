@@ -27,7 +27,7 @@ import {
 } from '@mui/icons-material'
 import { importJsonDataForVersion, getAvailableJsonFiles } from '../../utils/jsonImport'
 import { VERSION_INFO } from '@/utils/version'
-import { db } from '../../lib/db'
+import { DatabaseUtils } from '../../lib/db'
 
 interface JsonImportManagementProps {
   onDataUpdate?: () => void
@@ -70,19 +70,12 @@ const JsonImportManagement: React.FC<JsonImportManagementProps> = ({ onDataUpdat
 
   const loadDataCounts = async () => {
     try {
-      // Lade Datenzählungen direkt aus IndexedDB
-      const [participants, matchboxes, matchingNights, penalties] = await Promise.all([
-        db.participants.count(),
-        db.matchboxes.count(),
-        db.matchingNights.count(),
-        db.penalties.count()
-      ])
-      
+      const c = await DatabaseUtils.getCounts()
       setDataCounts({
-        participants,
-        matchboxes,
-        matchingNights,
-        penalties
+        participants: c.participants,
+        matchboxes: c.matchboxes,
+        matchingNights: c.matchingNights,
+        penalties: c.penalties
       })
       
       console.log('✅ JSON Import Management: Datenzählungen direkt aus IndexedDB geladen')

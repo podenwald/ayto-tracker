@@ -1,4 +1,5 @@
 import { db, type Participant, type Matchbox, type MatchingNight, type Penalty, type BroadcastNote } from '../lib/db'
+import { assertSeasonWritable, clearAllDataForSeason, getActiveSeasonId } from '@/services/seasonService'
 
 // Interface für die JSON-Import-Daten
 export interface JsonImportData {
@@ -10,57 +11,50 @@ export interface JsonImportData {
 }
 
 /**
- * Lädt eine spezifische JSON-Datei und importiert die Daten in die Datenbank
- * @param fileName - Der Name der JSON-Datei (z.B. "ayto-complete-export-2025-09-08.json")
- * @param version - Die Version für die neue JSON-Datei (z.B. "0.2.1")
- * @returns Promise<boolean> - true wenn erfolgreich, false bei Fehler
+ * Parst rohes JSON (Array oder Objekt mit participants) zu JsonImportData
  */
-export async function importJsonDataForVersion(fileName: string, version: string): Promise<boolean> {
-  try {
-    // Lade die spezifische JSON-Datei (ohne Cache) und mit Cache-Busting
-    const response = await fetch(`/json/${fileName}?t=${Date.now()}`, { cache: 'no-store' })
-    
-    if (!response.ok) {
-      throw new Error(`Fehler beim Laden der JSON-Datei ${fileName}: ${response.statusText}`)
+export function parseRawJsonToImportData(rawData: unknown): JsonImportData {
+  if (Array.isArray(rawData)) {
+    console.log(`📥 JSON im Array-Format erkannt (${rawData.length} Teilnehmer)`)
+    return {
+      participants: rawData as Participant[],
+      matchboxes: [],
+      matchingNights: [],
+      penalties: []
     }
-    
-    const rawData: unknown = await response.json()
-    
-    // Unterstütze beide Formate:
-    // 1. Objekt-Format: { participants: [...], matchboxes: [...], ... }
-    // 2. Array-Format: [...] (nur Teilnehmer)
-    let jsonData: JsonImportData
-    
-    if (Array.isArray(rawData)) {
-      // Array-Format: Direktes Array von Teilnehmern
-      console.log(`📥 JSON-Datei im Array-Format erkannt (${rawData.length} Teilnehmer)`)
-      jsonData = {
-        participants: rawData as Participant[],
-        matchboxes: [],
-        matchingNights: [],
-        penalties: []
-      }
-    } else if (rawData && typeof rawData === 'object' && 'participants' in rawData) {
-      // Objekt-Format: Vollständige Datenstruktur
-      console.log(`📥 JSON-Datei im Objekt-Format erkannt`)
-      jsonData = rawData as JsonImportData
-    } else {
-      throw new Error('Ungültiges JSON-Format: Erwartet wird entweder ein Array von Teilnehmern oder ein Objekt mit participants, matchboxes, etc.')
-    }
-    
-    // Lösche alle bestehenden Daten
-    await db.transaction('rw', [db.participants, db.matchboxes, db.matchingNights, db.penalties], async () => {
-      await db.participants.clear()
-      await db.matchboxes.clear()
-      await db.matchingNights.clear()
-      await db.penalties.clear()
-    })
-    
-    // Normalisiere und importiere Teilnehmer
-    await db.transaction('rw', [db.participants, db.matchboxes, db.matchingNights, db.penalties], async () => {
-      if (jsonData.participants && jsonData.participants.length > 0) {
-        // Normalisiere Teilnehmer-Daten
-        const normalizedParticipants = jsonData.participants.map((participant: any) => {
+  }
+  if (rawData && typeof rawData === 'object' && 'participants' in rawData) {
+    console.log('📥 JSON im Objekt-Format erkannt')
+    return rawData as JsonImportData
+  }
+  throw new Error(
+    'Ungültiges JSON-Format: Erwartet wird entweder ein Array von Teilnehmern oder ein Objekt mit participants, matchboxes, etc.'
+  )
+}
+
+export type ImportJsonBundleOptions = {
+  /** z. B. Erstimport einer nur-lesenden Katalog-Staffel (kein assertSeasonWritable) */
+  skipWritableCheck?: boolean
+}
+
+/**
+ * Importiert ein JSON-Bündel in eine konkrete Staffel (leert die Staffel zuvor).
+ */
+export async function importJsonBundleForSeason(
+  seasonId: number,
+  rawData: unknown,
+  options?: ImportJsonBundleOptions
+): Promise<void> {
+  if (!options?.skipWritableCheck) {
+    await assertSeasonWritable(seasonId)
+  }
+
+  const jsonData = parseRawJsonToImportData(rawData)
+  await clearAllDataForSeason(seasonId)
+
+  await db.transaction('rw', [db.participants, db.matchboxes, db.matchingNights, db.penalties, db.broadcastNotes], async () => {
+    if (jsonData.participants && jsonData.participants.length > 0) {
+      const normalizedParticipants = jsonData.participants.map((participant: any) => {
           // Gender-Mapping: w/m -> F/M
           let gender = participant.gender
           if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
@@ -84,6 +78,7 @@ export async function importJsonDataForVersion(fileName: string, version: string
           
           // Stelle sicher, dass alle erforderlichen Felder vorhanden sind
           return {
+            seasonId,
             name: participant.name || 'Unbekannt',
             knownFrom: participant.knownFrom || '',
             age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
@@ -108,6 +103,7 @@ export async function importJsonDataForVersion(fileName: string, version: string
         // Transformiere Matchbox-Daten: womanId/manId -> woman/man
         const transformedMatchboxes = jsonData.matchboxes.map((matchbox: any) => ({
           ...matchbox,
+          seasonId,
           woman: matchbox.womanId || matchbox.woman,
           man: matchbox.manId || matchbox.man,
           // Entferne die alten Felder
@@ -124,6 +120,7 @@ export async function importJsonDataForVersion(fileName: string, version: string
         // Transformiere Matching Night-Daten
         const transformedMatchingNights = jsonData.matchingNights.map((matchingNight: any) => ({
           ...matchingNight,
+          seasonId,
           // Stelle sicher, dass createdAt gesetzt ist
           createdAt: matchingNight.createdAt ? new Date(matchingNight.createdAt) : new Date()
         }))
@@ -134,6 +131,7 @@ export async function importJsonDataForVersion(fileName: string, version: string
         // Transformiere Penalty-Daten
         const transformedPenalties = jsonData.penalties.map((penalty: any) => ({
           ...penalty,
+          seasonId,
           // Stelle sicher, dass createdAt gesetzt ist
           createdAt: penalty.createdAt ? new Date(penalty.createdAt) : new Date()
         }))
@@ -144,6 +142,7 @@ export async function importJsonDataForVersion(fileName: string, version: string
         // Transformiere Broadcast Notes-Daten
         const transformedBroadcastNotes = jsonData.broadcastNotes.map((note: any) => ({
           ...note,
+          seasonId,
           // Stelle sicher, dass createdAt und updatedAt gesetzt sind
           createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
           updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date()
@@ -151,23 +150,38 @@ export async function importJsonDataForVersion(fileName: string, version: string
         await db.broadcastNotes.bulkPut(transformedBroadcastNotes)
       }
     })
-    
-    // Lade Datenzählungen nach dem Import
-    const [participantsCount, matchboxesCount, matchingNightsCount, penaltiesCount] = await Promise.all([
-      db.participants.count(),
-      db.matchboxes.count(),
-      db.matchingNights.count(),
-      db.penalties.count()
-    ])
-    
-    console.log(`✅ JSON-Daten erfolgreich für Version ${version} importiert:`)
-    console.log(`   📊 ${participantsCount} Teilnehmer`)
-    console.log(`   📊 ${matchboxesCount} Matchboxes`)
-    console.log(`   📊 ${matchingNightsCount} Matching Nights`)
-    console.log(`   📊 ${penaltiesCount} Strafen`)
-    
+
+  const [participantsCount, matchboxesCount, matchingNightsCount, penaltiesCount] = await Promise.all([
+    db.participants.where('seasonId').equals(seasonId).count(),
+    db.matchboxes.where('seasonId').equals(seasonId).count(),
+    db.matchingNights.where('seasonId').equals(seasonId).count(),
+    db.penalties.where('seasonId').equals(seasonId).count()
+  ])
+
+  console.log(`✅ JSON in Staffel ${seasonId} importiert:`)
+  console.log(`   📊 ${participantsCount} Teilnehmer, ${matchboxesCount} Matchboxes, ${matchingNightsCount} MN, ${penaltiesCount} Strafen`)
+}
+
+/**
+ * Lädt eine spezifische JSON-Datei und importiert die Daten in die Datenbank
+ * @param fileName - Der Name der JSON-Datei (z.B. "ayto-complete-export-2025-09-08.json")
+ * @param version - Die Version für die neue JSON-Datei (z.B. "0.2.1")
+ * @returns Promise<boolean> - true wenn erfolgreich, false bei Fehler
+ */
+export async function importJsonDataForVersion(fileName: string, version: string): Promise<boolean> {
+  try {
+    const response = await fetch(`/json/${fileName}?t=${Date.now()}`, { cache: 'no-store' })
+
+    if (!response.ok) {
+      throw new Error(`Fehler beim Laden der JSON-Datei ${fileName}: ${response.statusText}`)
+    }
+
+    const rawData: unknown = await response.json()
+    const seasonId = await getActiveSeasonId()
+    await importJsonBundleForSeason(seasonId, rawData)
+
+    console.log(`✅ JSON-Daten erfolgreich für Version ${version} importiert`)
     return true
-    
   } catch (error) {
     console.error('❌ Fehler beim Importieren der JSON-Daten:', error)
     console.error('Fehler-Details:', error instanceof Error ? error.message : String(error))
@@ -206,18 +220,19 @@ export async function createVersionWithJsonImport(fileName: string, version: str
  */
 export async function exportCurrentDatabaseState(): Promise<{success: boolean, fileName?: string, error?: string}> {
   try {
-    // Alle Daten aus der Datenbank laden
+    const sid = await getActiveSeasonId()
     const [participantsData, matchingNightsData, matchboxesData, penaltiesData, broadcastNotesData] = await Promise.all([
-      db.participants.toArray(),
-      db.matchingNights.toArray(),
-      db.matchboxes.toArray(),
-      db.penalties.toArray(),
-      db.broadcastNotes.toArray()
+      db.participants.where('seasonId').equals(sid).toArray(),
+      db.matchingNights.where('seasonId').equals(sid).toArray(),
+      db.matchboxes.where('seasonId').equals(sid).toArray(),
+      db.penalties.where('seasonId').equals(sid).toArray(),
+      db.broadcastNotes.where('seasonId').equals(sid).toArray()
     ])
     
     // Matchbox-Daten für Export verwenden (keine Transformation mehr nötig)
     const transformedMatchboxes = matchboxesData.map(m => ({
       id: m.id,
+      seasonId: m.seasonId,
       woman: m.woman,
       man: m.man,
       matchType: m.matchType,

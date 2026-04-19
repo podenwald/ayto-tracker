@@ -12,9 +12,26 @@ export type MatchType = 'perfect' | 'no-match' | 'sold'
 
 export type ParticipantStatus = 'Aktiv' | 'aktiv' | 'Inaktiv' | 'Perfekt Match'
 
+// === Staffel (lokale IndexedDB) ===
+export type SeasonKind = 'completed' | 'running' | 'custom'
+
+export interface Season {
+  id?: number
+  /** Eindeutiger Schlüssel pro Gerät (z. B. Katalog-Slug) */
+  slug: string
+  title: string
+  kind: SeasonKind
+  /** Abgeschlossene Staffeln: keine Bearbeitung durch Nutzer */
+  readOnly: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
 // === Domain-Entitäten ===
 export interface Participant {
   id?: number
+  /** Zugehörige Staffel (IndexedDB); nach Migration immer gesetzt */
+  seasonId: number
   name: string
   knownFrom: string
   age?: number
@@ -36,6 +53,7 @@ export type MatchingNightMatchType = 'normal' | 'sold'
 
 export interface MatchingNight {
   id?: number
+  seasonId: number
   name: string
   date: string
   pairs: Array<{ woman: string; man: string }>
@@ -51,6 +69,7 @@ export interface MatchingNight {
 
 export interface Matchbox {
   id?: number
+  seasonId: number
   woman: string
   man: string
   matchType: MatchType
@@ -64,6 +83,7 @@ export interface Matchbox {
 
 export interface Penalty {
   id?: number
+  seasonId: number
   participantName: string
   reason: string
   amount: number
@@ -74,6 +94,7 @@ export interface Penalty {
 
 export interface BroadcastNote {
   id?: number
+  seasonId: number
   date: string // ISO date (YYYY-MM-DD)
   notes: string
   createdAt: Date
@@ -83,6 +104,7 @@ export interface BroadcastNote {
 // === API/DTO-Typen ===
 export interface ParticipantDTO {
   id?: number
+  seasonId?: number
   name: string
   knownFrom: string
   age?: number
@@ -100,6 +122,7 @@ export interface ParticipantDTO {
 
 export interface MatchingNightDTO {
   id?: number
+  seasonId?: number
   name: string
   date: string
   pairs: Array<{ woman: string; man: string }>
@@ -114,6 +137,7 @@ export interface MatchingNightDTO {
 
 export interface MatchboxDTO {
   id?: number
+  seasonId?: number
   woman: string
   man: string
   matchType: MatchType
@@ -127,6 +151,7 @@ export interface MatchboxDTO {
 
 export interface PenaltyDTO {
   id?: number
+  seasonId?: number
   participantName: string
   reason: string
   amount: number
@@ -137,6 +162,7 @@ export interface PenaltyDTO {
 
 export interface BroadcastNoteDTO {
   id?: number
+  seasonId?: number
   date: string
   notes: string
   createdAt: string
@@ -252,6 +278,7 @@ export interface ProbabilityResult {
  */
 export interface ProbabilityCache {
   id?: number
+  seasonId: number
   dataHash: string // Hash der Input-Daten (Teilnehmer, Zeremonien, Matchboxen)
   result: ProbabilityResult
   createdAt: Date
@@ -263,6 +290,7 @@ export interface ProbabilityCache {
  */
 export interface ProbabilityCacheDTO {
   id?: number
+  seasonId?: number
   dataHash: string
   result: ProbabilityResult
   createdAt: string // ISO string

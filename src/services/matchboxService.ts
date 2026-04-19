@@ -8,13 +8,19 @@
 import { db } from '@/lib/db'
 import type { Matchbox, MatchboxDTO, MatchType } from '@/types'
 import { createBroadcastDateTime, sortBroadcastsChronologically, ensureMatchboxBroadcastData } from '@/utils/broadcastUtils'
+import { assertSeasonWritable, getActiveSeasonId } from '@/services/seasonService'
 
 export class MatchboxService {
+  private static async sid(): Promise<number> {
+    return getActiveSeasonId()
+  }
+
   /**
-   * Lädt alle Matchboxes aus der Datenbank
+   * Lädt alle Matchboxes der aktiven Staffel aus der Datenbank
    */
   static async getAllMatchboxes(): Promise<Matchbox[]> {
-    return await db.matchboxes.toArray()
+    const seasonId = await this.sid()
+    return await db.matchboxes.where('seasonId').equals(seasonId).toArray()
   }
 
   /**
@@ -33,7 +39,12 @@ export class MatchboxService {
    * Lädt Matchboxes nach Typ
    */
   static async getMatchboxesByType(type: MatchType): Promise<Matchbox[]> {
-    return await db.matchboxes.where('matchType').equals(type).toArray()
+    const seasonId = await this.sid()
+    return await db.matchboxes
+      .where('seasonId')
+      .equals(seasonId)
+      .filter(mb => mb.matchType === type)
+      .toArray()
   }
 
   /**
@@ -60,7 +71,9 @@ export class MatchboxService {
   /**
    * Erstellt eine neue Matchbox
    */
-  static async createMatchbox(matchbox: Omit<Matchbox, 'id' | 'createdAt' | 'updatedAt'>): Promise<number> {
+  static async createMatchbox(matchbox: Omit<Matchbox, 'id' | 'createdAt' | 'updatedAt' | 'seasonId'>): Promise<number> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
     const now = new Date()
     
     // Stelle sicher, dass Ausstrahlungsdaten gesetzt sind
@@ -68,6 +81,7 @@ export class MatchboxService {
     
     const newMatchbox: Omit<Matchbox, 'id'> = {
       ...matchboxWithBroadcastData,
+      seasonId,
       createdAt: now,
       updatedAt: now,
       ausstrahlungsdatum: matchbox.ausstrahlungsdatum || now.toISOString().split('T')[0], // Heutiges Datum als Standard
@@ -82,6 +96,12 @@ export class MatchboxService {
    * Aktualisiert eine Matchbox
    */
   static async updateMatchbox(id: number, updates: Partial<Matchbox>): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    const existing = await db.matchboxes.get(id)
+    if (!existing || existing.seasonId !== seasonId) {
+      throw new Error('Matchbox gehört nicht zur aktiven Staffel.')
+    }
     const updateData = {
       ...updates,
       updatedAt: new Date()
@@ -93,6 +113,12 @@ export class MatchboxService {
    * Löscht eine Matchbox
    */
   static async deleteMatchbox(id: number): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    const existing = await db.matchboxes.get(id)
+    if (!existing || existing.seasonId !== seasonId) {
+      throw new Error('Matchbox gehört nicht zur aktiven Staffel.')
+    }
     await db.matchboxes.delete(id)
   }
 
@@ -153,8 +179,12 @@ export class MatchboxService {
    * Konvertiert DTO zu Domain-Objekt
    */
   static fromDTO(dto: MatchboxDTO): Matchbox {
+    if (dto.seasonId == null) {
+      throw new Error('MatchboxDTO.seasonId ist erforderlich')
+    }
     return {
       ...dto,
+      seasonId: dto.seasonId,
       createdAt: new Date(dto.createdAt),
       updatedAt: new Date(dto.updatedAt),
     }
@@ -201,4 +231,3 @@ export class MatchboxService {
     return soldMatchboxes.reduce((total, matchbox) => total + (matchbox.price || 0), 0)
   }
 }
-

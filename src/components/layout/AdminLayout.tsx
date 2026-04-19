@@ -73,11 +73,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   const loadStats = async () => {
     try {
       // Lade Daten direkt aus IndexedDB
+      const { getActiveSeasonId } = await import('@/services/seasonService')
+      const sid = await getActiveSeasonId()
       const [participants, matchboxes, matchingNights, penalties] = await Promise.all([
-        db.participants.toArray(),
-        db.matchboxes.toArray(),
-        db.matchingNights.toArray(),
-        db.penalties.toArray()
+        db.participants.where('seasonId').equals(sid).toArray(),
+        db.matchboxes.where('seasonId').equals(sid).toArray(),
+        db.matchingNights.where('seasonId').equals(sid).toArray(),
+        db.penalties.where('seasonId').equals(sid).toArray()
       ])
 
       const activeParticipants = participants.filter(p => p.active !== false).length

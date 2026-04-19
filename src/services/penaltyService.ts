@@ -7,28 +7,42 @@
 
 import { db } from '@/lib/db'
 import type { Penalty, PenaltyDTO } from '@/types'
+import { assertSeasonWritable, getActiveSeasonId } from '@/services/seasonService'
 
 export class PenaltyService {
+  private static async sid(): Promise<number> {
+    return getActiveSeasonId()
+  }
+
   /**
-   * Lädt alle Penalties aus der Datenbank
+   * Lädt alle Penalties der aktiven Staffel aus der Datenbank
    */
   static async getAllPenalties(): Promise<Penalty[]> {
-    return await db.penalties.toArray()
+    const seasonId = await this.sid()
+    return await db.penalties.where('seasonId').equals(seasonId).toArray()
   }
 
   /**
    * Lädt Penalties nach Teilnehmer
    */
   static async getPenaltiesByParticipant(participantName: string): Promise<Penalty[]> {
-    return await db.penalties.where('participantName').equals(participantName).toArray()
+    const seasonId = await this.sid()
+    return await db.penalties
+      .where('seasonId')
+      .equals(seasonId)
+      .filter(p => p.participantName === participantName)
+      .toArray()
   }
 
   /**
    * Erstellt eine neue Penalty
    */
-  static async createPenalty(penalty: Omit<Penalty, 'id' | 'createdAt'>): Promise<number> {
+  static async createPenalty(penalty: Omit<Penalty, 'id' | 'createdAt' | 'seasonId'>): Promise<number> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
     const newPenalty: Omit<Penalty, 'id'> = {
       ...penalty,
+      seasonId,
       createdAt: new Date()
     }
     return await db.penalties.add(newPenalty)
@@ -38,6 +52,12 @@ export class PenaltyService {
    * Aktualisiert eine Penalty
    */
   static async updatePenalty(id: number, updates: Partial<Penalty>): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    const existing = await db.penalties.get(id)
+    if (!existing || existing.seasonId !== seasonId) {
+      throw new Error('Strafe gehört nicht zur aktiven Staffel.')
+    }
     await db.penalties.update(id, updates)
   }
 
@@ -45,6 +65,12 @@ export class PenaltyService {
    * Löscht eine Penalty
    */
   static async deletePenalty(id: number): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    const existing = await db.penalties.get(id)
+    if (!existing || existing.seasonId !== seasonId) {
+      throw new Error('Strafe gehört nicht zur aktiven Staffel.')
+    }
     await db.penalties.delete(id)
   }
 
@@ -83,8 +109,12 @@ export class PenaltyService {
    * Konvertiert DTO zu Domain-Objekt
    */
   static fromDTO(dto: PenaltyDTO): Penalty {
+    if (dto.seasonId == null) {
+      throw new Error('PenaltyDTO.seasonId ist erforderlich')
+    }
     return {
       ...dto,
+      seasonId: dto.seasonId,
       createdAt: new Date(dto.createdAt)
     }
   }
@@ -129,7 +159,12 @@ export class PenaltyService {
    * Lädt Penalties nach Grund
    */
   static async getPenaltiesByReason(reason: string): Promise<Penalty[]> {
-    return await db.penalties.where('reason').equals(reason).toArray()
+    const seasonId = await this.sid()
+    return await db.penalties
+      .where('seasonId')
+      .equals(seasonId)
+      .filter(p => p.reason === reason)
+      .toArray()
   }
 
   /**
@@ -145,4 +180,3 @@ export class PenaltyService {
     return totalAmount / uniqueParticipants.size
   }
 }
-

@@ -101,7 +101,10 @@ const BroadcastManagement: React.FC<BroadcastManagementProps> = ({
     setSavingNotes(prev => ({ ...prev, [date]: true }))
     
     try {
+      const { getActiveSeasonId } = await import('@/services/seasonService')
+      const seasonId = await getActiveSeasonId()
       const note: BroadcastNote = {
+        seasonId,
         date,
         notes: noteText.trim(),
         createdAt: new Date(),
@@ -219,14 +222,19 @@ const BroadcastManagement: React.FC<BroadcastManagementProps> = ({
     if (!editingEvent) return
 
     try {
+      const { getActiveSeasonId, assertSeasonWritable } = await import('@/services/seasonService')
+      const sid = await getActiveSeasonId()
+      await assertSeasonWritable(sid)
       if (editingEvent.type === 'matching-night') {
         const matchingNight = editingEvent.data as MatchingNight
+        if (matchingNight.seasonId !== sid) throw new Error('Falsche Staffel')
         await db.matchingNights.update(matchingNight.id!, {
           ausstrahlungsdatum: editingEvent.ausstrahlungsdatum,
           ausstrahlungszeit: editingEvent.ausstrahlungszeit
         })
       } else {
         const matchbox = editingEvent.data as Matchbox
+        if (matchbox.seasonId !== sid) throw new Error('Falsche Staffel')
         await db.matchboxes.update(matchbox.id!, {
           ausstrahlungsdatum: editingEvent.ausstrahlungsdatum,
           ausstrahlungszeit: editingEvent.ausstrahlungszeit

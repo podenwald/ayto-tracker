@@ -1,10 +1,12 @@
 import { Button } from '@/components/ui/button'
 import { db } from '@/lib/db'
+import { getActiveSeasonId, assertSeasonWritable } from '@/services/seasonService'
 import { isFileNewerThanLast, saveLastImportedJsonFile } from '@/utils/jsonVersion'
 
 export function ImportExport(){
   async function doExport(){
-    const all = await db.participants.toArray()
+    const sid = await getActiveSeasonId()
+    const all = await db.participants.where('seasonId').equals(sid).toArray()
     const blob = new Blob([JSON.stringify(all,null,2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href=url; a.download='participants.json'; a.click(); URL.revokeObjectURL(url)
@@ -26,6 +28,8 @@ export function ImportExport(){
         if (!proceed) return
       }
       const arr = JSON.parse(text);
+      const seasonId = await getActiveSeasonId()
+      await assertSeasonWritable(seasonId)
       
       // Daten normalisieren und Gender-Mapping durchführen
       const normalizedParticipants = arr.map((participant: any) => {
@@ -39,6 +43,7 @@ export function ImportExport(){
         
         // Sicherstellen, dass alle erforderlichen Felder vorhanden sind
         return {
+          seasonId,
           name: participant.name || 'Unbekannt',
           knownFrom: participant.knownFrom || '',
           age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
@@ -56,7 +61,7 @@ export function ImportExport(){
       console.log('Normalisierte Kandidat*innen:', normalizedParticipants);
       
       await db.transaction('rw', db.participants, async () => {
-        await db.participants.clear();
+        await db.participants.where('seasonId').equals(seasonId).delete();
         await db.participants.bulkPut(normalizedParticipants);
       });
       

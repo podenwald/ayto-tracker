@@ -28,7 +28,8 @@ import {
   Savings as SavingsIcon,
   Percent as PercentIcon,
   People as PeopleIcon,
-  EmojiEvents as EmojiEventsIcon
+  EmojiEvents as EmojiEventsIcon,
+  FolderShared as FolderSharedIcon
 } from '@mui/icons-material'
 
 const drawerWidth = 260
@@ -41,6 +42,10 @@ interface MenuLayoutProps {
   onCreateMatchingNight?: () => void
   /** Staffelende-Overlay (Chip neben Matching-Night-Aktionen) */
   onOpenSeasonFinale?: () => void
+  /** Dialog „Staffel wählen“ */
+  onOpenSeasonPicker?: () => void
+  /** Anzeigename der aktiven Staffel (optional) */
+  activeSeasonTitle?: string
   // Statistics data
   matchingNightsCount?: number
   currentLights?: number | 'V'
@@ -56,6 +61,8 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
   onCreateMatchbox,
   onCreateMatchingNight,
   onOpenSeasonFinale,
+  onOpenSeasonPicker,
+  activeSeasonTitle,
   matchingNightsCount = 0,
   currentLights = 0 as number | 'V',
   perfectMatchesCount = 0,
@@ -147,6 +154,11 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
             <Typography variant="caption" color="text.secondary">
               Live-Tracker 2026
             </Typography>
+            {activeSeasonTitle && (
+              <Typography variant="caption" color="primary.main" sx={{ display: 'block', fontWeight: 600, mt: 0.5 }}>
+                {activeSeasonTitle}
+              </Typography>
+            )}
           </Box>
         </Box>
       </Box>
@@ -199,6 +211,36 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
             </ListItem>
           ))}
         </List>
+
+        {onOpenSeasonPicker && (
+          <List sx={{ px: 2, pt: 0 }}>
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  onOpenSeasonPicker()
+                  setMobileOpen(false)
+                }}
+                sx={{
+                  borderRadius: 1.5,
+                  px: 2,
+                  py: 1.5,
+                  border: '1px dashed',
+                  borderColor: 'divider'
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <FolderSharedIcon color="primary" />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Staffel wählen"
+                  secondary="Lokal · Katalog · Neu"
+                  primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: 600 }}
+                  secondaryTypographyProps={{ fontSize: '0.7rem' }}
+                />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        )}
       </Box>
 
       {/* Statistics */}

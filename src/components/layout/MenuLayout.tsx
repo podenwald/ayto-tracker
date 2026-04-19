@@ -14,7 +14,8 @@ import {
   Card,
   Avatar,
   Button,
-  Tooltip
+  Tooltip,
+  Chip
 } from '@mui/material'
 import {
   Menu as MenuIcon,
@@ -26,7 +27,8 @@ import {
   AutoAwesome as AutoAwesomeIcon,
   Savings as SavingsIcon,
   Percent as PercentIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  EmojiEvents as EmojiEventsIcon
 } from '@mui/icons-material'
 
 const drawerWidth = 260
@@ -37,6 +39,8 @@ interface MenuLayoutProps {
   onTabChange?: (tab: string) => void
   onCreateMatchbox?: () => void
   onCreateMatchingNight?: () => void
+  /** Staffelende-Overlay (Chip neben Matching-Night-Aktionen) */
+  onOpenSeasonFinale?: () => void
   // Statistics data
   matchingNightsCount?: number
   currentLights?: number | 'V'
@@ -51,6 +55,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
   onTabChange,
   onCreateMatchbox,
   onCreateMatchingNight,
+  onOpenSeasonFinale,
   matchingNightsCount = 0,
   currentLights = 0 as number | 'V',
   perfectMatchesCount = 0,
@@ -319,6 +324,25 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
+            {onOpenSeasonFinale && (
+              <Tooltip title="Staffelende anzeigen (ab 10 Matching Nights)" arrow>
+                <Chip
+                  icon={<EmojiEventsIcon sx={{ fontSize: '1rem !important' }} />}
+                  label="Abschluss"
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  onClick={onOpenSeasonFinale}
+                  sx={{
+                    display: { xs: 'inline-flex', sm: 'none' },
+                    fontWeight: 600,
+                    borderWidth: 2,
+                    '& .MuiChip-label': { px: 0.75 },
+                    '&:hover': { bgcolor: 'action.hover' }
+                  }}
+                />
+              </Tooltip>
+            )}
             {/* Mobile: Icon-only buttons */}
             <Tooltip title="Neue Matching Night" arrow>
               <IconButton
@@ -371,6 +395,25 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
               </IconButton>
             </Tooltip>
             {/* Desktop: Buttons with text */}
+            {onOpenSeasonFinale && (
+              <Tooltip title="Staffelende anzeigen (ab 10 Matching Nights)" arrow>
+                <Chip
+                  icon={<EmojiEventsIcon sx={{ fontSize: '1rem !important' }} />}
+                  label="Abschluss"
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  onClick={onOpenSeasonFinale}
+                  sx={{
+                    display: { xs: 'none', sm: 'inline-flex' },
+                    fontWeight: 600,
+                    borderWidth: 2,
+                    '& .MuiChip-label': { px: 0.75 },
+                    '&:hover': { bgcolor: 'action.hover' }
+                  }}
+                />
+              </Tooltip>
+            )}
             <Button 
               variant="contained" 
               color="secondary" 

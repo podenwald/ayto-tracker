@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 // Avatar utilities removed - using simple fallback logic
 import {
   Box,
@@ -57,6 +57,8 @@ import { useProbabilityCalculation } from '@/hooks/useProbabilityCalculation'
 import { MatchboxService } from '@/services/matchboxService'
 import { MatchingNightService } from '@/services/matchingNightService'
 import ParticipantsView from '@/components/ParticipantsView'
+import SeasonFinaleDialog from '@/components/SeasonFinaleDialog'
+import { computeSeasonFinale, type SeasonFinaleResult } from '@/utils/seasonFinale'
 
 // ** Tab Panel Component
 interface TabPanelProps {
@@ -639,11 +641,18 @@ const OverviewMUI: React.FC = () => {
   }
 
   // Admin functionality states
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean
+    message: string
+    severity: 'success' | 'error' | 'info' | 'warning'
+  }>({
     open: false,
     message: '',
     severity: 'success'
   })
+  const [seasonFinaleOpen, setSeasonFinaleOpen] = useState(false)
+  const [seasonFinaleResult, setSeasonFinaleResult] = useState<SeasonFinaleResult | null>(null)
+  const [seasonFinaleSubtitle, setSeasonFinaleSubtitle] = useState('10. Matching Night gespeichert')
 
   // Matching Night form states (nur Multiselect, kein Drag & Drop)
   const [matchingNightDialog, setMatchingNightDialog] = useState(false)
@@ -943,13 +952,27 @@ const OverviewMUI: React.FC = () => {
 
       const nameToUse = matchingNightForm.name?.trim() || `Matching Night #${matchingNights.length + 1}`
       
-      await MatchingNightService.createMatchingNight({
+      const newMatchingNightId = await MatchingNightService.createMatchingNight({
         name: nameToUse,
         date: new Date().toISOString().split('T')[0],
         totalLights: isSold ? undefined : matchingNightForm.totalLights,
         pairs: completePairs,
         ...(isSold ? { matchType: 'sold' as const, price: matchingNightForm.price, buyer: matchingNightForm.buyer } : {})
       })
+
+      const [nightsAfter, boxesAfter, participantsAfter] = await Promise.all([
+        db.matchingNights.toArray(),
+        db.matchboxes.toArray(),
+        db.participants.toArray()
+      ])
+      if (nightsAfter.length === 10) {
+        const tenthNight = nightsAfter.find(n => n.id === newMatchingNightId)
+        if (tenthNight) {
+          setSeasonFinaleSubtitle('10. Matching Night gespeichert')
+          setSeasonFinaleResult(computeSeasonFinale(boxesAfter, nightsAfter, participantsAfter, tenthNight))
+          setSeasonFinaleOpen(true)
+        }
+      }
 
       setSnackbar({ open: true, message: isSold ? `Matching Night "${nameToUse}" wurde als verkauft gespeichert.` : `Matching Night "${nameToUse}" mit allen 10 Paaren wurde erfolgreich erstellt!`, severity: 'success' })
       setMatchingNightDialog(false)
@@ -1152,6 +1175,37 @@ const OverviewMUI: React.FC = () => {
   // Calculate statistics for the menu
   const statistics = calculateStatistics(matchboxes, matchingNights, penalties)
 
+  const handleOpenSeasonFinale = useCallback(async () => {
+    try {
+      const [nightsArr, boxesArr, participantsArr] = await Promise.all([
+        db.matchingNights.toArray(),
+        db.matchboxes.toArray(),
+        db.participants.toArray()
+      ])
+      if (nightsArr.length < 10) {
+        setSnackbar({
+          open: true,
+          message: 'Das Staffelende-Overlay ist erst ab 10. gespeicherten Matching Nights verfügbar.',
+          severity: 'info'
+        })
+        return
+      }
+      const sortedById = [...nightsArr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
+      const tenthNight = sortedById[9]
+      if (!tenthNight) return
+      setSeasonFinaleSubtitle('Auswertung zum Ende der Staffel')
+      setSeasonFinaleResult(computeSeasonFinale(boxesArr, nightsArr, participantsArr, tenthNight))
+      setSeasonFinaleOpen(true)
+    } catch (e) {
+      console.error(e)
+      setSnackbar({
+        open: true,
+        message: 'Konnte die Auswertung nicht laden.',
+        severity: 'error'
+      })
+    }
+  }, [])
+
   return (
     <MenuLayout
       activeTab={hasUserSelectedTab ? (activeTab === 0 ? 'overview' : activeTab === 1 ? 'candidates' : activeTab === 2 ? 'matching-nights' : activeTab === 3 ? 'matchbox' : activeTab === 4 ? 'probabilities' : undefined) : undefined}
@@ -1165,6 +1219,7 @@ const OverviewMUI: React.FC = () => {
       }}
       onCreateMatchbox={handleCreateMatchbox}
       onCreateMatchingNight={handleCreateMatchingNight}
+      onOpenSeasonFinale={handleOpenSeasonFinale}
       matchingNightsCount={statistics.matchingNightsCount}
       currentLights={statistics.currentLights}
       perfectMatchesCount={statistics.perfectMatchesCount}
@@ -2857,6 +2912,17 @@ const OverviewMUI: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <SeasonFinaleDialog
+        open={seasonFinaleOpen}
+        onClose={() => {
+          setSeasonFinaleOpen(false)
+          setSeasonFinaleResult(null)
+          setSeasonFinaleSubtitle('10. Matching Night gespeichert')
+        }}
+        result={seasonFinaleResult}
+        subtitle={seasonFinaleSubtitle}
+      />
 
       {/* Snackbar */}
       <Snackbar

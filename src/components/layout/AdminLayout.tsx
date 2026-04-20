@@ -32,6 +32,7 @@ import {
   Savings as SavingsIcon
 } from '@mui/icons-material'
 import { db } from '@/lib/db'
+import { getActiveSeasonSummary } from '@/services/seasonCatalogService'
 
 const drawerWidth = 260
 
@@ -52,6 +53,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
   console.log('Mobile:', isMobile) // Keep for responsive debugging
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [activeSeasonTitle, setActiveSeasonTitle] = useState<string | undefined>()
 
   // Stats für Menüleiste
   const [stats, setStats] = useState<{
@@ -120,6 +122,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       const currentBalance = startingBudget + totalVerkauf - totalPenalties + totalCredits
 
       setStats({ activeParticipants, perfectMatches, currentLights, currentBalance, matchingNightsCount, matchboxesCount })
+      const summary = await getActiveSeasonSummary()
+      setActiveSeasonTitle(summary?.title)
       
       console.log('✅ Admin Header: Statistiken direkt aus IndexedDB geladen')
     } catch (error) {
@@ -217,11 +221,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
             A
           </Avatar>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
-              AYTO Admin
+            <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }} noWrap>
+              AYTO
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Reality Show IL 2025
+              Admin
             </Typography>
           </Box>
         </Box>
@@ -338,7 +342,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
             {/* Mobile: Two lines */}
             <Box sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', lineHeight: 1.2 }}>
               <Typography variant="h6" component="div" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                AYTO 2026
+                {activeSeasonTitle || 'AYTO Admin'}
               </Typography>
               <Typography variant="body2" component="div" sx={{ fontWeight: 500, color: 'text.secondary' }}>
                 Admin
@@ -346,7 +350,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
             </Box>
             {/* Desktop: Single line */}
             <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
-              AYTO 2026 - Admin
+              {activeSeasonTitle || 'AYTO Admin'}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mr: 2, flexWrap: 'wrap', justifyContent: 'flex-end', rowGap: 0.5 }}>

@@ -68,7 +68,6 @@ import {
 import AdminLayout from '@/components/layout/AdminLayout'
 import { VERSION_INFO } from '@/utils/version'
 import BroadcastManagement from './BroadcastManagement'
-import JsonImportManagement from './JsonImportManagement'
 import { db, DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
 import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
 import { updateParticipantInJson, addParticipantToJson, deleteParticipantFromJson, updateMatchboxInJson, deleteMatchboxFromJson, updateMatchingNightInJson, deleteMatchingNightFromJson, updatePenaltyInJson, addPenaltyToJson, deletePenaltyFromJson } from '@/services/jsonDataService'
@@ -2091,59 +2090,6 @@ const SettingsManagement: React.FC<{
     }
   }
 
-  const exportAllData = async () => {
-    try {
-      const sid = await getActiveSeasonId()
-      const [participantsData, matchingNightsData, matchboxesData, penaltiesData, probabilityCacheData, broadcastNotesData] = await Promise.all([
-        db.participants.where('seasonId').equals(sid).toArray(),
-        db.matchingNights.where('seasonId').equals(sid).toArray(),
-        db.matchboxes.where('seasonId').equals(sid).toArray(),
-        db.penalties.where('seasonId').equals(sid).toArray(),
-        db.probabilityCache.where('seasonId').equals(sid).toArray(),
-        db.broadcastNotes.where('seasonId').equals(sid).toArray()
-      ])
-      
-      // Matchbox-Daten für Export verwenden (keine Transformation mehr nötig)
-      const transformedMatchboxes = matchboxesData.map(m => ({
-        id: m.id,
-        woman: m.woman,
-        man: m.man,
-        matchType: m.matchType,
-        price: m.price,
-        buyer: m.buyer,
-        ausstrahlungsdatum: m.ausstrahlungsdatum,
-        ausstrahlungszeit: m.ausstrahlungszeit,
-        createdAt: m.createdAt,
-        updatedAt: m.updatedAt
-      }))
-      
-      const allData = {
-        participants: participantsData,
-        matchingNights: matchingNightsData,
-        matchboxes: transformedMatchboxes,
-        penalties: penaltiesData,
-        probabilityCache: probabilityCacheData,
-        broadcastNotes: broadcastNotesData,
-        exportedAt: new Date().toISOString(),
-        version: "1.3"
-      }
-      
-      const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `ayto-complete-export-${new Date().toISOString().split('T')[0]}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-      
-      const totalItems = participantsData.length + matchingNightsData.length + matchboxesData.length + penaltiesData.length + broadcastNotesData.length
-      setSnackbar({ open: true, message: `✅ Kompletter Export erfolgreich!\n\n${participantsData.length} Kandidat*innen\n${matchingNightsData.length} Matching Nights\n${matchboxesData.length} Matchboxes\n${penaltiesData.length} Strafen/Transaktionen\n${probabilityCacheData.length} Wahrscheinlichkeits-Cache\n${broadcastNotesData.length} Notizen\n\nGesamt: ${totalItems} Einträge`, severity: 'success' })
-    } catch (error) {
-      console.error('Fehler beim kompletten Export:', error)
-      setSnackbar({ open: true, message: `❌ Fehler beim kompletten Export: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`, severity: 'error' })
-    }
-  }
-
   const exportForDeploy = async () => {
     try {
       setIsLoading(true)
@@ -2809,7 +2755,6 @@ Alle Daten gehen unwiderruflich verloren!`)
     { title: 'Matching Nights', count: matchingNights.length, onClick: exportMatchingNights, icon: <NightlifeIcon />, disabled: matchingNights.length === 0 },
     { title: 'Matchboxes', count: matchboxes.length, onClick: exportMatchboxes, icon: <InventoryIcon />, disabled: matchboxes.length === 0 },
     { title: 'Strafen/Transaktionen', count: penalties.length, onClick: exportPenalties, icon: <AccountBalanceWalletIcon />, disabled: penalties.length === 0 },
-    { title: 'Komplettexport', count: totalEntries, onClick: exportAllData, icon: <BackupIcon />, disabled: totalEntries === 0, variant: 'contained' as const },
     { title: 'Für Deploy exportieren', count: totalEntries, onClick: exportForDeploy, icon: <CloudUploadIcon />, disabled: totalEntries === 0, variant: 'contained' as const, color: 'secondary' as const }
   ]
 
@@ -3899,11 +3844,6 @@ const AdminPanelMUI: React.FC = () => {
           {/* Datenhaltung (vormals JSON Import) */}
           {activeTab === 'json-import' && (
             <Box sx={{ p: 3 }}>
-              {/* JSON-Daten Import an erster Stelle */}
-              <Box sx={{ mb: 4 }}>
-                <JsonImportManagement onDataUpdate={loadAllData} />
-              </Box>
-
               <SettingsManagement 
                 participants={participants}
                 matchboxes={matchboxes}

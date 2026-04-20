@@ -148,17 +148,12 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
             A
           </Avatar>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }} noWrap>
               AYTO
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Live-Tracker 2026
+              Live-Tracker
             </Typography>
-            {activeSeasonTitle && (
-              <Typography variant="caption" color="primary.main" sx={{ display: 'block', fontWeight: 600, mt: 0.5 }}>
-                {activeSeasonTitle}
-              </Typography>
-            )}
           </Box>
         </Box>
       </Box>
@@ -359,7 +354,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
           </IconButton>
           <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
             <Typography variant="h6" component="div" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-              AYTO 2026
+              {activeSeasonTitle || 'AYTO Live-Tracker'}
             </Typography>
             <Typography variant="body2" component="div" sx={{ fontWeight: 500, color: 'text.secondary' }}>
               Live-Tracker

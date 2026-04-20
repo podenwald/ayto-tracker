@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import { DatabaseUtils } from '@/lib/db'
+import { ensureActiveSeasonCatalogDataLoaded } from '@/services/seasonCatalogService'
 
 interface UseAppInitializationResult {
   isInitializing: boolean
@@ -37,6 +38,10 @@ export function useAppInitialization(): UseAppInitializationResult {
         } else {
           console.log('✅ Datenbank bereits initialisiert')
         }
+
+        // Sicherstellen, dass bei aktiver Katalog-Staffel die initialen JSON-Daten lokal vorhanden sind.
+        // Lädt nur, wenn die aktive Staffel noch keine lokalen Daten enthält.
+        await ensureActiveSeasonCatalogDataLoaded()
         
         console.log('✅ App-Initialisierung abgeschlossen')
       } catch (err: unknown) {

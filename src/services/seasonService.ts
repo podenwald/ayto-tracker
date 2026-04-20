@@ -38,7 +38,20 @@ export async function getActiveSeasonId(): Promise<number> {
     await DatabaseUtils.setMetaValue(META_ACTIVE_SEASON_ID, first.id)
     return first.id
   }
-  throw new Error('Keine Staffel in der Datenbank – Migration erforderlich.')
+
+  // Frische Datenbanken (ohne Migration von Alt-Versionen) haben noch keine Staffel.
+  // Lege in diesem Fall eine initiale, bearbeitbare Staffel an.
+  const now = new Date()
+  const createdSeasonId = await db.seasons.add({
+    slug: 'legacy',
+    title: 'Meine Staffel',
+    kind: 'custom',
+    readOnly: false,
+    createdAt: now,
+    updatedAt: now
+  })
+  await DatabaseUtils.setMetaValue(META_ACTIVE_SEASON_ID, createdSeasonId)
+  return createdSeasonId
 }
 
 export async function setActiveSeasonId(seasonId: number): Promise<void> {

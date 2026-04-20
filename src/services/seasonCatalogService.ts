@@ -2,7 +2,7 @@
  * Katalog-Staffeln von /seasons.json (Server) – Auswahl & Import in IndexedDB.
  */
 
-import { db } from '@/lib/db'
+import { db, DatabaseUtils } from '@/lib/db'
 import type { SeasonKind } from '@/types'
 import { importJsonBundleForSeason } from '@/utils/jsonImport'
 import {
@@ -28,11 +28,7 @@ export interface SeasonCatalogFile {
   entries: SeasonCatalogEntry[]
 }
 
-/**
- * Erwartet JSON; liefert eine verständliche Meldung, wenn stattdessen HTML (SPA-Fallback) kommt.
- */
-async function parseJsonBody<T>(res: Response, label: string): Promise<T> {
-  const text = await res.text()
+function parseJsonFromText<T>(text: string, label: string): T {
   const trimmed = text.trimStart()
   if (trimmed.startsWith('<')) {
     throw new Error(
@@ -45,6 +41,40 @@ async function parseJsonBody<T>(res: Response, label: string): Promise<T> {
     const msg = e instanceof Error ? e.message : String(e)
     throw new Error(`${label}: Ungültiges JSON (${msg})`)
   }
+}
+
+/**
+ * Erwartet JSON; liefert eine verständliche Meldung, wenn stattdessen HTML (SPA-Fallback) kommt.
+ */
+async function parseJsonBody<T>(res: Response, label: string): Promise<T> {
+  const text = await res.text()
+  return parseJsonFromText<T>(text, label)
+}
+
+function catalogBundleMetaKey(catalogEntryId: string): string {
+  return `catalogBundleSha256:${catalogEntryId}`
+}
+
+async function hashJsonPayload(text: string): Promise<string> {
+  if (globalThis.crypto?.subtle) {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+    return Array.from(new Uint8Array(digest))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')
+  }
+  let h = 5381
+  for (let i = 0; i < text.length; i++) {
+    h = (h * 33) ^ text.charCodeAt(i)
+  }
+  return `djb2:${(h >>> 0).toString(16)}`
+}
+
+async function fetchCatalogDataText(dataUrl: string): Promise<string> {
+  const res = await fetch(dataUrl, { cache: 'no-store' })
+  if (!res.ok) {
+    throw new Error(`Daten konnten nicht geladen werden (${dataUrl}): ${res.status}`)
+  }
+  return await res.text()
 }
 
 export async function fetchSeasonCatalog(): Promise<SeasonCatalogFile | null> {
@@ -98,14 +128,64 @@ export async function activateCatalogEntry(entry: SeasonCatalogEntry): Promise<v
     return
   }
 
-  const res = await fetch(entry.dataUrl, { cache: 'no-store' })
-  if (!res.ok) {
-    throw new Error(`Daten konnten nicht geladen werden (${entry.dataUrl}): ${res.status}`)
-  }
-  const raw: unknown = await parseJsonBody<unknown>(res, entry.dataUrl)
+  const text = await fetchCatalogDataText(entry.dataUrl)
+  const raw: unknown = parseJsonFromText<unknown>(text, entry.dataUrl)
   await importJsonBundleForSeason(seasonId, raw, {
     skipWritableCheck: entry.readOnly === true
   })
+  await DatabaseUtils.setMetaValue(catalogBundleMetaKey(entry.id), await hashJsonPayload(text))
+}
+
+/**
+ * Stellt beim App-Start sicher, dass die aktuell aktive Katalog-Staffel die passenden JSON-Daten hat.
+ * - Nur-Lesen-Katalog: bei geänderter JSON-Datei (SHA-256) erneut importieren.
+ * - Bearbeitbare Staffel: nur Erstimport, wenn lokal noch leer (kein Überschreiben von Nutzerdaten).
+ */
+export async function ensureActiveSeasonCatalogDataLoaded(): Promise<void> {
+  const activeSeasonId = await getActiveSeasonId()
+  const activeSeason = await db.seasons.get(activeSeasonId)
+  if (!activeSeason) return
+
+  const catalog = await fetchSeasonCatalog()
+  const entry = catalog?.entries.find(item => item.id === activeSeason.slug)
+  if (!entry?.dataUrl?.trim()) return
+
+  const [participantsCount, matchingNightsCount, matchboxesCount, penaltiesCount] = await Promise.all([
+    db.participants.where('seasonId').equals(activeSeasonId).count(),
+    db.matchingNights.where('seasonId').equals(activeSeasonId).count(),
+    db.matchboxes.where('seasonId').equals(activeSeasonId).count(),
+    db.penalties.where('seasonId').equals(activeSeasonId).count()
+  ])
+
+  const hasAnyData = participantsCount + matchingNightsCount + matchboxesCount + penaltiesCount > 0
+
+  const text = await fetchCatalogDataText(entry.dataUrl)
+  const nextHash = await hashJsonPayload(text)
+  const metaKey = catalogBundleMetaKey(entry.id)
+  const storedHash = await DatabaseUtils.getMetaValue(metaKey)
+  const storedHashStr = typeof storedHash === 'string' ? storedHash : null
+
+  if (entry.readOnly === true) {
+    if (storedHashStr === nextHash) {
+      return
+    }
+    const raw: unknown = parseJsonFromText<unknown>(text, entry.dataUrl)
+    await importJsonBundleForSeason(activeSeasonId, raw, {
+      skipWritableCheck: true
+    })
+    await DatabaseUtils.setMetaValue(metaKey, nextHash)
+    return
+  }
+
+  if (hasAnyData) {
+    return
+  }
+
+  const raw: unknown = parseJsonFromText<unknown>(text, entry.dataUrl)
+  await importJsonBundleForSeason(activeSeasonId, raw, {
+    skipWritableCheck: false
+  })
+  await DatabaseUtils.setMetaValue(metaKey, nextHash)
 }
 
 /**
@@ -127,7 +207,17 @@ export async function getActiveSeasonSummary(): Promise<{ id: number; title: str
     const sid = await getActiveSeasonId()
     const row = await db.seasons.get(sid)
     if (!row?.id) return null
-    return { id: row.id, title: row.title, readOnly: row.readOnly === true }
+    let resolvedTitle = row.title
+
+    // Wenn die aktive Staffel im Server-Katalog existiert, nutze konsequent den Katalogtitel.
+    // So bleibt die UI-Bezeichnung stabil und folgt seasons.json.
+    const catalog = await fetchSeasonCatalog()
+    const catalogEntry = catalog?.entries.find(entry => entry.id === row.slug)
+    if (catalogEntry?.title?.trim()) {
+      resolvedTitle = catalogEntry.title.trim()
+    }
+
+    return { id: row.id, title: resolvedTitle, readOnly: row.readOnly === true }
   } catch {
     return null
   }

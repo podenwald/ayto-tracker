@@ -134,7 +134,7 @@ export async function getJsonDataSources(): Promise<string[]> {
     return list.map((name: string) => `/json/${name.replace(/^\/json\//, '')}`)
   } catch (error) {
     console.warn('⚠️ index.json nicht geladen, nutze Fallback:', error)
-    return ['/json/ayto2026.json']
+    return ['/json/ayto-2026.json']
   }
 }
 

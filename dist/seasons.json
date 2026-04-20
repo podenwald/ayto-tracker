@@ -2,20 +2,29 @@
   "version": 1,
   "entries": [
     {
-      "id": "catalog-ayto-2026-aktuell",
-      "title": "AYTO 2026 – aktueller Datenstand",
+      "id": "catalog-ayto-rsil-2026-aktuell",
+      "title": "AYTO RSIL 2026 - Upcomming",
       "description": "Start-Staffel mit Cast und Daten aus dem Server (bearbeitbar).",
       "kind": "running",
       "readOnly": false,
-      "dataUrl": "/json/ayto_aktuell.json"
+      "dataUrl": "/json/ayto-rsil-2026.json"
     },
     {
-      "id": "catalog-ayto-2026-snapshot",
-      "title": "AYTO 2026 – Snapshot (Beispiel)",
-      "description": "Beispiel für eine abgeschlossene Staffel (nur Ansicht).",
+      "id": "catalog-ayto-2026",
+      "title": "AYTO 2026",
+      "description": "Abgeschlossene Staffel (nur Ansicht).",
       "kind": "completed",
       "readOnly": true,
-      "dataUrl": "/json/ayto2026.json"
-    }
+      "dataUrl": "/json/ayto-2026.json"
+    },
+    {
+      "id": "catalog-ayto-rsil-2025",
+      "title": "AYTO RSIL 2025",
+      "description": "Abgeschlossene Staffel (nur Ansicht).",
+      "kind": "completed",
+      "readOnly": true,
+      "dataUrl": "/json/ayto-rsil-2025.json"
+    }    
+
   ]
 }

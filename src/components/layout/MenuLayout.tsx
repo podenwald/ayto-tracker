@@ -24,7 +24,7 @@ import {
   Inventory as InventoryIcon,
   Settings as SettingsIcon,
   LightMode as LightModeIcon,
-  AutoAwesome as AutoAwesomeIcon,
+  Favorite as FavoriteIcon,
   Savings as SavingsIcon,
   Percent as PercentIcon,
   People as PeopleIcon,
@@ -272,6 +272,23 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
             </Box>
           </Card>
 
+          {/* Perfect Matches */}
+          <Card sx={{ p: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar sx={{ bgcolor: 'success.main', width: 28, height: 28 }}>
+                <FavoriteIcon sx={{ fontSize: '0.875rem' }} />
+              </Avatar>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
+                  Perfect Matches
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
+                  {perfectMatchesCount}
+                </Typography>
+              </Box>
+            </Box>
+          </Card>
+
           {/* Current Lights */}
           <Card sx={{ p: 1.5 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -284,23 +301,6 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: 'warning.main' }}>
                   {currentLights}
-                </Typography>
-              </Box>
-            </Box>
-          </Card>
-
-          {/* Perfect Matches */}
-          <Card sx={{ p: 1.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar sx={{ bgcolor: 'success.main', width: 28, height: 28 }}>
-                <AutoAwesomeIcon sx={{ fontSize: '0.875rem' }} />
-              </Avatar>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
-                  Perfect Matches
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
-                  {perfectMatchesCount}
                 </Typography>
               </Box>
             </Box>

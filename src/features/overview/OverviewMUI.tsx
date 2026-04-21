@@ -1272,7 +1272,7 @@ const OverviewMUI: React.FC = () => {
               <Card
                 sx={{
                   width: 280,
-                  background: 'linear-gradient(135deg, #BD0A16 0%, #CD9536 100%)',
+                  background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
                   color: 'white',
                   boxShadow: 4,
                   borderRadius: 3,

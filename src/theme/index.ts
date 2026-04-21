@@ -1,13 +1,11 @@
-import { createTheme, type ThemeOptions } from '@mui/material/styles'
+import { createTheme, darken, lighten, type ThemeOptions } from '@mui/material/styles'
+import { DEFAULT_COLOR_PREFERENCES, type AppColorPreferences } from './colorPreferences'
 
 // ** Materio Theme Colors
-const themeColors = {
-  primary: '#BD0A16', // Orangeton
-  secondary: '#CD9536', // Gelbton 
+const baseThemeColors = {
   success: '#56CA00',
   error: '#FF4C51',
   warning: '#FFB400',
-  info: '#CD9536', // Gelbton für Info-Boxen
   grey: {
     50: '#FAFAFA',
     100: '#F5F5F5',
@@ -123,47 +121,57 @@ const shadows = [
   '0px 48px 96px rgba(165, 163, 174, 0.3)'
 ]
 
-// ** Theme Options
-const themeOptions: ThemeOptions = {
+function gradient(direction: number, start: string, end: string): string {
+  return `linear-gradient(${direction}deg, ${start} 0%, ${end} 100%)`
+}
+
+export function getGenderPlaceholderGradient(gender: 'F' | 'M', colors: AppColorPreferences): string {
+  return gender === 'F'
+    ? gradient(135, lighten(colors.secondary, 0.15), darken(colors.secondary, 0.2))
+    : gradient(135, lighten(colors.primary, 0.15), darken(colors.primary, 0.2))
+}
+
+export function createAppTheme(colors: AppColorPreferences = DEFAULT_COLOR_PREFERENCES) {
+  const themeOptions: ThemeOptions = {
   palette: {
     mode: 'light',
     primary: {
-      main: themeColors.primary,
-      light: '#E03A44',
-      dark: '#8A080F',
+      main: colors.primary,
+      light: lighten(colors.primary, 0.2),
+      dark: darken(colors.primary, 0.28),
       contrastText: '#FFF'
     },
     secondary: {
-      main: themeColors.secondary,
-      light: '#E0B05F',
-      dark: '#A6752A',
+      main: colors.secondary,
+      light: lighten(colors.secondary, 0.2),
+      dark: darken(colors.secondary, 0.28),
       contrastText: '#FFF'
     },
     success: {
-      main: themeColors.success,
+      main: baseThemeColors.success,
       light: '#7BC03A',
       dark: '#4DA90E',
       contrastText: '#FFF'
     },
     error: {
-      main: themeColors.error,
+      main: baseThemeColors.error,
       light: '#FF6F70',
       dark: '#E73D3E',
       contrastText: '#FFF'
     },
     warning: {
-      main: themeColors.warning,
+      main: baseThemeColors.warning,
       light: '#FFC633',
       dark: '#E69E00',
       contrastText: '#FFF'
     },
     info: {
-      main: themeColors.info,
-      light: '#E0B05F',
-      dark: '#A6752A',
+      main: colors.secondary,
+      light: lighten(colors.secondary, 0.2),
+      dark: darken(colors.secondary, 0.28),
       contrastText: '#FFF'
     },
-    grey: themeColors.grey,
+    grey: baseThemeColors.grey,
     text: {
       primary: '#3A3541',
       secondary: '#3A3541',
@@ -224,18 +232,18 @@ const themeOptions: ThemeOptions = {
           fontSize: '0.875rem'
         },
         containedPrimary: {
-          background: 'linear-gradient(135deg, #BD0A16 0%, #CD9536 100%)',
+          background: gradient(135, colors.primary, colors.secondary),
           color: '#FFF',
           '&:hover': {
-            background: 'linear-gradient(135deg, #8A080F 0%, #A6752A 100%)',
+            background: gradient(135, darken(colors.primary, 0.28), darken(colors.secondary, 0.28)),
             boxShadow: 4
           }
         },
         containedSecondary: {
-          background: 'linear-gradient(135deg, #CD9536 0%, #BD0A16 100%)',
+          background: gradient(135, colors.secondary, colors.primary),
           color: '#FFF',
           '&:hover': {
-            background: 'linear-gradient(135deg, #A6752A 0%, #8A080F 100%)',
+            background: gradient(135, darken(colors.secondary, 0.28), darken(colors.primary, 0.28)),
             boxShadow: 4
           }
         }
@@ -250,10 +258,10 @@ const themeOptions: ThemeOptions = {
               borderColor: '#DBDADE'
             },
             '&:hover fieldset': {
-              borderColor: themeColors.primary
+              borderColor: colors.primary
             },
             '&.Mui-focused fieldset': {
-              borderColor: themeColors.primary
+              borderColor: colors.primary
             }
           }
         }
@@ -296,7 +304,7 @@ const themeOptions: ThemeOptions = {
           fontWeight: 500,
           fontSize: '0.875rem',
           '&.Mui-selected': {
-            color: themeColors.primary
+            color: colors.primary
           }
         }
       }
@@ -304,13 +312,15 @@ const themeOptions: ThemeOptions = {
     MuiTabs: {
       styleOverrides: {
         indicator: {
-          backgroundColor: themeColors.primary
+          backgroundColor: colors.primary
         }
       }
     }
   }
 }
+  return createTheme(themeOptions)
+}
 
 // ** Create and export theme
-export const theme = createTheme(themeOptions)
+export const theme = createAppTheme()
 export default theme

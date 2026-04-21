@@ -28,6 +28,7 @@ import {
   Schedule as ScheduleIcon,
   Favorite as FavoriteIcon,
   LightMode as LightModeIcon,
+  Settings as SettingsIcon,
   Home as HomeIcon,
   Savings as SavingsIcon
 } from '@mui/icons-material'
@@ -192,9 +193,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       value: 'broadcast'
     },
     {
-      text: 'Budget & Stafen',
+      text: 'Budget & Strafen',
       icon: <SavingsIcon />,
       value: 'settings'
+    },
+    {
+      text: 'Einstellungen',
+      icon: <SettingsIcon />,
+      value: 'appearance'
     },
     {
       text: 'Datenhaltung',

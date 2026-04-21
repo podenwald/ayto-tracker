@@ -64,6 +64,7 @@ import {
   Inventory as InventoryIcon,
   Nightlife as NightlifeIcon,
   Schedule as ScheduleIcon,
+  Palette as PaletteIcon,
 } from '@mui/icons-material'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { VERSION_INFO } from '@/utils/version'
@@ -73,6 +74,13 @@ import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '
 import { updateParticipantInJson, addParticipantToJson, deleteParticipantFromJson, updateMatchboxInJson, deleteMatchboxFromJson, updateMatchingNightInJson, deleteMatchingNightFromJson, updatePenaltyInJson, addPenaltyToJson, deletePenaltyFromJson } from '@/services/jsonDataService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
 import { MatchboxService } from '@/services/matchboxService'
+import {
+  DEFAULT_COLOR_PREFERENCES,
+  isHexColor,
+  loadColorPreferences,
+  resetColorPreferences,
+  saveColorPreferences
+} from '@/theme/colorPreferences'
 // import { exportCurrentDatabaseState } from '@/utils/jsonImport' // Nicht mehr benötigt, da eigene Implementierung
 
 
@@ -293,7 +301,11 @@ const ParticipantsList: React.FC<{
                     borderRadius: 3,
                     overflow: 'hidden',
                     position: 'relative',
-                    backgroundImage: (participant.photoUrl && participant.photoUrl.trim() !== '') ? `url(${participant.photoUrl})` : (participant.gender === 'F' ? 'linear-gradient(135deg, #E0B05F 0%, #A6752A 100%)' : 'linear-gradient(135deg, #E03A44 0%, #8A080F 100%)'),
+                    backgroundImage: (theme) => (participant.photoUrl && participant.photoUrl.trim() !== '')
+                      ? `url(${participant.photoUrl})`
+                      : participant.gender === 'F'
+                        ? `linear-gradient(135deg, ${theme.palette.secondary.light} 0%, ${theme.palette.secondary.dark} 100%)`
+                        : `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     cursor: 'pointer',
@@ -524,7 +536,11 @@ const ParticipantsList: React.FC<{
                     borderRadius: 3,
                     overflow: 'hidden',
                     position: 'relative',
-                    backgroundImage: (participant.photoUrl && participant.photoUrl.trim() !== '') ? `url(${participant.photoUrl})` : (participant.gender === 'F' ? 'linear-gradient(135deg, #E0B05F 0%, #A6752A 100%)' : 'linear-gradient(135deg, #E03A44 0%, #8A080F 100%)'),
+                    backgroundImage: (theme) => (participant.photoUrl && participant.photoUrl.trim() !== '')
+                      ? `url(${participant.photoUrl})`
+                      : participant.gender === 'F'
+                        ? `linear-gradient(135deg, ${theme.palette.secondary.light} 0%, ${theme.palette.secondary.dark} 100%)`
+                        : `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     cursor: 'pointer',
@@ -1835,7 +1851,7 @@ const SettingsManagement: React.FC<{
   matchingNights: MatchingNight[]
   penalties: Penalty[]
   onUpdate: () => void
-  renderContext?: 'settings' | 'json-import'
+  renderContext?: 'settings' | 'json-import' | 'appearance'
 }> = ({ participants, matchboxes, matchingNights, penalties, onUpdate, renderContext = 'settings' }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -1860,6 +1876,10 @@ const SettingsManagement: React.FC<{
     showDialog: false
   })
   const [newBudget, setNewBudget] = useState<string>('')
+  const [themeColorSettings, setThemeColorSettings] = useState({
+    primary: DEFAULT_COLOR_PREFERENCES.primary,
+    secondary: DEFAULT_COLOR_PREFERENCES.secondary
+  })
   const [penaltyForm, setPenaltyForm] = useState({
     participantName: '',
     reason: '',
@@ -1877,6 +1897,8 @@ const SettingsManagement: React.FC<{
     if (savedBudget) {
       setBudgetSettings(prev => ({ ...prev, startingBudget: parseInt(savedBudget, 10) }))
     }
+    const colors = loadColorPreferences()
+    setThemeColorSettings(colors)
   }, [])
 
   // ** Budget Functions **
@@ -1901,6 +1923,21 @@ const SettingsManagement: React.FC<{
   const closeBudgetDialog = () => {
     setBudgetSettings(prev => ({ ...prev, showDialog: false }))
     setNewBudget('')
+  }
+
+  const saveThemeColors = () => {
+    if (!isHexColor(themeColorSettings.primary) || !isHexColor(themeColorSettings.secondary)) {
+      setSnackbar({ open: true, message: '❌ Bitte gültige HEX-Farben angeben (z. B. #BF1E1E).', severity: 'error' })
+      return
+    }
+    saveColorPreferences(themeColorSettings)
+    setSnackbar({ open: true, message: '✅ Theme-Farben wurden gespeichert und direkt angewendet.', severity: 'success' })
+  }
+
+  const restoreDefaultThemeColors = () => {
+    resetColorPreferences()
+    setThemeColorSettings(DEFAULT_COLOR_PREFERENCES)
+    setSnackbar({ open: true, message: '✅ Standardfarben wurden wiederhergestellt.', severity: 'success' })
   }
 
   // ** Penalty Functions **
@@ -2766,9 +2803,73 @@ Alle Daten gehen unwiderruflich verloren!`)
 
   return (
     <Box>
+      {renderContext === 'appearance' && (
+        <Card sx={{ mb: 4 }}>
+          <CardHeader
+            title="Farben & Verläufe"
+            avatar={<Avatar sx={{ bgcolor: 'secondary.main' }}><PaletteIcon /></Avatar>}
+          />
+          <CardContent>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', lg: '180px 280px 180px 280px' },
+                gap: 2,
+                alignItems: 'end'
+              }}
+            >
+              <TextField
+                label="Primary Picker"
+                type="color"
+                value={themeColorSettings.primary}
+                onChange={(e) => setThemeColorSettings(prev => ({ ...prev, primary: e.target.value }))}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Hauptfarbe (Männer)"
+                value={themeColorSettings.primary}
+                onChange={(e) => setThemeColorSettings(prev => ({ ...prev, primary: e.target.value }))}
+                placeholder="#BD0A16"
+                sx={{ width: 280 }}
+              />
+              <TextField
+                label="Secondary Picker"
+                type="color"
+                value={themeColorSettings.secondary}
+                onChange={(e) => setThemeColorSettings(prev => ({ ...prev, secondary: e.target.value }))}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Akzentfarbe (Frauen)"
+                value={themeColorSettings.secondary}
+                onChange={(e) => setThemeColorSettings(prev => ({ ...prev, secondary: e.target.value }))}
+                placeholder="#CD9536"
+                sx={{ width: 280 }}
+              />
+            </Box>
+            <Box
+              sx={{
+                mt: 2,
+                p: 2,
+                borderRadius: 2,
+                color: '#fff',
+                background: `linear-gradient(135deg, ${themeColorSettings.primary} 0%, ${themeColorSettings.secondary} 100%)`
+              }}
+            >
+              Vorschau Matchbox-Verlauf
+            </Box>
+            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+              <Button variant="contained" onClick={saveThemeColors}>Farben speichern</Button>
+              <Button variant="outlined" onClick={restoreDefaultThemeColors}>Auf Standard zurücksetzen</Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Budget Settings Section (hidden in Datenhaltung) */}
-      {renderContext !== 'json-import' && (
+      {renderContext === 'settings' && (
       <Card sx={{ mb: 4 }}>
         <CardHeader 
           title="Budget Einstellungen"
@@ -2917,7 +3018,7 @@ Alle Daten gehen unwiderruflich verloren!`)
       )}
 
       {/* Penalties Management Section (hidden in Datenhaltung) */}
-      {renderContext !== 'json-import' && (
+      {renderContext === 'settings' && (
       <Card sx={{ mb: 4 }}>
         <CardHeader 
           title="Strafen-Verwaltung"
@@ -3837,6 +3938,20 @@ const AdminPanelMUI: React.FC = () => {
                 penalties={penalties}
                 onUpdate={loadAllData}
                 renderContext="settings"
+              />
+            </Box>
+          )}
+
+          {/* Einstellungen (Farben & Verläufe) */}
+          {activeTab === 'appearance' && (
+            <Box sx={{ p: 3 }}>
+              <SettingsManagement
+                participants={participants}
+                matchboxes={matchboxes}
+                matchingNights={matchingNights}
+                penalties={penalties}
+                onUpdate={loadAllData}
+                renderContext="appearance"
               />
             </Box>
           )}

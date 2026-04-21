@@ -37,7 +37,7 @@ const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => 
           {/* Women Section */}
           <Box sx={{ mb: 6 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-              <Avatar sx={{ bgcolor: '#CD9536' }}>
+              <Avatar sx={{ bgcolor: 'secondary.main' }}>
                 <WomanIcon sx={{ color: 'white' }} />
               </Avatar>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -62,7 +62,11 @@ const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => 
                     borderRadius: 3,
                     overflow: 'hidden',
                     position: 'relative',
-                    backgroundImage: (participant.photoUrl && participant.photoUrl.trim() !== '') ? `url(${participant.photoUrl})` : (participant.gender === 'F' ? 'linear-gradient(135deg, #E0B05F 0%, #A6752A 100%)' : 'linear-gradient(135deg, #E03A44 0%, #8A080F 100%)'),
+                    backgroundImage: (theme) => (participant.photoUrl && participant.photoUrl.trim() !== '')
+                      ? `url(${participant.photoUrl})`
+                      : participant.gender === 'F'
+                        ? `linear-gradient(135deg, ${theme.palette.secondary.light} 0%, ${theme.palette.secondary.dark} 100%)`
+                        : `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     transition: 'all 0.3s ease-in-out',
@@ -238,7 +242,7 @@ const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => 
           {/* Men Section */}
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-              <Avatar sx={{ bgcolor: '#BD0A16' }}>
+              <Avatar sx={{ bgcolor: 'primary.main' }}>
                 <ManIcon sx={{ color: 'white' }} />
               </Avatar>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -262,7 +266,11 @@ const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => 
                     borderRadius: 3,
                     overflow: 'hidden',
                     position: 'relative',
-                    backgroundImage: (participant.photoUrl && participant.photoUrl.trim() !== '') ? `url(${participant.photoUrl})` : (participant.gender === 'F' ? 'linear-gradient(135deg, #E0B05F 0%, #A6752A 100%)' : 'linear-gradient(135deg, #E03A44 0%, #8A080F 100%)'),
+                    backgroundImage: (theme) => (participant.photoUrl && participant.photoUrl.trim() !== '')
+                      ? `url(${participant.photoUrl})`
+                      : participant.gender === 'F'
+                        ? `linear-gradient(135deg, ${theme.palette.secondary.light} 0%, ${theme.palette.secondary.dark} 100%)`
+                        : `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     transition: 'all 0.3s ease-in-out',

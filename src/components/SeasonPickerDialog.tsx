@@ -87,12 +87,14 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
     setLoading(true)
     setError(null)
     try {
-      if (item.localSeason?.id != null) {
+      // Für Katalog-Staffeln immer den Aktivierungs-Flow nutzen:
+      // setzt activeSeasonId und lädt bei leerer Staffel initiale JSON-Daten.
+      if (item.catalogEntry) {
+        await activateCatalogEntry(item.catalogEntry)
+      } else if (item.localSeason?.id != null) {
         if (item.localSeason.id !== activeId) {
           await setActiveSeasonId(item.localSeason.id)
         }
-      } else if (item.catalogEntry) {
-        await activateCatalogEntry(item.catalogEntry)
       }
 
       await refreshLocal()

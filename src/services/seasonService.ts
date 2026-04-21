@@ -3,6 +3,11 @@
  */
 
 import { db, DatabaseUtils, type Season, type SeasonKind } from '@/lib/db'
+import {
+  ensureSeasonRowFromCatalog,
+  fetchSeasonCatalog,
+  pickDefaultCatalogEntry
+} from '@/services/seasonCatalogCore'
 
 export const META_ACTIVE_SEASON_ID = 'activeSeasonId'
 
@@ -33,6 +38,17 @@ export async function getActiveSeasonId(): Promise<number> {
     const exists = await db.seasons.get(id)
     if (exists) return id
   }
+
+  // Ohne gültige Meta: nicht die niedrigste DB-id wählen (älteste Import-Staffel),
+  // sondern die Default-Zeile aus seasons.json (erste bearbeitbare, sonst erste Eintrag).
+  const catalog = await fetchSeasonCatalog()
+  const defaultEntry = catalog ? pickDefaultCatalogEntry(catalog) : null
+  if (defaultEntry) {
+    const seasonId = await ensureSeasonRowFromCatalog(defaultEntry)
+    await DatabaseUtils.setMetaValue(META_ACTIVE_SEASON_ID, seasonId)
+    return seasonId
+  }
+
   const first = await db.seasons.orderBy('id').first()
   if (first?.id != null) {
     await DatabaseUtils.setMetaValue(META_ACTIVE_SEASON_ID, first.id)

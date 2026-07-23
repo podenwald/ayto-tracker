@@ -1,5 +1,7 @@
 # PWA Hosting-Anforderungen & Anleitung
 
+> **Stand 2026-07-23:** Dieser Guide wägt Hosting-Optionen ab und empfiehlt Netlify. Tatsächlich gewählt wurde am Ende **Netcup vServer** (siehe `VSERVER_HOSTING_GUIDE.md`), deployed automatisiert per FTP über GitHub Actions (`.github/workflows/main.yml`) - nicht über Netlify. Die `_headers`/`_redirects`-Dateien für Netlify liegen weiterhin im Repo, werden im aktuellen Deploy aber nicht ausgewertet. Der Rest dieses Dokuments ist als allgemeiner Provider-Vergleich weiterhin nützlich, nur die Abschluss-Empfehlung stimmt nicht mehr mit der echten Entscheidung überein.
+
 ## 🔒 Technische Mindestanforderungen
 
 ### 1. **HTTPS ist Pflicht** ⚠️

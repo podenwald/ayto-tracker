@@ -1,5 +1,7 @@
 # Domain-Setup: legendforest.de
 
+> **Umgesetzt:** Subdomain-Variante (Option 1), tatsächliche URL ist `ayto-tracker.legendforest.de` (nicht `tracker.legendforest.de`, wie unten als Beispiel verwendet). Der laufende Deploy erfolgt automatisiert per FTP über GitHub Actions, siehe `docs/DEPLOYMENT.md` - die Nginx/SSH-Schritte unten beschreiben die einmalige Server-Einrichtung.
+
 ## ✅ Domain verfügbar: https://legendforest.de/
 
 Du hast bereits eine funktionierende Domain! Jetzt gibt es zwei Optionen:

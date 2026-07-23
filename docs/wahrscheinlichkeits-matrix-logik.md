@@ -1,5 +1,7 @@
 # Wahrscheinlichkeits-Matrix - Spiellogik
 
+> **Status:** Die Berechnung (`probabilityService.ts`, läuft im Web Worker `probabilityWorker.ts`) ist implementiert und funktionsfähig, der Menüpunkt ist im aktuellen UI (Stand v1.2.1) aber deaktiviert. Diese Doku beschreibt die Logik, wie sie im Code vorhanden ist.
+
 ## Übersicht
 
 Die Wahrscheinlichkeits-Matrix zeigt für jedes mögliche Paar (Frau × Mann) die Wahrscheinlichkeit an, dass sie ein Perfect Match sind. Die Darstellung erfolgt visuell durch Symbole und zusätzliche Informationen über Matching Nights.

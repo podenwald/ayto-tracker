@@ -13,7 +13,10 @@ const crypto = require('crypto')
 const { execSync } = require('child_process')
 
 const MANIFEST_PATH = path.join(__dirname, '..', 'public', 'manifest.json')
-const DATA_FILE_PATH = path.join(__dirname, '..', 'public', 'ayto-vip-2025.json')
+// Hasht nur die Fallback-Datei (siehe databaseUpdateService.ts), nicht alle in
+// public/json/index.json gelisteten Staffel-Dateien - Änderungen an den
+// anderen Dateien werden von dataHash aktuell nicht erkannt.
+const DATA_FILE_PATH = path.join(__dirname, '..', 'public', 'json', 'ayto-2026.json')
 const PROJECT_ROOT = path.join(__dirname, '..')
 const HAS_GIT_REPO = fs.existsSync(path.join(PROJECT_ROOT, '.git'))
 

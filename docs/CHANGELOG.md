@@ -1,5 +1,59 @@
 # Changelog
 
+## [1.2.1] - 2026-07-23
+
+### 🚀 Neue Features
+- Vollbild-MUI-Dialoge auf Mobile statt gequetschter Modals (`SeasonPickerDialog`, Matchbox-/Matching-Night-Dialoge im Admin-Panel)
+- Responsive Toolbar-Höhen und Stat-Chips in Admin-/Menü-Layout
+
+### 🛠️ Verbesserungen
+- Guard gegen veraltete Staffel-Wechsel-Responses in `OverviewMUI` (verhindert UI-State-Leaks bei schnellem Staffelwechsel)
+- `DatabaseUpdateBanner`: manuelle Dismiss-Funktion entfernt
+
+### 🐛 Bugfixes
+- TS18048-Build-Fehler bei der Matchbox-Avatar-Vorschau behoben (mögliches `undefined` bei `woman`/`man`)
+- `package-lock.json` fälschlich aus Git-Tracking entfernt, CI-Deploy schlug fehl → behoben, Datei bleibt dauerhaft getrackt
+- `scripts/update-manifest.cjs` verwies auf eine nicht mehr existierende Datei (`ayto-vip-2025.json`), wodurch `dataHash` im Manifest immer `"unknown"` war → auf die tatsächliche Fallback-Datei `public/json/ayto-2026.json` korrigiert
+
+### 🔧 Sonstiges
+- Vollständiger Umstieg der Entwicklungsumgebung von Cursor auf Claude Code (`CLAUDE.md`, `.claude/`-Konfiguration)
+- Cursor-Altlasten entfernt (`.cursor/debug.log`, doppelte `update-manifest.js`, toter `useAytoState`-Hook, Synology-Sync-Konflikt-Datei)
+- `docs/` durchgetestet und aktualisiert (mehrere seit Monaten veraltete Angaben zu Netlify-Deploy, Datenbank-Version, Manifest-Feldern korrigiert)
+
+---
+
+## [1.2.0] - 2026-04-21
+- Konfigurierbare Farben
+
+---
+
+## [1.1.1] - 2026-04-21
+- Asset-Referenzen und Versionierung aktualisiert
+
+---
+
+## [1.1.0] - 2026-04-20
+- Release v1.1.0 (Finale-Version)
+
+---
+
+## [1.0.4] – [1.0.5] - 2026-03-10
+- Neue Matching Nights mit Details in den Daten ergänzt
+- Herleitungs-Feature zur Erklärung der Wahrscheinlichkeitsberechnung in `OverviewMUI`
+
+---
+
+## [1.0.1] – [1.0.3] - 2026-02-11
+- Matching-Night-Erstellung im Frontend, Menü/Theme/UX-Anpassungen
+- Dynamische JSON-Quellen aus `public/json/index.json` mit Fallback (Vorläufer des heutigen `databaseUpdateService.ts`)
+
+---
+
+## [1.0.0] - 2026-02-08
+- Erstes Release nach der Umbenennung/dem Versions-Reset unten (`0.0.1`)
+
+---
+
 ## [0.0.1] - 2026-01-12
 
 ### 🔄 Projektumbenennung

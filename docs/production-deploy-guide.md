@@ -2,107 +2,80 @@
 
 Dieser Leitfaden beschreibt, wie bei jedem Deployment sichergestellt wird, dass auf Production immer die aktuellste App-Version und Datengrundlage verfügbar ist.
 
+> **Hinweis:** Diese Datei beschrieb ursprünglich einen Netlify-basierten Deploy. Das Projekt nutzt inzwischen **GitHub Actions + FTP auf einen Netcup-vServer** - der Inhalt wurde entsprechend korrigiert.
+
 ### Überblick
-- Primärdatenquelle: `public/json/ayto-vip-2025.json`
-- Fallback-Datenquelle: `public/json/ayto-complete-noPicture.json`
-- Beim Build wird automatisch:
-  1) die App-Version aus Git ermittelt
-  2) ein tagesaktueller Export erstellt und `ayto-vip-2025.json` damit synchronisiert
-  3) das Manifest mit Version (Git-Tag) und Daten-Hash der finalen `ayto-vip-2025.json` generiert
+- Datenquellen: alle Dateien, die in `public/json/index.json` gelistet sind (aktuell `ayto-2026.json`, `ayto-rsil-2025.json`, `ayto-rsil-2026.json`) - es gibt keine einzelne feste „Primärdatenquelle“ mehr
+- `dataHash` im Manifest hasht nur die Fallback-Datei `public/json/ayto-2026.json`, nicht alle Dateien (bekannte Einschränkung)
+- Beim Build wird automatisch (`prebuild`):
+  1) die App-Version aus dem Git-Tag ermittelt (`scripts/generate-version.cjs`)
+  2) das Manifest mit Version und Daten-Hash generiert (`scripts/update-manifest.cjs`)
 
 ### Voraussetzungen
-- Netlify baut den `main` Branch (Production Context)
-- Build-Command: `npm run build`
-- Publish Directory: `dist`
+- GitHub Actions Workflow `.github/workflows/main.yml`, Trigger: Push auf `main`
+- Build-Command im Workflow: `npm ci && npm run build`
+- Deploy-Ziel: FTP-Upload von `./dist/` nach `hosting119408.a2fac.netcup.net` (Secrets `FTP_USERNAME`/`FTP_PASSWORT`)
 
 ### Standard-Ablauf für ein Release
-1. Änderungen in `main` mergen (Code + Daten im Repo, falls nötig)
-2. Optional: Git-Tag setzen (z. B. `v0.5.7`)
-3. Netlify-Deploy abwarten
-4. Nach dem Deploy: Seite in Production öffnen und Version prüfen:
-   - Footer → „Versionsinformationen“
-   - Manifest (Aufruf `/manifest.json`) zeigt `version` = Git-Tag, `dataHash` ≠ `unknown`
+1. Änderungen auf einem Feature-Branch entwickeln, `npm run build`/`npm run lint` lokal prüfen
+2. Branch nach `main` mergen (Fast-Forward oder Merge) und pushen - das **ist** der Deploy-Trigger, kein separater Schritt nötig
+3. GitHub-Actions-Run abwarten (`gh run list --branch main` oder in der GitHub-UI), Dauer ca. 1 Minute
+4. Nach erfolgreichem Run: Seite unter https://ayto-tracker.legendforest.de/ öffnen und Version prüfen (Footer/Admin-Panel „Versionsinformationen“)
 
 ### Durchführungsreihenfolge (Schritt für Schritt)
-1) IndexedDB → JSON aktualisieren (vor dem Deploy)
-   - App öffnen → Admin-Panel → Tab „Datenhaltung“
-   - „Export für Deployment“ klicken (lädt vollständige JSON des aktuellen IndexedDB‑Stands herunter)
-   - Heruntergeladene Datei als `public/json/ayto-vip-2025.json` speichern (vorhandene Datei überschreiben)
-
-2) (Optional) Git-Tag setzen
-   - Tag repräsentiert die Release-Version der App (z. B. `v0.5.7`)
-
-3) Deploy starten (Netlify baut `main`)
-   - Build-Command: `npm run build`
-   - Publish Directory: `dist`
-   - Falls Diskrepanzen/Cache-Probleme: „Clear cache and deploy site“ auslösen
-
-4) Post-Deploy prüfen
-   - Footer → „Versionsinformationen“ zeigt Git-Tag/Commit, Environment = Production
-   - `/manifest.json` → `version` = Git-Tag und `dataHash` ≠ `unknown`
-   - `/json/ayto-vip-2025.json` erreichbar; Felder `exportedAt` ≈ Build‑Zeit, `version` = Package-Version
+1) Falls sich Daten geändert haben: IndexedDB → JSON exportieren
+   - App öffnen → Admin-Panel → „Export für Deployment“ klicken (lädt vollständige JSON des aktuellen IndexedDB-Stands herunter, Dateiname `ayto-complete-export-YYYY-MM-DD.json`)
+   - Datei nach `public/json/` legen und in `public/json/index.json` eintragen
+2) Versionsnummer/Branch-Name passend zum geplanten Release wählen (siehe Versionskonvention: Branch-Name trägt die Zielversion, z. B. `feature/mobilFirst-v1.2.1`)
+3) Nach `main` mergen und pushen → GitHub Actions baut und deployed automatisch
+4) Post-Deploy prüfen:
+   - Footer/Admin-Panel zeigt den erwarteten Git-Tag/Commit
+   - `/manifest.json` zeigt `version` = Git-Tag und `dataHash` ≠ `unknown`
 
 ### Was der Build automatisch macht
 - `prebuild` führt aus:
-  - `scripts/generate-version.cjs` → ermittelt Git-Tag, Commit, Build-Zeit, Production-Flag
-  - `scripts/export-current-db.cjs` → erzeugt tagesaktuellen Export und überschreibt `public/json/ayto-vip-2025.json`
-  - `scripts/update-manifest.cjs` → schreibt `/public/manifest.json` mit:
+  - `scripts/generate-version.cjs` → ermittelt Git-Tag, Commit, Build-Zeit, Production-Flag, schreibt `src/utils/version.ts`
+  - `scripts/update-manifest.cjs` → schreibt `public/manifest.json` mit:
     - `version`: aktueller Git-Tag
-    - `dataHash`: Hash der finalen `ayto-vip-2025.json`
+    - `dataHash`: Hash von `public/json/ayto-2026.json` (nur diese eine Datei, siehe Überblick)
     - `released`: Datum/Uhrzeit des Tags
 
-Damit sind App-Version (Code) und Daten-Stand (JSON) synchron und eindeutig identifizierbar.
-
-### IndexedDB → JSON aktualisieren (Detail)
-Ziel: Production soll immer die aktuellsten Daten nutzen. Primärquelle ist `public/json/ayto-vip-2025.json`. Diese wird vor dem Deployment aus der aktuellen IndexedDB erzeugt.
-
-Schritte:
-1) App öffnen → Admin-Panel → Tab „Datenhaltung“
-2) „Export für Deployment“ klicken → vollständige JSON wird heruntergeladen
-3) Datei lokal als `public/json/ayto-vip-2025.json` speichern (vorhandene Datei überschreiben)
-4) Änderungen (falls erforderlich) committen/mergen → Netlify baut automatisch
-
-Hinweise:
-- Die Exportdatei `ayto-complete-export-YYYY-MM-DD.json` dient als Fallback. Die App lädt primär `ayto-vip-2025.json`.
-- Der Build synchronisiert `ayto-vip-2025.json` zusätzlich mit dem tagesaktuellen Export, und generiert ein Manifest mit Tag/Hash.
-
 ### Nach dem Deploy – Checks
-- In der App (Footer → „Versionsinformationen"):
-  - Version = erwarteter Git-Tag (z. B. `v0.5.7`)
+- In der App (Footer/Admin-Panel „Versionsinformationen“):
+  - Version = erwarteter Git-Tag
   - Commit = 7-stelliger Prefix des letzten Commits
-  - Environment = „Production“
 - Manifest unter `/manifest.json`:
   - `version` = Git-Tag
   - `dataHash` ≠ `unknown`
   - `released` plausibel
-- JSON-Erreichbarkeit:
-  - `GET /json/ayto-vip-2025.json` liefert aktuelle Daten (Feld `exportedAt` ~ Build-Zeit, `version` = Package-Version)
+- GitHub-Actions-Run: Status „success“ (`gh run list --branch main --limit 1`)
 
 ### Häufige Probleme und Lösungen
-- Problem: Production zeigt alte Version / alten Tag
-  - Ursache: Build hat älteren Commit/Tag gebaut
-  - Lösung: In Netlify „Clear cache and deploy site“ auf `main` auslösen
+- Problem: Deploy-Workflow schlägt fehl mit „Dependencies lock file is not found“
+  - Ursache: `package-lock.json` wurde aus dem Git-Tracking entfernt
+  - Lösung: Datei committen, niemals in `.gitignore` aufnehmen (siehe `CLAUDE.md`)
+- Problem: Production zeigt alte Version
+  - Ursache: Push kam nicht auf `main` an, oder Workflow ist fehlgeschlagen
+  - Lösung: `gh run list --branch main` prüfen, ggf. erneut pushen
 - Problem: Manifest zeigt `dataHash: "unknown"`
-  - Ursache: `ayto-vip-2025.json` nicht vorhanden oder nicht synchron
-  - Lösung: Erneut deployen, ggf. „Clear cache and deploy site“; sicherstellen, dass `public/json/ayto-vip-2025.json` im Repo vorhanden ist
+  - Ursache: `public/json/ayto-2026.json` nicht vorhanden
+  - Lösung: Datei muss im Repo existieren (aktuell der Fall); ansonsten `scripts/update-manifest.cjs` prüfen
 - Problem: App meldet „Keine JSON-Dateien gefunden“
-  - Ursache: `dist/json` fehlt oder Pfade falsch
-  - Lösung: Prüfen, dass `public/json/*` existiert (wird von Vite nach `dist/json` kopiert); Build erneut ausführen
+  - Ursache: `public/json/index.json` fehlt, ist leer oder verweist auf nicht existierende Dateien
+  - Lösung: `index.json` prüfen, Build erneut ausführen
 - Problem: Service Worker zeigt alten Stand
-  - Lösung: Seite hart neu laden (Cmd+Shift+R) oder in DevTools → Application → Service Workers → Update/Unregister; App lädt danach den neuen Build
+  - Lösung: Seite hart neu laden (Cmd+Shift+R) oder in DevTools → Application → Service Workers → Update/Unregister
 
 ### Best Practices
-- Git-Tag immer auf den aktuellen Release-Commit setzen (falls Tags verwendet werden)
+- Branch-Name trägt die Zielversion (siehe Entscheidungs-Doku im Repo), Tag wird beim Release entsprechend gesetzt
 - Keine manuellen Änderungen an `dist/` vornehmen – immer über `npm run build`
-- Bei Datenänderungen (z. B. neue Broadcasting-Zeiten) einfach commiten; der Build synchronisiert `ayto-vip-2025.json` automatisch
-- Bei Netlify-Problemen: „Clear cache and deploy site“ auf `main`
+- Bei Datenänderungen: Export über Admin-Panel, Datei + `index.json`-Eintrag committen
+- Nach dem Push immer den GitHub-Actions-Run auf Erfolg prüfen, nicht blind vertrauen
 
 ### Kurzanleitung (TL;DR)
-1. Merge nach `main`
-2. (Optional) Tag setzen
-3. Netlify-Deploy abwarten
-4. Prüfen:
+1. Merge nach `main`, pushen
+2. GitHub-Actions-Run abwarten und auf Erfolg prüfen
+3. Prüfen:
    - Footer-Version = erwarteter Tag
    - `/manifest.json` hat korrekte `version` und `dataHash`
-   - `/json/ayto-vip-2025.json` ist erreichbar und aktuell
-
+   - Seite lädt und zeigt aktuelle Daten

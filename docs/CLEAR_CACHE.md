@@ -9,9 +9,15 @@
 ```javascript
 // IndexedDB Cache löschen
 (async () => {
-  const dbRequest = indexedDB.open('aytoDB', 11);
+  // Keine feste Versionsnummer angeben - die Datenbank hat aktuell Schema-Version 15
+  // und wächst weiter; ein zu niedriger Wert hier löst einen VersionError aus.
+  const dbRequest = indexedDB.open('aytoDB');
   dbRequest.onsuccess = async (event) => {
     const db = event.target.result;
+    if (!db.objectStoreNames.contains('probabilityCache')) {
+      console.warn('⚠️ probabilityCache-Tabelle existiert nicht - Cache ist bereits leer.');
+      return;
+    }
     const transaction = db.transaction(['probabilityCache'], 'readwrite');
     const store = transaction.objectStore('probabilityCache');
     await store.clear();
@@ -20,6 +26,8 @@
   };
 })();
 ```
+
+> Ausführlichere Variante mit Fehlerbehandlung: siehe [`script_konsole.js`](script_konsole.js) im selben Ordner.
 
 3. **Seite wird automatisch neu geladen**
 

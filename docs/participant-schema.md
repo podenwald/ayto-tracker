@@ -6,6 +6,7 @@
 - `name` (string) - Name des Teilnehmers
 - `gender` ('F' | 'M') - Geschlecht
 - `knownFrom` (string) - Bekannt aus (TV-Shows, etc.)
+- `seasonId` (number) - Zugehörige Staffel (seit Multi-Season-Support, Schema-Version 15; nach der Migration bei allen Teilnehmern gesetzt)
 
 ### Optionale Basis-Daten
 - `id` (number?) - Eindeutige Datenbank-ID
@@ -13,6 +14,7 @@
 - `status` (string?) - Status-Text (meist "aktiv")
 - `active` (boolean?) - Aktiv/Inaktiv Flag
 - `bio` (string?) - Biografie/Beschreibung
+- `source` (string?) - Bildquellen-Angabe, wird als kleiner Text unten rechts auf dem Foto eingeblendet (`ParticipantsView.tsx`)
 
 ### Media & Fotos
 - `photoUrl` (string?) - URL zum offiziellen Profilbild
@@ -24,15 +26,14 @@
 ### Social Media
 - `socialMediaAccount` (string?) - Link zu Social Media Account
 
-## 🆕 Neue Felder (erweitert 2025-09-05)
+## 🆕 Free Photo Fields
 
-### Free Photo Fields
 Diese Felder ermöglichen die Verwendung lizenzfreier Bilder als Alternative zu urheberrechtlich geschützten Bildern:
 
 ```json
 {
   "freeProfilePhotoUrl": "https://unsplash.com/photos/example-portrait",
-  "freeProfilePhotoAttribution": "Photo by Jane Doe on Unsplash", 
+  "freeProfilePhotoAttribution": "Photo by Jane Doe on Unsplash",
   "freeProfilePhotoLicense": "Unsplash License"
 }
 ```
@@ -49,6 +50,7 @@ Diese Felder ermöglichen die Verwendung lizenzfreier Bilder als Alternative zu 
 
 ```json
 {
+  "seasonId": 1,
   "name": "Max Mustermann",
   "knownFrom": "Love Island Germany (2024)",
   "age": 25,
@@ -58,6 +60,7 @@ Diese Felder ermöglichen die Verwendung lizenzfreier Bilder als Alternative zu 
   "bio": "Fitness-Coach und Reality TV Star",
   "gender": "M",
   "id": 1,
+  "source": "Instagram @max_mustermann",
   "socialMediaAccount": "https://instagram.com/max_mustermann",
   "photoBlob": null,
   "freeProfilePhotoUrl": "https://unsplash.com/photos/fitness-model-portrait",
@@ -68,14 +71,16 @@ Diese Felder ermöglichen die Verwendung lizenzfreier Bilder als Alternative zu 
 
 ## 🗄️ Datenbank Migration
 
-Die Datenbank wurde auf Version 8 erweitert:
+Die `participants`-Tabelle ist Teil des Dexie-Schemas in `src/lib/db.ts`, aktuell Version 15:
 
 ```javascript
-this.version(8).stores({
-  participants: '++id, name, gender, status, active, socialMediaAccount, freeProfilePhotoUrl',
-  // ... andere Tabellen
+this.version(15).stores({
+  participants: '++id, seasonId, name, gender, status, active, socialMediaAccount, freeProfilePhotoUrl',
+  // ... andere Tabellen, alle zusätzlich um seasonId erweitert
 })
 ```
+
+Die Indizes `status`, `active`, `socialMediaAccount` und `freeProfilePhotoUrl` stammen aus früheren Schema-Versionen (6–9); `seasonId` kam mit Version 15 als Teil des Multi-Season-Retrofits hinzu (siehe Architektur-Dokumentation).
 
 ## 📝 Verwendung
 

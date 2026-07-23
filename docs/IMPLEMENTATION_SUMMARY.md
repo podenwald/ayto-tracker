@@ -4,14 +4,14 @@
 
 ### 1. Manifest-basierte Versionierung ✅
 - **Datei:** `public/manifest.json`
-- Automatische Versionsverwaltung mit `dbVersion` und `released`
+- Automatische Versionsverwaltung mit `version` (Git-Tag) und `released` (nicht `dbVersion` - das Feld heißt `version`)
 - Script zur automatischen Aktualisierung: `scripts/update-manifest.cjs`
 - npm-Script: `npm run update-manifest`
 
 ### 2. IndexedDB Meta Store ✅
 - **Erweiterung:** `src/lib/db.ts`
-- Neuer `meta` Store für Versions-Informationen
-- Version 10 der Datenbank mit Meta-Funktionen
+- `meta`-Store für Versions-Informationen (u. a. `activeSeasonId`)
+- Aktuell Schema-Version 15 (gewachsen seit der ursprünglichen Version 10 dieses Features, u. a. durch den Multi-Season-Retrofit)
 - Atomic Updates für Konsistenz
 
 ### 3. Update-Service ✅
@@ -30,7 +30,7 @@
 ### 5. UI-Komponenten ✅
 - **Banner:** `src/components/DatabaseUpdateBanner.tsx`
   - Benutzer-freundlicher Update-Hinweis
-  - "Jetzt aktualisieren" / "Später" Optionen
+  - "Jetzt aktualisieren" (die manuelle "Später"/Dismiss-Option wurde in v1.2.1 entfernt)
   - Integriertes Feedback-System
   
 - **Toast:** `src/components/UpdateFeedbackToast.tsx`
@@ -67,10 +67,9 @@
 5. Erfolgs-Feedback wird angezeigt
 
 ### Deployment
-1. Neue Daten werden hochgeladen
-2. `npm run update-manifest` wird ausgeführt
-3. `dbVersion` wird erhöht
-4. `released` wird aktualisiert
+1. Push auf `main` löst GitHub Actions aus (`.github/workflows/main.yml`)
+2. `npm run build` (inkl. `prebuild`) läuft automatisch, `scripts/update-manifest.cjs` wird dabei mitausgeführt
+3. `version` (Git-Tag) und `dataHash` werden aktualisiert, `released` wird gesetzt
 
 ## Verwendung
 
@@ -118,11 +117,7 @@ cat public/manifest.json
 
 ## Nächste Schritte
 
-Das System ist vollständig implementiert und einsatzbereit. Bei jedem Deployment:
-
-1. Neue Daten hochladen
-2. `npm run update-manifest` ausführen
-3. App deployen
+Das System ist vollständig implementiert und einsatzbereit. Neue Daten in `public/json/` ablegen (und in `public/json/index.json` eintragen), committen und auf `main` pushen - `npm run update-manifest` läuft dann automatisch als Teil des CI-Builds mit.
 
 Die Nutzer werden automatisch über neue Daten informiert und können selbst entscheiden, wann sie ihre IndexedDB aktualisieren möchten.
 

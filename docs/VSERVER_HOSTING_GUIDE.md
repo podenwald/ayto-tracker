@@ -224,7 +224,9 @@ sudo certbot --apache -d ayto-tracker.dein-domain.de
 
 ## 🔄 Automatisches Deployment
 
-### Option 1: GitHub Actions + SSH
+> **Tatsächlich implementiert** (`.github/workflows/main.yml`): FTP-Deploy statt SSH/SCP - `npm ci && npm run build`, danach Upload von `dist/` per `SamKirkland/FTP-Deploy-Action` nach `hosting119408.a2fac.netcup.net` (Secrets `FTP_USERNAME`/`FTP_PASSWORT`). Kein Nginx-Restart-Schritt nötig, da es sich um klassisches Webhosting mit bereits laufendem Webserver handelt, nicht um manuelle Nginx-Administration auf einem Root-VServer. Die folgende SSH/SCP-basierte Variante wurde nicht umgesetzt, bleibt aber als Alternative dokumentiert, falls doch mal Root-Zugriff auf einen VServer genutzt wird.
+
+### Option 1: GitHub Actions + SSH (Alternative, nicht im Einsatz)
 
 Erstelle `.github/workflows/deploy-vserver.yml`:
 

@@ -1,17 +1,23 @@
 # App-Vorbereitung: AYTO-Tracker
 
+> Stand 2026-07-23: Die PWA-Grundlagen (Option A, Phase 1) sind inzwischen erledigt und die App ist als v1.2.1 live im Einsatz. Eine native App (Option B/C) ist laut der README-Roadmap bzw. `README.md` **nicht geplant** - die Checklisten dazu unten sind als Referenz stehen geblieben, falls sich das mal ändert.
+
 ## 📋 Übersicht: Aktueller Stand
 
 ### ✅ Bereits vorhanden:
-- ✅ PWA-Grundlagen (Service Worker, Manifest)
-- ✅ Offline-Funktionalität (IndexedDB)
-- ✅ Responsive Design (Smartphone/Tablet/Desktop)
+- ✅ PWA-Grundlagen (Service Worker via `vite-plugin-pwa`, Web-App-Manifest)
+- ✅ Offline-Funktionalität (IndexedDB via Dexie)
+- ✅ Responsive Design (Smartphone/Tablet/Desktop, inkl. Vollbild-Dialoge auf Mobile seit v1.2.1)
 - ✅ Device Detection
-- ✅ App-Icons (192x192, 512x512)
+- ✅ App-Icons (192x192, 512x512, maskable)
 - ✅ Apple Touch Icon
+- ✅ Mehrere Staffeln parallel verwaltbar
+- ✅ Automatisierter Deploy (GitHub Actions → FTP → Netcup-vServer)
 
-### ⚠️ Noch zu erledigen:
-Siehe detaillierte Schritte unten.
+### ⚠️ Noch offen (siehe auch der README-Roadmap):
+- Wahrscheinlichkeits-Analyse ist implementiert, aber im Menü deaktiviert
+- Keine automatisierte Test-Suite
+- Code-Splitting fehlt (Bundle > 500 kB)
 
 ---
 

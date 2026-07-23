@@ -1,5 +1,7 @@
 # Setup: ayto-tracker.legendforest.de
 
+> **Status:** Umgesetzt, App ist unter dieser URL live. Diese Anleitung beschreibt die einmalige DNS-/Server-Einrichtung; der laufende Deploy bei jeder Code-Änderung läuft automatisiert über GitHub Actions per FTP (siehe `docs/DEPLOYMENT.md`), nicht über die hier manuell beschriebenen Upload-Schritte.
+
 ## 🎯 Ziel: AYTO-Tracker auf Subdomain deployen
 
 **Subdomain:** `ayto-tracker.legendforest.de`  

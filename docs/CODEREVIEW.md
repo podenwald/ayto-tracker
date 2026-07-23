@@ -15,16 +15,14 @@ Bitte prüfe die folgenden Punkte, bevor du den PR approvest oder mergest:
 - [ ] TypeScript-Compiler (`tsc`) läuft fehlerfrei.
 
 ## 🏗️ Architektur / Struktur
-- [ ] UI, Business-Logic und Datenzugriff sind klar getrennt.
-- [ ] Komponenten sind **presentational vs. container/hooks** getrennt.
-- [ ] Side-Effects (API-Calls, Storage, WS) sind ausgelagert.
-- [ ] Ordnerstruktur folgt Projektkonventionen (`components`, `hooks`, `lib`, `services`, `pages`).
+- [ ] UI, Business-Logic (Services) und Datenzugriff (Dexie) sind klar getrennt - keine direkten `db.*`-Zugriffe aus Komponenten.
+- [ ] Neue Schreibpfade in Services rufen `assertSeasonWritable()` auf, bevor sie schreiben.
+- [ ] Ordnerstruktur folgt Projektkonventionen (`components`, `features`, `hooks`, `lib`, `services`, `types`).
 
-## ⚛️ React / Next.js
+## ⚛️ React
 - [ ] React Hooks-Regeln werden eingehalten (`eslint-plugin-react-hooks` prüft dies).
-- [ ] Data-Fetching folgt Next.js Best Practices (SSR/SSG/CSR klar abgegrenzt).
-- [ ] Performance-Optimierungen: `next/image`, lazy loading, dynamic imports wo sinnvoll.
-- [ ] Komponenten sind **testbar** und möglichst „pure“.
+- [ ] Neue Admin-/Overview-Screens nutzen MUI konsistent zum Rest von `features/admin`/`features/overview`; neue geteilte Primitives gehen nach `components/ui` (shadcn/Radix) - nicht beide Systeme in derselben Komponente mischen.
+- [ ] Komponenten sind möglichst „pure“ und **manuell getestet** (es gibt keine automatisierte Test-Suite, siehe unten).
 
 ## 🎨 Styling / Tailwind
 - [ ] Tailwind-Klassen sind konsistent und lesbar, ggf. mit `clsx`/`tailwind-merge`.
@@ -32,10 +30,9 @@ Bitte prüfe die folgenden Punkte, bevor du den PR approvest oder mergest:
 - [ ] Purge/Content-Konfiguration ist korrekt → keine unnötigen CSS-Reste.
 
 ## 🤖 Automatisierte Prüfungen
-- [ ] ESLint läuft fehlerfrei (`eslint .`).
-- [ ] Prettier-Formatierung stimmt (`prettier --check .`).
-- [ ] Tests (Unit + ggf. E2E) laufen grün in CI.
-- [ ] CI-Jobs prüfen: build, type-check, lint, test.
+- [ ] `npm run lint` läuft (bestehende `no-explicit-any`-Fehler in Alt-Code sind bekannt und kein neuer Blocker, aber keine neuen hinzufügen).
+- [ ] `npm run build` läuft fehlerfrei durch - der `tsc -b`-Schritt darin ist aktuell das **einzige** harte Gate, da es keine automatisierte Test-Suite gibt (kein vitest/jest, kein Prettier konfiguriert).
+- [ ] Der GitHub-Actions-Deploy-Workflow prüft nur `npm ci && npm run build` - nichts anderes läuft in CI, Review muss das kompensieren.
 - [ ] Keine ungenutzten Imports, Variablen oder Dependencies.
 
 ## 🔒 Sicherheit / Qualität

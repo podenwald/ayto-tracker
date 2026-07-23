@@ -11,6 +11,7 @@
 import { DatabaseUtils, db, type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
 import type { DatabaseImport, ParticipantDTO, MatchingNightDTO, MatchboxDTO, PenaltyDTO } from '@/types'
 import { assertSeasonWritable, clearAllDataForSeason, getActiveSeasonId } from '@/services/seasonService'
+import { fetchSeasonCatalog } from '@/services/seasonCatalogCore'
 
 // Manifest-Interface
 export interface DatabaseManifest {
@@ -167,37 +168,48 @@ export async function getJsonDataSourcesNewestFirst(): Promise<string[]> {
 }
 
 /**
- * Lädt die aktuellen Daten vom Server (dynamisch aus public/json, neueste Datei zuerst)
+ * Lädt die aktuellen Daten vom Server für die AKTIVE Staffel.
+ *
+ * Löst die Datenquelle über den Katalog-Eintrag der aktiven Staffel auf (gleiche
+ * Zuordnung wie ensureActiveSeasonCatalogDataLoaded()), NICHT durch Scannen aller
+ * Dateien in public/json/ nach "neuestem" Last-Modified-Datum. Letzteres ignorierte
+ * komplett, welche Staffel aktiv ist, und konnte dadurch die aktive Staffel mit den
+ * Teilnehmern einer völlig anderen Staffel überschreiben (siehe CLAUDE.md/ADRs).
  */
 export async function fetchLatestDatabaseData(): Promise<DatabaseImport> {
+  const activeSeasonId = await getActiveSeasonId()
+  const activeSeason = await db.seasons.get(activeSeasonId)
+  if (!activeSeason) {
+    throw new Error('Keine aktive Staffel gefunden')
+  }
+
+  const catalog = await fetchSeasonCatalog()
+  const entry = catalog?.entries.find(item => item.id === activeSeason.slug)
+  if (!entry?.dataUrl?.trim()) {
+    throw new Error(`Keine Datenquelle für die aktive Staffel "${activeSeason.title}" im Katalog gefunden`)
+  }
+
   try {
-    const dataSources = await getJsonDataSourcesNewestFirst()
-
-    let lastError: Error | null = null
-
-    for (const source of dataSources) {
-      try {
-        const response = await fetch(source, NO_CACHE_HEADERS)
-        
-        if (response.ok) {
-          const data: DatabaseImport = await response.json()
-          
-          // Validierung der Datenstruktur
-          if (data.participants && Array.isArray(data.participants)) {
-            console.log(`✅ Daten erfolgreich von ${source} geladen`)
-            return data
-          }
-        }
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error('Unbekannter Fehler')
-        console.warn(`⚠️ Fehler beim Laden von ${source}:`, error)
-      }
+    const response = await fetch(entry.dataUrl, NO_CACHE_HEADERS)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
     }
-    
-    throw lastError || new Error('Keine gültigen Datenquellen gefunden')
+    const raw: unknown = await response.json()
+    // Katalog-Datendateien liegen wahlweise als reines Teilnehmer-Array oder als
+    // Objekt mit participants/matchingNights/... vor (siehe parseRawJsonToImportData
+    // in jsonImport.ts, die denselben Katalog-Dateien beim regulären Staffel-Import
+    // begegnet).
+    const data: DatabaseImport = Array.isArray(raw)
+      ? { participants: raw as ParticipantDTO[], matchingNights: [], matchboxes: [], penalties: [] }
+      : (raw as DatabaseImport)
+    if (!data.participants || !Array.isArray(data.participants)) {
+      throw new Error(`Ungültige Datenstruktur von ${entry.dataUrl}`)
+    }
+    console.log(`✅ Daten erfolgreich von ${entry.dataUrl} geladen (Staffel "${activeSeason.title}")`)
+    return data
   } catch (error) {
     console.error('Fehler beim Laden der Datenbank-Daten:', error)
-    throw new Error(`Daten konnten nicht geladen werden: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
+    throw new Error(`Daten konnten nicht geladen werden (${entry.dataUrl}): ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
   }
 }
 

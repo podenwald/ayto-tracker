@@ -201,6 +201,71 @@ export class AytoDB extends Dexie {
         n.seasonId = sid
       })
     })
+
+    // Version 16: bestehende Duplikat-Staffeln (gleicher slug) reparieren.
+    // Duplikate konnten entstehen, wenn ensureSeasonRowFromCatalog() vor dem Fix
+    // aus zwei nahezu gleichzeitigen Aufrufen (z. B. "/" und "/admin" beim allerersten
+    // Besuch) heraus zweimal dieselbe Katalog-Season anlegte, bevor meta.activeSeasonId
+    // gesetzt war. `slug` bleibt hier bewusst noch NICHT eindeutig - ein Unique-Index
+    // auf einem Store mit noch vorhandenen Duplikaten lässt IndexedDB die gesamte
+    // Versions-Transaktion abbrechen, bevor diese Aufräum-Logik überhaupt läuft.
+    // Der Unique-Index kommt daher separat in Version 17, auf bereits bereinigten Daten.
+    this.version(16).stores({
+      seasons: '++id, slug, kind, readOnly, createdAt, updatedAt',
+      participants: '++id, seasonId, name, gender, status, active, socialMediaAccount, freeProfilePhotoUrl',
+      matchingNights: '++id, seasonId, name, date, pairs, totalLights, createdAt, ausstrahlungsdatum, ausstrahlungszeit',
+      matchboxes: '++id, seasonId, woman, man, matchType, price, buyer, createdAt, updatedAt, ausstrahlungsdatum, ausstrahlungszeit',
+      penalties: '++id, seasonId, participantName, reason, amount, date, createdAt',
+      probabilityCache: '++id, seasonId, dataHash, createdAt, updatedAt',
+      broadcastNotes: '++id, seasonId, date, notes, createdAt, updatedAt',
+      meta: 'key, value, updatedAt'
+    }).upgrade(async tx => {
+      const allSeasons = await tx.table('seasons').toArray() as Season[]
+      const bySlug = new Map<string, Season[]>()
+      for (const season of allSeasons) {
+        const group = bySlug.get(season.slug) ?? []
+        group.push(season)
+        bySlug.set(season.slug, group)
+      }
+
+      const activeMeta = await tx.table('meta').get('activeSeasonId')
+      const activeSeasonId = typeof activeMeta?.value === 'number' ? activeMeta.value : null
+
+      const entityTables = [
+        'participants',
+        'matchingNights',
+        'matchboxes',
+        'penalties',
+        'probabilityCache',
+        'broadcastNotes'
+      ] as const
+
+      for (const group of bySlug.values()) {
+        if (group.length < 2) continue
+
+        // Gewinner: die Season, auf die meta.activeSeasonId aktuell zeigt (falls in
+        // dieser Gruppe), sonst die mit der niedrigsten id (zuerst angelegt).
+        const sorted = [...group].sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
+        const winner = group.find(s => s.id === activeSeasonId) ?? sorted[0]
+        const losers = group.filter(s => s.id !== winner.id)
+
+        for (const loser of losers) {
+          if (loser.id == null || winner.id == null) continue
+          for (const tableName of entityTables) {
+            await tx.table(tableName)
+              .where('seasonId').equals(loser.id)
+              .modify({ seasonId: winner.id })
+          }
+          await tx.table('seasons').delete(loser.id)
+        }
+      }
+    })
+
+    // Version 17: seasons.slug eindeutig machen. Nach Version 16 sind keine
+    // Duplikate mehr vorhanden, der Unique-Index kann also gefahrlos gesetzt werden.
+    this.version(17).stores({
+      seasons: '++id, &slug, kind, readOnly, createdAt, updatedAt'
+    })
   }
 }
 

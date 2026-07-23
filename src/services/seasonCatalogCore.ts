@@ -60,19 +60,26 @@ export async function fetchSeasonCatalog(): Promise<SeasonCatalogFile | null> {
 
 /**
  * Legt die Staffel-Zeile an oder liefert die bestehende (gleicher slug = entry.id).
+ *
+ * Check und Add laufen in einer gemeinsamen 'rw'-Transaktion auf `seasons`, damit
+ * zwei nahezu gleichzeitige Aufrufe (z. B. "/" und "/admin" in getrennten Tabs beim
+ * allerersten Besuch, bevor meta.activeSeasonId gesetzt ist) nicht beide denselben
+ * Katalog-Eintrag als zwei separate Staffel-Zeilen anlegen.
  */
 export async function ensureSeasonRowFromCatalog(entry: SeasonCatalogEntry): Promise<number> {
-  const existing = await db.seasons.where('slug').equals(entry.id).first()
-  if (existing?.id != null) return existing.id
+  return db.transaction('rw', db.seasons, async () => {
+    const existing = await db.seasons.where('slug').equals(entry.id).first()
+    if (existing?.id != null) return existing.id
 
-  const now = new Date()
-  return db.seasons.add({
-    slug: entry.id,
-    title: entry.title,
-    kind: entry.kind,
-    readOnly: entry.readOnly,
-    createdAt: now,
-    updatedAt: now
+    const now = new Date()
+    return db.seasons.add({
+      slug: entry.id,
+      title: entry.title,
+      kind: entry.kind,
+      readOnly: entry.readOnly,
+      createdAt: now,
+      updatedAt: now
+    })
   })
 }
 

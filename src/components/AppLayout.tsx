@@ -25,7 +25,7 @@ interface AppLayoutProps {
  */
 export function AppLayout({ children }: AppLayoutProps) {
   const { versionCheck, handleVersionDialogClose, handleCacheCleared } = useVersionCheck()
-  const { updateState, performUpdate, dismissUpdate } = useDatabaseUpdate()
+  const { updateState, performUpdate } = useDatabaseUpdate()
 
   return (
     <>
@@ -33,14 +33,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       <DatabaseUpdateBanner
         updateState={updateState}
         onUpdate={performUpdate}
-        onDismiss={dismissUpdate}
       />
       
-      {/* Hauptinhalt mit Top-Padding wenn Banner angezeigt wird */}
-      <div style={{ 
-        paddingTop: updateState.isUpdateAvailable ? '60px' : '0',
-        transition: 'padding-top 0.3s ease'
-      }}>
+      {/* Hauptinhalt */}
+      <div>
         {children}
       </div>
       

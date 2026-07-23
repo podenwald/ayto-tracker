@@ -32,7 +32,9 @@ import {
   Divider,
   Paper,
   Collapse,
-  InputAdornment
+  InputAdornment,
+  useTheme,
+  useMediaQuery
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -755,6 +757,8 @@ const MatchboxManagement: React.FC<{
   matchboxes: Matchbox[]
   onUpdate: () => void
 }> = ({ participants, matchboxes, onUpdate }) => {
+  const theme = useTheme()
+  const isMobileDialog = useMediaQuery(theme.breakpoints.down('sm'))
   const [editingMatchbox, setEditingMatchbox] = useState<Matchbox | undefined>(undefined)
   const [matchboxForm, setMatchboxForm] = useState<Omit<Matchbox, 'id' | 'createdAt' | 'updatedAt' | 'seasonId'>>({
     woman: '',
@@ -1015,7 +1019,7 @@ const MatchboxManagement: React.FC<{
       </Card>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={showDialog} onClose={resetForm} maxWidth="md" fullWidth>
+      <Dialog open={showDialog} onClose={resetForm} maxWidth="md" fullWidth fullScreen={isMobileDialog}>
         <DialogTitle>
           {editingMatchbox ? 'Matchbox bearbeiten' : 'Neue Matchbox'}
         </DialogTitle>
@@ -1165,7 +1169,7 @@ const MatchboxManagement: React.FC<{
             )}
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
           <Button onClick={resetForm}>Abbrechen</Button>
           <Button onClick={saveMatchbox} variant="contained" startIcon={<SaveIcon />}>
             {editingMatchbox ? 'Aktualisieren' : 'Erstellen'}
@@ -1194,6 +1198,8 @@ const MatchingNightManagement: React.FC<{
   matchingNights: MatchingNight[]
   onUpdate: () => void
 }> = ({ participants, matchboxes, matchingNights, onUpdate }) => {
+  const theme = useTheme()
+  const isMobileDialog = useMediaQuery(theme.breakpoints.down('sm'))
   const [editingMatchingNight, setEditingMatchingNight] = useState<MatchingNight | undefined>(undefined)
   const [matchingNightForm, setMatchingNightForm] = useState<{
     name: string;
@@ -1538,7 +1544,7 @@ const MatchingNightManagement: React.FC<{
       </Card>
 
       {/* Bearbeiten-Dialog (nur bestehende Matching Nights) */}
-      <Dialog open={!!editingMatchingNight} onClose={resetForm} maxWidth="lg" fullWidth>
+      <Dialog open={!!editingMatchingNight} onClose={resetForm} maxWidth="lg" fullWidth fullScreen={isMobileDialog}>
         <DialogTitle>
           Matching Night bearbeiten
         </DialogTitle>
@@ -1822,7 +1828,7 @@ const MatchingNightManagement: React.FC<{
             )}
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
           <Button onClick={resetForm}>Abbrechen</Button>
           <Button onClick={saveMatchingNight} variant="contained" startIcon={<SaveIcon />}>
             Aktualisieren
@@ -1853,6 +1859,8 @@ const SettingsManagement: React.FC<{
   onUpdate: () => void
   renderContext?: 'settings' | 'json-import' | 'appearance'
 }> = ({ participants, matchboxes, matchingNights, penalties, onUpdate, renderContext = 'settings' }) => {
+  const theme = useTheme()
+  const isMobileDialog = useMediaQuery(theme.breakpoints.down('sm'))
   const [isLoading, setIsLoading] = useState(false)
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
@@ -3421,6 +3429,7 @@ Alle Daten gehen unwiderruflich verloren!`)
         onClose={() => setConfirmDialog(prev => ({ ...prev, open: false }))}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobileDialog}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {confirmDialog.severity === 'error' ? (
@@ -3435,7 +3444,7 @@ Alle Daten gehen unwiderruflich verloren!`)
             {confirmDialog.message}
           </Typography>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
           <Button onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))}>
             Abbrechen
           </Button>
@@ -3459,6 +3468,7 @@ Alle Daten gehen unwiderruflich verloren!`)
         onClose={closePenaltyDialog}
         maxWidth="md"
         fullWidth
+        fullScreen={isMobileDialog}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <WarningIcon color="error" />
@@ -3551,7 +3561,7 @@ Alle Daten gehen unwiderruflich verloren!`)
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
           <Button onClick={closePenaltyDialog}>
             Abbrechen
           </Button>
@@ -3572,6 +3582,7 @@ Alle Daten gehen unwiderruflich verloren!`)
         onClose={closeBudgetDialog}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobileDialog}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <SavingsIcon color="primary" />
@@ -3600,7 +3611,7 @@ Alle Daten gehen unwiderruflich verloren!`)
             </Typography>
           </Alert>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
           <Button onClick={closeBudgetDialog}>
             Abbrechen
           </Button>
@@ -3664,12 +3675,14 @@ const AdminPanelMUI: React.FC = () => {
   
   // Ref for the participant form to scroll to it
   const participantFormRef = useRef<HTMLDivElement>(null)
+  const latestLoadRequestRef = useRef(0)
 
   useEffect(() => {
     loadAllData()
   }, [])
 
   const loadAllData = async () => {
+    const requestId = ++latestLoadRequestRef.current
     try {
       const sid = await getActiveSeasonId()
       const [participantsData, matchboxesData, matchingNightsData, penaltiesData] = await Promise.all([
@@ -3678,6 +3691,11 @@ const AdminPanelMUI: React.FC = () => {
         db.matchingNights.where('seasonId').equals(sid).toArray(),
         db.penalties.where('seasonId').equals(sid).toArray()
       ])
+
+      // Guard gegen Race-Conditions beim schnellen Staffelwechsel.
+      if (requestId !== latestLoadRequestRef.current) {
+        return
+      }
       
       setParticipants(participantsData)
       setMatchboxes(matchboxesData)

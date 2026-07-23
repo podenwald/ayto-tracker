@@ -13,7 +13,9 @@ import {
   Alert,
   CircularProgress,
   Box,
-  Chip
+  Chip,
+  useTheme,
+  useMediaQuery
 } from '@mui/material'
 import {
   Lock as LockIcon
@@ -37,6 +39,8 @@ export interface SeasonPickerDialogProps {
 const SHOW_LEGACY_SEASON_IN_PICKER = import.meta.env.DEV
 
 const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, onApplied }) => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [localSeasons, setLocalSeasons] = useState<Season[]>([])
@@ -151,7 +155,13 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
 
   return (
     <>
-    <Dialog open={open} onClose={loading ? undefined : onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={loading ? undefined : onClose}
+      maxWidth="sm"
+      fullWidth
+      fullScreen={isMobile}
+    >
       <DialogTitle>Staffel wählen</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -216,7 +226,7 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
           ))}
         </List>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 1.5 } }}>
         <Button onClick={onClose} disabled={loading}>
           Schließen
         </Button>

@@ -72,6 +72,11 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
 
+  const seasonFinaleAvailable = matchingNightsCount >= 10
+  const seasonFinaleTooltip = seasonFinaleAvailable
+    ? 'Staffelende anzeigen'
+    : `Abschluss erst ab 10 Matching Nights (aktuell: ${matchingNightsCount})`
+
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
   }
@@ -172,6 +177,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
                   borderRadius: 1.5,
                   px: 2,
                   py: 1.5,
+                  minHeight: 44,
                   backgroundColor: activeTab === item.value ? 'primary.main' : 'transparent',
                   color: activeTab === item.value ? 'white !important' : 'text.primary',
                   '&:hover': {
@@ -219,6 +225,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
                   borderRadius: 1.5,
                   px: 2,
                   py: 1.5,
+                  minHeight: 44,
                   border: '1px dashed',
                   borderColor: 'divider'
                 }}
@@ -228,7 +235,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
                 </ListItemIcon>
                 <ListItemText
                   primary="Staffel wählen"
-                  secondary="Lokal · Katalog · Neu"
+                  secondary={activeSeasonTitle || 'Keine aktive Staffel'}
                   primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: 600 }}
                   secondaryTypographyProps={{ fontSize: '0.7rem' }}
                 />
@@ -342,7 +349,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
           borderColor: 'divider'
         }}
       >
-        <Toolbar sx={{ minHeight: '64px !important' }}>
+        <Toolbar sx={{ minHeight: { xs: 72, sm: 64 }, py: { xs: 1, sm: 0 } }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
@@ -362,36 +369,54 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
             {onOpenSeasonFinale && (
-              <Tooltip title="Staffelende anzeigen (ab 10 Matching Nights)" arrow>
-                <Chip
-                  icon={<EmojiEventsIcon sx={{ fontSize: '1rem !important' }} />}
-                  label="Abschluss"
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  onClick={onOpenSeasonFinale}
-                  sx={{
-                    display: { xs: 'inline-flex', sm: 'none' },
-                    fontWeight: 600,
-                    borderWidth: 2,
-                    '& .MuiChip-label': { px: 0.75 },
-                    '&:hover': { bgcolor: 'action.hover' }
-                  }}
-                />
+              <Tooltip title={seasonFinaleTooltip} arrow>
+                <span style={{ display: 'inline-flex' }}>
+                  <IconButton
+                    onClick={seasonFinaleAvailable ? onOpenSeasonFinale : undefined}
+                    disabled={!seasonFinaleAvailable}
+                    sx={{
+                      display: { xs: 'flex', lg: 'none' },
+                      width: 44,
+                      height: 44,
+                      minWidth: 44,
+                      padding: 0,
+                      borderRadius: 1,
+                      color: 'primary.main',
+                      border: '2px solid',
+                      borderColor: 'primary.main',
+                      bgcolor: 'background.paper',
+                      '&:hover': {
+                        bgcolor: 'action.hover'
+                      },
+                      '&.Mui-disabled': {
+                        opacity: 0.45,
+                        color: 'action.disabled',
+                        borderColor: 'action.disabledBackground',
+                        bgcolor: 'transparent'
+                      },
+                      '& .MuiSvgIcon-root': {
+                        fontSize: '1.05rem'
+                      }
+                    }}
+                    aria-label="Abschluss"
+                  >
+                    <EmojiEventsIcon />
+                  </IconButton>
+                </span>
               </Tooltip>
             )}
-            {/* Mobile: Icon-only buttons */}
+            {/* Schmale Viewports: Icon-only Aktionen */}
             <Tooltip title="Neue Matching Night" arrow>
               <IconButton
                 color="secondary"
                 onClick={onCreateMatchingNight}
                 sx={{ 
-                  display: { xs: 'flex', sm: 'none' },
+                  display: { xs: 'flex', lg: 'none' },
                   bgcolor: 'secondary.main',
                   color: 'white',
-                  width: 32,
-                  height: 32,
-                  minWidth: 32,
+                  width: 44,
+                  height: 44,
+                  minWidth: 44,
                   padding: 0,
                   borderRadius: 1,
                   '&:hover': {
@@ -411,12 +436,12 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
                 color="primary"
                 onClick={onCreateMatchbox}
                 sx={{ 
-                  display: { xs: 'flex', sm: 'none' },
+                  display: { xs: 'flex', lg: 'none' },
                   bgcolor: 'primary.main',
                   color: 'white',
-                  width: 32,
-                  height: 32,
-                  minWidth: 32,
+                  width: 44,
+                  height: 44,
+                  minWidth: 44,
                   padding: 0,
                   borderRadius: 1,
                   '&:hover': {
@@ -433,22 +458,29 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
             </Tooltip>
             {/* Desktop: Buttons with text */}
             {onOpenSeasonFinale && (
-              <Tooltip title="Staffelende anzeigen (ab 10 Matching Nights)" arrow>
-                <Chip
-                  icon={<EmojiEventsIcon sx={{ fontSize: '1rem !important' }} />}
-                  label="Abschluss"
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                  onClick={onOpenSeasonFinale}
-                  sx={{
-                    display: { xs: 'none', sm: 'inline-flex' },
-                    fontWeight: 600,
-                    borderWidth: 2,
-                    '& .MuiChip-label': { px: 0.75 },
-                    '&:hover': { bgcolor: 'action.hover' }
-                  }}
-                />
+              <Tooltip title={seasonFinaleTooltip} arrow>
+                <span style={{ display: 'inline-flex' }}>
+                  <Chip
+                    icon={<EmojiEventsIcon sx={{ fontSize: '1rem !important' }} />}
+                    label="Abschluss"
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    disabled={!seasonFinaleAvailable}
+                    onClick={seasonFinaleAvailable ? onOpenSeasonFinale : undefined}
+                    sx={{
+                      display: { xs: 'none', lg: 'inline-flex' },
+                      fontWeight: 600,
+                      borderWidth: 2,
+                      '& .MuiChip-label': { px: 0.75 },
+                      '&:not(.Mui-disabled):hover': { bgcolor: 'action.hover' },
+                      '&.Mui-disabled': {
+                        opacity: 0.45,
+                        borderColor: 'action.disabledBackground'
+                      }
+                    }}
+                  />
+                </span>
               </Tooltip>
             )}
             <Button 
@@ -457,7 +489,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
               size="small"
               startIcon={<NightlifeIcon />} 
               onClick={onCreateMatchingNight}
-              sx={{ display: { xs: 'none', sm: 'flex' } }}
+              sx={{ display: { xs: 'none', lg: 'flex' }, whiteSpace: 'nowrap' }}
             >
               Neue Matching Night
             </Button>
@@ -467,7 +499,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
               size="small"
               startIcon={<InventoryIcon />} 
               onClick={onCreateMatchbox}
-              sx={{ display: { xs: 'none', sm: 'flex' } }}
+              sx={{ display: { xs: 'none', lg: 'flex' }, whiteSpace: 'nowrap' }}
             >
               Neue Matchbox
             </Button>
@@ -517,6 +549,8 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
               <IconButton
                 onClick={handleSettingsClick}
                 sx={{
+                  width: { xs: 44, sm: 40 },
+                  height: { xs: 44, sm: 40 },
                   opacity: showOnboarding ? 1 : 0.6,
                   color: showOnboarding ? 'primary.main' : 'text.secondary',
                   position: 'relative',

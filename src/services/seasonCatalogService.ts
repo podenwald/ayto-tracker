@@ -3,7 +3,7 @@
  */
 
 import { db, DatabaseUtils } from '@/lib/db'
-import { importJsonBundleForSeason } from '@/utils/jsonImport'
+import { importJsonBundleForSeason, parseRawJsonToImportData } from '@/utils/jsonImport'
 import {
   clearAllDataForSeason,
   createSeason,
@@ -23,6 +23,33 @@ export { fetchSeasonCatalog, ensureSeasonRowFromCatalog, parseJsonFromText }
 
 function catalogBundleMetaKey(catalogEntryId: string): string {
   return `catalogBundleSha256:${catalogEntryId}`
+}
+
+async function getSeasonEntityCounts(seasonId: number): Promise<{
+  participants: number
+  matchingNights: number
+  matchboxes: number
+  penalties: number
+}> {
+  const [participants, matchingNights, matchboxes, penalties] = await Promise.all([
+    db.participants.where('seasonId').equals(seasonId).count(),
+    db.matchingNights.where('seasonId').equals(seasonId).count(),
+    db.matchboxes.where('seasonId').equals(seasonId).count(),
+    db.penalties.where('seasonId').equals(seasonId).count()
+  ])
+  return { participants, matchingNights, matchboxes, penalties }
+}
+
+function isSeasonSnapshotComplete(
+  current: { participants: number; matchingNights: number; matchboxes: number; penalties: number },
+  expected: { participants: number; matchingNights: number; matchboxes: number; penalties: number }
+): boolean {
+  return (
+    current.participants === expected.participants &&
+    current.matchingNights === expected.matchingNights &&
+    current.matchboxes === expected.matchboxes &&
+    current.penalties === expected.penalties
+  )
 }
 
 async function hashJsonPayload(text: string): Promise<string> {
@@ -59,17 +86,42 @@ export async function activateCatalogEntry(entry: SeasonCatalogEntry): Promise<v
     return
   }
 
-  const hasData = (await db.participants.where('seasonId').equals(seasonId).count()) > 0
+  const counts = await getSeasonEntityCounts(seasonId)
+  const hasData = counts.participants + counts.matchingNights + counts.matchboxes + counts.penalties > 0
+
+  const text = await fetchCatalogDataText(entry.dataUrl)
+  const nextHash = await hashJsonPayload(text)
+  const raw: unknown = parseJsonFromText<unknown>(text, entry.dataUrl)
+  const bundle = parseRawJsonToImportData(raw)
+  const expectedCounts = {
+    participants: bundle.participants.length,
+    matchingNights: bundle.matchingNights.length,
+    matchboxes: bundle.matchboxes.length,
+    penalties: bundle.penalties.length
+  }
+  const metaKey = catalogBundleMetaKey(entry.id)
+  const storedHash = await DatabaseUtils.getMetaValue(metaKey)
+  const storedHashStr = typeof storedHash === 'string' ? storedHash : null
+
+  if (entry.readOnly === true) {
+    if (storedHashStr === nextHash && isSeasonSnapshotComplete(counts, expectedCounts)) {
+      return
+    }
+    await importJsonBundleForSeason(seasonId, raw, {
+      skipWritableCheck: true
+    })
+    await DatabaseUtils.setMetaValue(metaKey, nextHash)
+    return
+  }
+
   if (hasData) {
     return
   }
 
-  const text = await fetchCatalogDataText(entry.dataUrl)
-  const raw: unknown = parseJsonFromText<unknown>(text, entry.dataUrl)
   await importJsonBundleForSeason(seasonId, raw, {
-    skipWritableCheck: entry.readOnly === true
+    skipWritableCheck: false
   })
-  await DatabaseUtils.setMetaValue(catalogBundleMetaKey(entry.id), await hashJsonPayload(text))
+  await DatabaseUtils.setMetaValue(metaKey, nextHash)
 }
 
 /**
@@ -86,26 +138,30 @@ export async function ensureActiveSeasonCatalogDataLoaded(): Promise<void> {
   const entry = catalog?.entries.find(item => item.id === activeSeason.slug)
   if (!entry?.dataUrl?.trim()) return
 
-  const [participantsCount, matchingNightsCount, matchboxesCount, penaltiesCount] = await Promise.all([
-    db.participants.where('seasonId').equals(activeSeasonId).count(),
-    db.matchingNights.where('seasonId').equals(activeSeasonId).count(),
-    db.matchboxes.where('seasonId').equals(activeSeasonId).count(),
-    db.penalties.where('seasonId').equals(activeSeasonId).count()
-  ])
+  const counts = await getSeasonEntityCounts(activeSeasonId)
 
-  const hasAnyData = participantsCount + matchingNightsCount + matchboxesCount + penaltiesCount > 0
+  const hasAnyData = counts.participants + counts.matchingNights + counts.matchboxes + counts.penalties > 0
 
   const text = await fetchCatalogDataText(entry.dataUrl)
   const nextHash = await hashJsonPayload(text)
+  const raw: unknown = parseJsonFromText<unknown>(text, entry.dataUrl)
+  const bundle = parseRawJsonToImportData(raw)
+  const expectedCounts = {
+    participants: bundle.participants.length,
+    matchingNights: bundle.matchingNights.length,
+    matchboxes: bundle.matchboxes.length,
+    penalties: bundle.penalties.length
+  }
   const metaKey = catalogBundleMetaKey(entry.id)
   const storedHash = await DatabaseUtils.getMetaValue(metaKey)
   const storedHashStr = typeof storedHash === 'string' ? storedHash : null
 
   if (entry.readOnly === true) {
-    if (storedHashStr === nextHash) {
+    const isCompleteSnapshot = isSeasonSnapshotComplete(counts, expectedCounts)
+
+    if (storedHashStr === nextHash && isCompleteSnapshot) {
       return
     }
-    const raw: unknown = parseJsonFromText<unknown>(text, entry.dataUrl)
     await importJsonBundleForSeason(activeSeasonId, raw, {
       skipWritableCheck: true
     })
@@ -117,7 +173,6 @@ export async function ensureActiveSeasonCatalogDataLoaded(): Promise<void> {
     return
   }
 
-  const raw: unknown = parseJsonFromText<unknown>(text, entry.dataUrl)
   await importJsonBundleForSeason(activeSeasonId, raw, {
     skipWritableCheck: false
   })

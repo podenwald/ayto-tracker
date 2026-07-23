@@ -85,93 +85,19 @@ export const useDeviceDetection = (): DeviceInfo => {
 }
 
 /**
- * Deaktiviert die Rotation auf Tablets (nur Querformat erlaubt)
+ * Legacy-Kompatibilität: Orientierung wird nicht mehr blockiert.
+ * Stattdessen werden im UI nicht-blockierende Hinweise angezeigt.
  */
 export const lockTabletOrientation = (): void => {
-  const deviceInfo = detectDevice()
-  
-  if (deviceInfo.isTablet && deviceInfo.orientation === 'portrait') {
-    // Zeige Warnung für Portrait-Modus auf Tablets
-    const warningElement = document.createElement('div')
-    warningElement.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.8);
-        color: white;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 20px;
-      ">
-        <h2>📱 Tablet-Rotation erforderlich</h2>
-        <p>Bitte drehen Sie Ihr Tablet ins Querformat für die beste Erfahrung.</p>
-        <p>Die App ist für Tablets nur im Querformat optimiert.</p>
-      </div>
-    `
-    document.body.appendChild(warningElement)
-    
-    // Entferne Warnung wenn Orientierung geändert wird
-    const removeWarning = () => {
-      if (detectDevice().orientation === 'landscape') {
-        document.body.removeChild(warningElement)
-        window.removeEventListener('orientationchange', removeWarning)
-      }
-    }
-    window.addEventListener('orientationchange', removeWarning)
-  }
+  // no-op
 }
 
 /**
- * Deaktiviert die Rotation auf Smartphones (nur Hochformat erlaubt)
+ * Legacy-Kompatibilität: Orientierung wird nicht mehr blockiert.
+ * Stattdessen werden im UI nicht-blockierende Hinweise angezeigt.
  */
 export const lockSmartphoneOrientation = (): void => {
-  const deviceInfo = detectDevice()
-  
-  if (deviceInfo.isSmartphone && deviceInfo.orientation === 'landscape') {
-    // Zeige Warnung für Querformat-Modus auf Smartphones
-    const warningElement = document.createElement('div')
-    warningElement.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.8);
-        color: white;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 20px;
-      ">
-        <h2>📱 Smartphone-Rotation erforderlich</h2>
-        <p>Bitte drehen Sie Ihr Smartphone ins Hochformat für die beste Erfahrung.</p>
-        <p>Die App ist für Smartphones nur im Hochformat optimiert.</p>
-      </div>
-    `
-    document.body.appendChild(warningElement)
-    
-    // Entferne Warnung wenn Orientierung geändert wird
-    const removeWarning = () => {
-      if (detectDevice().orientation === 'portrait') {
-        document.body.removeChild(warningElement)
-        window.removeEventListener('orientationchange', removeWarning)
-      }
-    }
-    window.addEventListener('orientationchange', removeWarning)
-  }
+  // no-op
 }
 
 /**

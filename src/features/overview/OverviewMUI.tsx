@@ -28,9 +28,11 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  LinearProgress
+  LinearProgress,
+  useTheme,
+  useMediaQuery
 } from '@mui/material'
-import { useDeviceDetection, lockTabletOrientation, lockSmartphoneOrientation } from '@/lib/deviceDetection'
+import { useDeviceDetection } from '@/lib/deviceDetection'
 import MenuLayout from '@/components/layout/MenuLayout'
 import {
   Favorite as FavoriteIcon,
@@ -513,6 +515,9 @@ const calculateStatistics = (matchboxes: Matchbox[], matchingNights: MatchingNig
 
 // ** Main Overview Component
 const OverviewMUI: React.FC = () => {
+  const theme = useTheme()
+  const isMobileDialog = useMediaQuery(theme.breakpoints.down('sm'))
+  const isCompactMatrix = useMediaQuery(theme.breakpoints.down('md'))
   const [participants, setParticipants] = useState<Participant[]>([])
   const [matchingNights, setMatchingNights] = useState<MatchingNight[]>([])
   const [matchboxes, setMatchboxes] = useState<Matchbox[]>([])
@@ -533,6 +538,7 @@ const OverviewMUI: React.FC = () => {
   
   // Ref to track if we've already attempted calculation for the current tab
   const calculationAttemptedRef = useRef<number | null>(null)
+  const latestLoadRequestRef = useRef(0)
 
   useEffect(() => {
     loadAllData()
@@ -586,6 +592,7 @@ const OverviewMUI: React.FC = () => {
   }, [activeTab, probabilityResult, probabilityStatus.isCalculating, probabilityStatus.error, triggerCalculation])
 
   const loadAllData = async () => {
+    const requestId = ++latestLoadRequestRef.current
     try {
       const sid = await getActiveSeasonId()
       const [participantsData, matchingNightsData, matchboxesData, penaltiesData] = await Promise.all([
@@ -594,6 +601,12 @@ const OverviewMUI: React.FC = () => {
         db.matchboxes.where('seasonId').equals(sid).toArray(),
         db.penalties.where('seasonId').equals(sid).toArray()
       ])
+
+      // Verhindert UI-State-Leaks bei schnellem Staffelwechsel:
+      // nur der zuletzt gestartete Ladevorgang darf den State schreiben.
+      if (requestId !== latestLoadRequestRef.current) {
+        return
+      }
       
       setParticipants(participantsData)
       setMatchingNights(matchingNightsData)
@@ -601,6 +614,9 @@ const OverviewMUI: React.FC = () => {
       setPenalties(penaltiesData)
       
       const summary = await getActiveSeasonSummary()
+      if (requestId !== latestLoadRequestRef.current) {
+        return
+      }
       setActiveSeasonLabel(summary?.title)
       setActiveSeasonReadOnly(summary?.readOnly ?? false)
 
@@ -648,6 +664,15 @@ const OverviewMUI: React.FC = () => {
       ...prev,
       pairs: prev.pairs.filter((_, i) => i !== index)
     }))
+  }
+
+  const resetUiSelectionsForSeasonSwitch = () => {
+    setMatchingNightDialog(false)
+    setMatchboxDialog(false)
+    setExpandedMatchingNights(new Set())
+    setDragOverTarget(null)
+    resetMatchingNightForm()
+    resetMatchboxForm()
   }
 
   // Admin functionality states
@@ -1175,14 +1200,22 @@ const OverviewMUI: React.FC = () => {
   const deviceInfo = useDeviceDetection()
   const isMobile = deviceInfo.isSmartphone // Nur Smartphones gelten als "mobile"
 
-  // Geräte-spezifische Rotation-Locks aktivieren
+  // Nicht-blockierender Orientierungshinweis statt Fullscreen-Lock
   useEffect(() => {
-    if (deviceInfo.isTablet) {
-      lockTabletOrientation()
-    } else if (deviceInfo.isSmartphone) {
-      lockSmartphoneOrientation()
+    if (deviceInfo.isTablet && deviceInfo.orientation === 'portrait') {
+      setSnackbar({
+        open: true,
+        message: 'Für Tablets wird Querformat empfohlen – du kannst trotzdem weiterarbeiten.',
+        severity: 'info'
+      })
+    } else if (deviceInfo.isSmartphone && deviceInfo.orientation === 'landscape') {
+      setSnackbar({
+        open: true,
+        message: 'Für Smartphones wird Hochformat empfohlen – du kannst trotzdem weiterarbeiten.',
+        severity: 'info'
+      })
     }
-  }, [deviceInfo.isTablet, deviceInfo.isSmartphone])
+  }, [deviceInfo.isTablet, deviceInfo.isSmartphone, deviceInfo.orientation])
   // Calculate statistics for the menu
   const statistics = calculateStatistics(matchboxes, matchingNights, penalties)
 
@@ -1252,8 +1285,8 @@ const OverviewMUI: React.FC = () => {
           <Card sx={{ mb: 4 }}>
           {/* Overview Tab */}
           <TabPanel value={activeTab} index={0}>
-            {/* Floating Matchbox Creator - nur auf Desktop */}
-            {!isMobile && (
+            {/* Floating Matchbox Creator vorerst deaktiviert (spätere Neufassung geplant) */}
+            {false && !isMobile && (
             <Box
               data-floating-box
               sx={{
@@ -1368,10 +1401,10 @@ const OverviewMUI: React.FC = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {(() => {
                             const woman = women.find(w => w.name === matchboxForm.woman)
-                            const hasPhoto = woman?.photoUrl && woman.photoUrl.trim() !== ''
+                            const hasPhoto = !!woman?.photoUrl?.trim()
                             return (
-                              <Avatar 
-                                src={hasPhoto ? woman.photoUrl : undefined}
+                              <Avatar
+                                src={hasPhoto ? woman?.photoUrl : undefined}
                                 sx={{ 
                                   width: 40, 
                                   height: 40, 
@@ -1444,10 +1477,10 @@ const OverviewMUI: React.FC = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {(() => {
                             const man = men.find(m => m.name === matchboxForm.man)
-                            const hasPhoto = man?.photoUrl && man.photoUrl.trim() !== ''
+                            const hasPhoto = !!man?.photoUrl?.trim()
                             return (
-                              <Avatar 
-                                src={hasPhoto ? man.photoUrl : undefined}
+                              <Avatar
+                                src={hasPhoto ? man?.photoUrl : undefined}
                                 sx={{ 
                                   width: 40, 
                                   height: 40, 
@@ -1677,7 +1710,7 @@ const OverviewMUI: React.FC = () => {
                 gap: 3,
                 justifyContent: 'flex-start'
               }}>
-                {matchboxes
+                {[...matchboxes]
                   .sort((a, b) => {
                     const dateA = a.ausstrahlungsdatum ? new Date(a.ausstrahlungsdatum).getTime() : new Date(a.createdAt).getTime()
                     const dateB = b.ausstrahlungsdatum ? new Date(b.ausstrahlungsdatum).getTime() : new Date(b.createdAt).getTime()
@@ -1694,7 +1727,7 @@ const OverviewMUI: React.FC = () => {
                     
                     return (
                       <CoupleAvatars
-                        key={matchbox.id}
+                        key={matchbox.id ?? `${matchbox.woman}-${matchbox.man}-${new Date(matchbox.createdAt).getTime()}`}
                         womanName={matchbox.woman}
                         manName={matchbox.man}
                         additionalInfo={additionalInfo}
@@ -1872,8 +1905,13 @@ const OverviewMUI: React.FC = () => {
                   {/* Matrix nur anzeigen wenn Daten vorhanden */}
                   {probabilityResult && men.length > 0 && women.length > 0 && (
                   <>
-                  <Box sx={{ overflow: 'visible' }}>
-                    <Table size="small">
+                  <Box sx={{ overflowX: 'auto', overflowY: 'visible', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+                    <Table
+                      size="small"
+                      sx={{
+                        minWidth: Math.max(760, men.length * (isCompactMatrix ? 74 : 88) + (isCompactMatrix ? 180 : 220))
+                      }}
+                    >
                       <TableHead>
                         <TableRow>
                         <TableCell sx={{ 
@@ -1888,8 +1926,8 @@ const OverviewMUI: React.FC = () => {
                             return (
                             <TableCell key={man.id} sx={{ 
                               fontWeight: 'bold',
-                              fontSize: '0.9rem',
-                              minWidth: '80px',
+                              fontSize: isCompactMatrix ? '0.75rem' : '0.9rem',
+                              minWidth: isCompactMatrix ? '68px' : '80px',
                               textAlign: 'center',
                               verticalAlign: 'top',
                               p: 1,
@@ -1901,9 +1939,9 @@ const OverviewMUI: React.FC = () => {
                               <Avatar 
                                 src={man.photoUrl}
                                 sx={{ 
-                                  width: 32, 
-                                  height: 32, 
-                                  fontSize: '0.9rem',
+                                  width: isCompactMatrix ? 24 : 32,
+                                  height: isCompactMatrix ? 24 : 32,
+                                  fontSize: isCompactMatrix ? '0.75rem' : '0.9rem',
                                   bgcolor: 'white',
                                   border: hasPerfectMatch ? '2px solid' : '1px solid',
                                   borderColor: hasPerfectMatch ? 'success.dark' : 'grey.300'
@@ -1912,7 +1950,7 @@ const OverviewMUI: React.FC = () => {
                                 {man.name?.charAt(0)}
                               </Avatar>
                               <Typography variant="caption" sx={{ 
-                                fontSize: '0.9rem',
+                                fontSize: isCompactMatrix ? '0.7rem' : '0.9rem',
                                 lineHeight: 1,
                                 textAlign: 'center',
                                 wordBreak: 'break-word',
@@ -1944,7 +1982,7 @@ const OverviewMUI: React.FC = () => {
                           <TableRow key={woman.id}>
                             <TableCell sx={{ 
                               fontWeight: 'bold', 
-                              fontSize: '0.9rem',
+                              fontSize: isCompactMatrix ? '0.75rem' : '0.9rem',
                               width: '1%',
                               whiteSpace: 'nowrap',
                               p: 1,
@@ -1977,9 +2015,9 @@ const OverviewMUI: React.FC = () => {
                               <Avatar 
                                 src={woman.photoUrl}
                                 sx={{ 
-                                  width: 32, 
-                                  height: 32, 
-                                  fontSize: '0.9rem',
+                                  width: isCompactMatrix ? 24 : 32,
+                                  height: isCompactMatrix ? 24 : 32,
+                                  fontSize: isCompactMatrix ? '0.75rem' : '0.9rem',
                                   bgcolor: 'white',
                                   border: womanHasPerfectMatch ? '2px solid' : '1px solid',
                                   borderColor: womanHasPerfectMatch ? 'success.dark' : 'grey.300'
@@ -2018,17 +2056,17 @@ const OverviewMUI: React.FC = () => {
                                     bgcolor: 'white',  // Alle Felder weiß
                                     textAlign: 'center',
                                     fontWeight: 'bold',
-                                    fontSize: '1.5rem',  // Alle Felder gleich groß
+                                    fontSize: isCompactMatrix ? '1.1rem' : '1.5rem',
                                     color: isConfirmedPerfectMatch ? 'success.main' :     // Perfect Match = Grün
                                            isDefinitelyExcluded ? 'error.main' :          // Definitiv ausgeschlossen = Rot
                                            'text.secondary',                               // Andere = Grau
                                     cursor: 'pointer',
                                     border: '1px solid',
                                     borderColor: 'divider',
-                                    minWidth: '40px',
-                                    maxWidth: '50px',
-                                    width: '45px',
-                                    height: '45px',
+                                    minWidth: isCompactMatrix ? '34px' : '40px',
+                                    maxWidth: isCompactMatrix ? '42px' : '50px',
+                                    width: isCompactMatrix ? '38px' : '45px',
+                                    height: isCompactMatrix ? '38px' : '45px',
                                     p: 0.25,
                                     '&:hover': {
                                       bgcolor: 'grey.50',
@@ -2048,7 +2086,7 @@ const OverviewMUI: React.FC = () => {
                                     display: 'flex', 
                                     alignItems: 'center', 
                                     justifyContent: 'center',
-                                    minHeight: '24px',
+                                    minHeight: isCompactMatrix ? '18px' : '24px',
                                     borderBottom: allMatchingNightsTogether.nightNumbers.length > 0 ? '1px solid' : 'none',
                                     borderColor: 'divider',
                                     pb: allMatchingNightsTogether.nightNumbers.length > 0 ? 0.5 : 0
@@ -2066,10 +2104,10 @@ const OverviewMUI: React.FC = () => {
                                       alignItems: 'center', 
                                       justifyContent: 'center', 
                                       pt: 0.5,
-                                      minHeight: '20px'
+                                      minHeight: isCompactMatrix ? '16px' : '20px'
                                     }}>
                                       <Typography variant="caption" sx={{ 
-                                        fontSize: '0.6rem', 
+                                        fontSize: isCompactMatrix ? '0.5rem' : '0.6rem',
                                         lineHeight: 1.2, 
                                         color: isConfirmedPerfectMatch ? 'success.main' : 'info.main',
                                         fontWeight: 'bold',
@@ -2178,18 +2216,23 @@ const OverviewMUI: React.FC = () => {
                   }
                 />
                 <CardContent>
-                  <Box sx={{ overflow: 'auto', maxHeight: 600 }}>
-                    <Table size="small">
+                  <Box sx={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 600, maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+                    <Table
+                      size="small"
+                      sx={{
+                        minWidth: Math.max(760, men.length * (isCompactMatrix ? 86 : 100) + (isCompactMatrix ? 200 : 240))
+                      }}
+                    >
                       <TableHead>
                         <TableRow>
                         <TableCell sx={{ fontWeight: 'bold' }}></TableCell>
                           {men.map(man => (
                             <TableCell key={man.id} sx={{ 
                               fontWeight: 'bold', 
-                              fontSize: '1rem',
-                            minWidth: '80px',
+                              fontSize: isCompactMatrix ? '0.85rem' : '1rem',
+                            minWidth: isCompactMatrix ? '70px' : '80px',
                               textAlign: 'center',
-                              height: '80px',
+                              height: isCompactMatrix ? '64px' : '80px',
                             verticalAlign: 'bottom',
                               p: 1,
                               bgcolor: 'white'
@@ -2198,9 +2241,9 @@ const OverviewMUI: React.FC = () => {
                               <Avatar 
                                 src={man.photoUrl}
                                 sx={{ 
-                                    width: 32, 
-                                    height: 32, 
-                                    fontSize: '1rem',
+                                    width: isCompactMatrix ? 24 : 32,
+                                    height: isCompactMatrix ? 24 : 32,
+                                    fontSize: isCompactMatrix ? '0.75rem' : '1rem',
                                     border: '2px solid',
                                     borderColor: 'primary.main'
                                 }}
@@ -2208,7 +2251,7 @@ const OverviewMUI: React.FC = () => {
                                 {man.name?.charAt(0)}
                               </Avatar>
                               <Typography variant="caption" sx={{ 
-                                  fontSize: '1rem',
+                                  fontSize: isCompactMatrix ? '0.75rem' : '1rem',
                                 lineHeight: 1,
                                 wordBreak: 'break-word',
                                   color: 'black',
@@ -2226,8 +2269,8 @@ const OverviewMUI: React.FC = () => {
                           <TableRow key={woman.id}>
                             <TableCell sx={{ 
                               fontWeight: 'bold', 
-                              fontSize: '1rem',
-                            minWidth: '100px',
+                              fontSize: isCompactMatrix ? '0.85rem' : '1rem',
+                            minWidth: isCompactMatrix ? '82px' : '100px',
                               p: 1,
                               bgcolor: 'white'
                           }}>
@@ -2246,9 +2289,9 @@ const OverviewMUI: React.FC = () => {
                               <Avatar 
                                 src={woman.photoUrl}
                                 sx={{ 
-                                    width: 32, 
-                                    height: 32, 
-                                    fontSize: '1rem',
+                                    width: isCompactMatrix ? 24 : 32,
+                                    height: isCompactMatrix ? 24 : 32,
+                                    fontSize: isCompactMatrix ? '0.75rem' : '1rem',
                                     border: '2px solid',
                                     borderColor: 'primary.main'
                                 }}
@@ -2264,12 +2307,12 @@ const OverviewMUI: React.FC = () => {
                                   bgcolor: 'white',
                                     textAlign: 'center',
                                   fontWeight: 'bold',
-                                  fontSize: '1.2rem',
+                                  fontSize: isCompactMatrix ? '1rem' : '1.2rem',
                                     cursor: 'pointer',
                                   border: '1px solid',
                                   borderColor: 'divider',
-                                  minWidth: 60,
-                                  height: 40,
+                                  minWidth: isCompactMatrix ? 48 : 60,
+                                  height: isCompactMatrix ? 34 : 40,
                                   p: 0.5,
                                   color: userSolution[woman.name!]?.[man.name!] === '✓' ? 'success.main' :
                                          userSolution[woman.name!]?.[man.name!] === '✗' ? 'error.main' :
@@ -2388,7 +2431,7 @@ const OverviewMUI: React.FC = () => {
 
 
       {/* Matching Night Dialog */}
-      <Dialog open={matchingNightDialog} onClose={() => setMatchingNightDialog(false)} maxWidth="lg" fullWidth>
+      <Dialog open={matchingNightDialog} onClose={() => setMatchingNightDialog(false)} maxWidth="lg" fullWidth fullScreen={isMobileDialog}>
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <Box sx={{ flex: 1 }}>
@@ -2614,7 +2657,7 @@ const OverviewMUI: React.FC = () => {
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
           <Button onClick={() => { setMatchingNightDialog(false); resetMatchingNightForm(); }}>Abbrechen</Button>
           <Button
             onClick={saveMatchingNight}
@@ -2632,7 +2675,7 @@ const OverviewMUI: React.FC = () => {
       </Dialog>
 
       {/* Matchbox Dialog */}
-      <Dialog open={matchboxDialog} onClose={() => setMatchboxDialog(false)} maxWidth="md" fullWidth>
+      <Dialog open={matchboxDialog} onClose={() => setMatchboxDialog(false)} maxWidth="md" fullWidth fullScreen={isMobileDialog}>
         <DialogTitle>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
@@ -2925,7 +2968,7 @@ const OverviewMUI: React.FC = () => {
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
           <Button onClick={() => {setMatchboxDialog(false); resetMatchboxForm();}}>Abbrechen</Button>
           <Button onClick={saveMatchbox} variant="contained" startIcon={<SaveIcon />}>
             Erstellen
@@ -2938,6 +2981,7 @@ const OverviewMUI: React.FC = () => {
         onClose={() => setSeasonPickerOpen(false)}
         onApplied={() => {
           void (async () => {
+            resetUiSelectionsForSeasonSwitch()
             await clearProbabilityCache()
             await loadAllData()
           })()

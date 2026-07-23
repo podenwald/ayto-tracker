@@ -6,19 +6,18 @@
  */
 
 import { useState } from 'react'
+import SyncIcon from '@mui/icons-material/Sync'
 import type { DatabaseUpdateState, DatabaseUpdateResult } from '@/services/databaseUpdateService'
 import UpdateFeedbackToast from './UpdateFeedbackToast'
 
 interface DatabaseUpdateBannerProps {
   updateState: DatabaseUpdateState
   onUpdate: () => Promise<DatabaseUpdateResult>
-  onDismiss: () => void
 }
 
 export default function DatabaseUpdateBanner({
   updateState,
-  onUpdate,
-  onDismiss
+  onUpdate
 }: DatabaseUpdateBannerProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [updateResult, setUpdateResult] = useState<DatabaseUpdateResult | null>(null)
@@ -31,12 +30,6 @@ export default function DatabaseUpdateBanner({
       const result = await onUpdate()
       setUpdateResult(result)
       
-      if (result.success) {
-        // Erfolgreiches Update - Banner nach kurzer Zeit ausblenden
-        setTimeout(() => {
-          onDismiss()
-        }, 2000)
-      }
     } catch (error) {
       console.error('Fehler beim Update:', error)
       setUpdateResult({
@@ -74,58 +67,51 @@ export default function DatabaseUpdateBanner({
   }
 
   return (
-    <div 
+    <div
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-        color: 'white',
-        padding: '12px 16px',
-        zIndex: 1300,
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-      }}
-    >
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
+        inset: 0,
+        background: 'rgba(15, 23, 42, 0.55)',
+        zIndex: 1400,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '16px',
-        flexWrap: 'wrap'
-      }}>
-        {/* Update-Info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '16px'
-          }}>
-            🔄
+        justifyContent: 'center',
+        padding: '16px'
+      }}
+    >
+      <div
+        className="db-update-overlay-card"
+        style={{
+          width: 'min(680px, calc(100vw - 32px))',
+          background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+          color: 'white',
+          borderRadius: '14px',
+          boxShadow: '0 18px 40px rgba(0, 0, 0, 0.35)',
+          border: '1px solid rgba(255,255,255,0.18)',
+          padding: '18px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+          >
+            <SyncIcon sx={{ fontSize: 22, color: 'white' }} />
           </div>
-          
-          <div>
-            <div style={{ 
-              fontSize: '14px', 
-              fontWeight: 600,
-              marginBottom: '2px'
-            }}>
-              🔄 Datenbank-Update verfügbar
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>
+              Datenbank-Update erforderlich
             </div>
-            <div style={{ 
-              fontSize: '12px', 
-              opacity: 0.9,
-              lineHeight: 1.4
-            }}>
-              DB-Version {updateState.latestVersion} verfügbar 
+            <div style={{ fontSize: '13px', opacity: 0.95, lineHeight: 1.45 }}>
+              DB-Version {updateState.latestVersion} ist verfügbar
               {updateState.releasedDate && (
                 <> • Veröffentlicht am {formatDate(updateState.releasedDate)}</>
               )}
@@ -133,28 +119,25 @@ export default function DatabaseUpdateBanner({
           </div>
         </div>
 
-
-        {/* Aktions-Buttons */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="db-update-actions" style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
           <button
             onClick={handleUpdate}
             disabled={isUpdating || updateState.isUpdating}
+            className="db-update-cta-button"
             style={{
-              background: isUpdating || updateState.isUpdating 
-                ? 'rgba(255, 255, 255, 0.3)' 
-                : 'rgba(255, 255, 255, 0.2)',
+              background: isUpdating || updateState.isUpdating ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.18)',
               color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              fontSize: '13px',
-              fontWeight: 500,
+              border: '1px solid rgba(255, 255, 255, 0.35)',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 600,
               cursor: isUpdating || updateState.isUpdating ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              minWidth: '120px',
+              gap: '8px',
+              minWidth: '160px',
               justifyContent: 'center'
             }}
             onMouseEnter={(e) => {
@@ -164,55 +147,27 @@ export default function DatabaseUpdateBanner({
             }}
             onMouseLeave={(e) => {
               if (!isUpdating && !updateState.isUpdating) {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)'
               }
             }}
           >
             {isUpdating || updateState.isUpdating ? (
               <>
-                <div style={{
-                  width: '12px',
-                  height: '12px',
-                  border: '2px solid rgba(255, 255, 255, 0.5)',
-                  borderTop: '2px solid white',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
+                <div
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid rgba(255, 255, 255, 0.5)',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}
+                />
                 Aktualisiere...
               </>
             ) : (
               <>Jetzt aktualisieren</>
             )}
-          </button>
-
-          <button
-            onClick={onDismiss}
-            disabled={isUpdating || updateState.isUpdating}
-            style={{
-              background: 'transparent',
-              color: 'rgba(255, 255, 255, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: isUpdating || updateState.isUpdating ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              if (!isUpdating && !updateState.isUpdating) {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
-                e.currentTarget.style.color = 'white'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isUpdating && !updateState.isUpdating) {
-                e.currentTarget.style.background = 'transparent'
-                e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)'
-              }
-            }}
-          >
-            Später
           </button>
         </div>
       </div>
@@ -221,6 +176,24 @@ export default function DatabaseUpdateBanner({
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 640px) {
+          .db-update-overlay-card {
+            padding: 16px !important;
+            border-radius: 12px !important;
+          }
+
+          .db-update-actions {
+            justify-content: stretch !important;
+          }
+
+          .db-update-cta-button {
+            width: 100% !important;
+            min-width: 0 !important;
+            padding: 12px 16px !important;
+            font-size: 15px !important;
+          }
         }
       `}</style>
       

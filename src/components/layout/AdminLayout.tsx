@@ -260,6 +260,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                   borderRadius: 1.5,
                   px: 2,
                   py: 1.5,
+                  minHeight: 44,
                   backgroundColor: activeTab === item.value ? 'primary.main' : 'transparent',
                   color: activeTab === item.value ? 'primary.contrastText' : 'text.primary',
                   '&:hover': {
@@ -334,7 +335,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
           borderColor: 'divider'
         }}
       >
-        <Toolbar sx={{ minHeight: '64px !important' }}>
+        <Toolbar sx={{ minHeight: { xs: 72, sm: 64 }, py: { xs: 1, sm: 0 } }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
@@ -359,12 +360,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
               {activeSeasonTitle || 'AYTO Admin'}
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mr: 2, flexWrap: 'wrap', justifyContent: 'flex-end', rowGap: 0.5 }}>
-            <Chip icon={<NightlifeIcon fontSize="small" />} label={`${stats.matchingNightsCount}`} size="small" color="primary" sx={{ fontWeight: 600 }} />
-            <Chip icon={<InventoryIcon fontSize="small" />} label={`${stats.matchboxesCount}`} size="small" color="secondary" sx={{ fontWeight: 600 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 1, flexWrap: 'wrap', justifyContent: 'flex-end', rowGap: 0.5 }}>
+            <Chip icon={<NightlifeIcon fontSize="small" />} label={`${stats.matchingNightsCount}`} size="small" color="primary" sx={{ fontWeight: 600, display: { xs: 'none', md: 'inline-flex' } }} />
+            <Chip icon={<InventoryIcon fontSize="small" />} label={`${stats.matchboxesCount}`} size="small" color="secondary" sx={{ fontWeight: 600, display: { xs: 'none', md: 'inline-flex' } }} />
             <Chip icon={<FavoriteIcon fontSize="small" />} label={`${stats.perfectMatches}`} size="small" color="success" sx={{ fontWeight: 600 }} />
-            <Box sx={{ flexBasis: { xs: '100%', sm: 0 }, height: 0, margin: 0, padding: 0 }} />
-            <Chip icon={<LightModeIcon fontSize="small" />} label={`${stats.currentLights}`} size="small" color="warning" sx={{ fontWeight: 600 }} />
+            <Chip icon={<LightModeIcon fontSize="small" />} label={`${stats.currentLights}`} size="small" color="warning" sx={{ fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }} />
             <Chip label={`${stats.currentBalance.toLocaleString('de-DE')} €`} size="small" color={stats.currentBalance >= 0 ? 'success' : 'error'} sx={{ fontWeight: 700 }} />
           </Box>
           <Tooltip title="Zur Startseite" arrow>

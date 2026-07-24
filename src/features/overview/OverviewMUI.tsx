@@ -59,6 +59,7 @@ import {
 import { useProbabilityCalculation } from '@/hooks/useProbabilityCalculation'
 import { MatchboxService } from '@/services/matchboxService'
 import { MatchingNightService } from '@/services/matchingNightService'
+import { getConfirmedPerfectMatchNames } from '@/utils/matchStatus'
 import ParticipantsView from '@/components/ParticipantsView'
 import SeasonFinaleDialog from '@/components/SeasonFinaleDialog'
 import SeasonPickerDialog from '@/components/SeasonPickerDialog'
@@ -705,16 +706,7 @@ const OverviewMUI: React.FC = () => {
   const [matchingNightSelectedMan, setMatchingNightSelectedMan] = useState<string>('')
   
   // Get all participants who are already confirmed as Perfect Matches (regardless of airing order)
-  const getAllConfirmedPerfectMatchParticipants = () => {
-    const confirmedParticipants = new Set<string>()
-    matchboxes
-      .filter(mb => mb.matchType === 'perfect')
-      .forEach(mb => {
-        confirmedParticipants.add(mb.woman)
-        confirmedParticipants.add(mb.man)
-      })
-    return confirmedParticipants
-  }
+  const getAllConfirmedPerfectMatchParticipants = () => getConfirmedPerfectMatchNames(matchboxes)
 
   // Matchbox form states
   const [matchboxDialog, setMatchboxDialog] = useState(false)
@@ -1649,7 +1641,7 @@ const OverviewMUI: React.FC = () => {
 
           {/* Kandidat*innen Tab */}
           <TabPanel value={activeTab} index={1}>
-            <ParticipantsView participants={participants} />
+            <ParticipantsView participants={participants} confirmedPerfectMatchNames={getAllConfirmedPerfectMatchParticipants()} />
           </TabPanel>
 
           {/* Matching Nights Tab */}

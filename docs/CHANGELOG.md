@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.3.0] - 2026-07-24
+
+### 🐛 Bugfixes
+- Divergierender Aktiv-/Perfect-Match-Status zwischen Home-, Kandidat*innen- und Admin-Ansicht behoben: Alle drei lasen den Status bisher aus unterschiedlichen Quellen (Home berechnete live aus den Matchbox-Daten, Kandidat*innen- und Admin-Ansicht aus dem persistierten `participant.active`-Feld, das nach einem JSON-Reimport oder einer gelöschten/geänderten Matchbox veralten konnte). Alle drei Views leiten den Status jetzt einheitlich über `getConfirmedPerfectMatchNames()` aus den Matchbox-Daten ab (`src/utils/matchStatus.ts`).
+
+### 🔒 Rechtliches
+- Alle direkt verlinkten Kandidat*innen-Fotos (`photoUrl`) aus allen drei Staffeln entfernt (`ayto-2026.json`: kino.de, `ayto-rsil-2025.json`: rnd.de, `ayto-rsil-2026.json`: geplante RTL-Fotos). RTLs Media-Hub-Nutzungsbedingungen erlauben die Nutzung nur registrierten Journalist*innen zur redaktionellen Berichterstattung, zeitlich begrenzt auf das Ausstrahlungsfenster — nicht für einen dauerhaft laufenden Fan-Tracker. Bleibt leer, bis die Nutzungsrechte geklärt sind.
+
+---
+
 ## [1.2.1] - 2026-07-23
 
 ### 🚀 Neue Features

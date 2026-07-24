@@ -72,6 +72,7 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import { VERSION_INFO } from '@/utils/version'
 import BroadcastManagement from './BroadcastManagement'
 import { db, DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
+import { getConfirmedPerfectMatchNames } from '@/utils/matchStatus'
 import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
 import { updateParticipantInJson, addParticipantToJson, deleteParticipantFromJson, updateMatchboxInJson, deleteMatchboxFromJson, updateMatchingNightInJson, deleteMatchingNightFromJson, updatePenaltyInJson, addPenaltyToJson, deletePenaltyFromJson } from '@/services/jsonDataService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
@@ -99,9 +100,10 @@ const StatisticsCards: React.FC<{
 // ** Participant Form Component
 const ParticipantForm: React.FC<{
   initial?: Participant
+  confirmedPerfectMatchNames: Set<string>
   onSaved: () => void
   onCancel?: () => void
-}> = ({ initial, onSaved, onCancel }) => {
+}> = ({ initial, confirmedPerfectMatchNames, onSaved, onCancel }) => {
   const [form, setForm] = useState<Participant>(initial ?? {
     seasonId: 0,
     name: '', knownFrom: '', age: undefined, status: 'Aktiv', photoUrl: '', source: '', bio: '', gender: 'F', socialMediaAccount: ''
@@ -187,9 +189,9 @@ const ParticipantForm: React.FC<{
               <TextField
                 fullWidth
                 label="Status"
-                value={(form.active !== false) ? 'Aktiv' : 'Perfekt Match'}
+                value={confirmedPerfectMatchNames.has(form.name || '') ? 'Perfekt Match' : 'Aktiv'}
                 InputProps={{ readOnly: true }}
-                helperText="Wird automatisch aus dem Aktiv-Status abgeleitet"
+                helperText="Wird automatisch aus den Matchbox-Daten abgeleitet"
               />
               <TextField
                 fullWidth
@@ -260,13 +262,14 @@ const ParticipantForm: React.FC<{
 // ** Participants List Component
 const ParticipantsList: React.FC<{
   participants: Participant[]
+  confirmedPerfectMatchNames: Set<string>
   onEdit: (participant: Participant) => void
   onDelete: (id: number) => void
   womenLimit: number
   menLimit: number
   onLoadMoreWomen: () => void
   onLoadMoreMen: () => void
-}> = ({ participants, onEdit, onDelete, womenLimit, menLimit, onLoadMoreWomen, onLoadMoreMen }) => {
+}> = ({ participants, confirmedPerfectMatchNames, onEdit, onDelete, womenLimit, menLimit, onLoadMoreWomen, onLoadMoreMen }) => {
   const women = participants.filter(p => p.gender === 'F')
   const men = participants.filter(p => p.gender === 'M')
   
@@ -357,9 +360,9 @@ const ParticipantsList: React.FC<{
                         height: 12,
                         borderRadius: '50%',
                         border: '2px solid white',
-                        backgroundColor: participant.active !== false ? 'success.main' : '#EC4899',
+                        backgroundColor: !confirmedPerfectMatchNames.has(participant.name || '') ? 'success.main' : '#EC4899',
                         // Zusätzliche Sicherheit für pinke Farbe bei Perfekt Matches
-                        ...(participant.active === false && {
+                        ...(confirmedPerfectMatchNames.has(participant.name || '') && {
                           backgroundColor: '#EC4899 !important'
                         })
                       }
@@ -592,9 +595,9 @@ const ParticipantsList: React.FC<{
                         height: 12,
                         borderRadius: '50%',
                         border: '2px solid white',
-                        backgroundColor: participant.active !== false ? 'success.main' : '#EC4899',
+                        backgroundColor: !confirmedPerfectMatchNames.has(participant.name || '') ? 'success.main' : '#EC4899',
                         // Zusätzliche Sicherheit für pinke Farbe bei Perfekt Matches
-                        ...(participant.active === false && {
+                        ...(confirmedPerfectMatchNames.has(participant.name || '') && {
                           backgroundColor: '#EC4899 !important'
                         })
                       }
@@ -3836,6 +3839,7 @@ const AdminPanelMUI: React.FC = () => {
             <Box sx={{ p: 3 }}>
               <ParticipantsList
                 participants={participants}
+                confirmedPerfectMatchNames={getConfirmedPerfectMatchNames(matchboxes)}
                 onEdit={handleEditParticipant}
                 onDelete={handleDeleteParticipant}
                 womenLimit={womenLimit}
@@ -3893,9 +3897,10 @@ const AdminPanelMUI: React.FC = () => {
                 <Collapse in={showParticipantForm}>
                   <Card variant="outlined">
                     <CardContent>
-                      <ParticipantForm 
-                        initial={editingParticipant} 
-                        onSaved={() => { 
+                      <ParticipantForm
+                        initial={editingParticipant}
+                        confirmedPerfectMatchNames={getConfirmedPerfectMatchNames(matchboxes)}
+                        onSaved={() => {
                           setEditingParticipant(undefined)
                           setShowParticipantForm(false)
                           loadAllData() 

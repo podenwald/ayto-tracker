@@ -193,18 +193,6 @@ export interface AppRoute {
   type: 'root' | 'admin'
 }
 
-export interface VersionCheckState {
-  shouldShowDialog: boolean
-  lastVersion: string | null
-  currentVersion: string
-}
-
-export interface AppState {
-  route: AppRoute['type']
-  isInitializing: boolean
-  initError: string | null
-  versionCheck: VersionCheckState
-}
 
 // === Utility-Typen ===
 export interface Pair {

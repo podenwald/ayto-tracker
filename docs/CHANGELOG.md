@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.0] - 2026-07-25
+
+### 🚀 Neue Features
+- Nutzer*innen werden jetzt automatisch auf neue Versionen hingewiesen, statt es nur nach einem manuellen Reload zufällig zu bemerken: Die App prüft im Hintergrund (höchstens einmal täglich) `/manifest.json` und lädt bei einer neuen Version die Seite unbemerkt neu.
+- Nach einem automatischen Update erscheint auf der Startseite einmalig eine Infobox mit dem letzten Eintrag aus `docs/CHANGELOG.md` — schließbar über einen Button.
+
+### 🛠️ Verbesserungen
+- Der alte manuelle "Neue Version verfügbar"-Dialog (mit Cache-/Cookie-Löschen-Empfehlung) entfällt, da das Update jetzt automatisch im Hintergrund läuft.
+
+---
+
 ## [1.3.0] - 2026-07-24
 
 ### 🐛 Bugfixes

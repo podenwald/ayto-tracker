@@ -61,6 +61,7 @@ import { MatchboxService } from '@/services/matchboxService'
 import { MatchingNightService } from '@/services/matchingNightService'
 import { getConfirmedPerfectMatchNames } from '@/utils/matchStatus'
 import ParticipantsView from '@/components/ParticipantsView'
+import UpdateInfoBox from '@/components/UpdateInfoBox'
 import SeasonFinaleDialog from '@/components/SeasonFinaleDialog'
 import SeasonPickerDialog from '@/components/SeasonPickerDialog'
 import { computeSeasonFinale, type SeasonFinaleResult } from '@/utils/seasonFinale'
@@ -1277,6 +1278,8 @@ const OverviewMUI: React.FC = () => {
           <Card sx={{ mb: 4 }}>
           {/* Overview Tab */}
           <TabPanel value={activeTab} index={0}>
+            <UpdateInfoBox />
+
             {/* Floating Matchbox Creator vorerst deaktiviert (spätere Neufassung geplant) */}
             {false && !isMobile && (
             <Box

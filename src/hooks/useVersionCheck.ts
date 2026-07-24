@@ -1,57 +1,25 @@
 /**
  * Custom Hook für Versions-Check
- * 
- * Kapselt die Versions-Check-Logik.
- * Folgt dem Single Responsibility Principle.
+ *
+ * Startet die tägliche Hintergrundprüfung auf eine neue App-Version
+ * (unbemerkter Reload bei Bedarf) und initialisiert die Versionsverwaltung.
+ * Das "neue Version gesehen"-Signal für die UI (z. B. UpdateInfoBox) wird
+ * unabhängig davon direkt über versionCheck.ts ermittelt.
  */
 
-import { useEffect, useState } from 'react'
-import { initializeVersionCheck } from '@/utils/versionCheck'
-import type { VersionCheckState } from '@/types'
+import { useEffect } from 'react'
+import { initializeVersionCheck, checkAndApplyBackgroundUpdate } from '@/utils/versionCheck'
 
-interface UseVersionCheckResult {
-  versionCheck: VersionCheckState
-  handleVersionDialogClose: () => void
-  handleCacheCleared: () => void
-}
+/** Intervall, in dem geprüft wird, ob die tägliche Hintergrundprüfung fällig ist */
+const POLL_TICK_MS = 60 * 60 * 1000 // stündlich prüfen, ob 24h seit letztem Check vergangen sind
 
-/**
- * Hook für Versions-Check
- * 
- * Verantwortlichkeiten:
- * - Initialisierung des Versions-Checks
- * - State-Management für Versions-Dialog
- * - Cache-Clear-Handling
- */
-export function useVersionCheck(): UseVersionCheckResult {
-  const [versionCheck, setVersionCheck] = useState<VersionCheckState>({
-    shouldShowDialog: false,
-    lastVersion: null,
-    currentVersion: ''
-  })
-
+export function useVersionCheck(): void {
   useEffect(() => {
-    const versionResult = initializeVersionCheck()
-    setVersionCheck({
-      shouldShowDialog: versionResult.shouldShowDialog,
-      lastVersion: versionResult.lastVersion,
-      currentVersion: versionResult.currentVersion
-    })
+    initializeVersionCheck()
+
+    checkAndApplyBackgroundUpdate()
+    const intervalId = window.setInterval(checkAndApplyBackgroundUpdate, POLL_TICK_MS)
+
+    return () => window.clearInterval(intervalId)
   }, [])
-
-  const handleVersionDialogClose = () => {
-    setVersionCheck(prev => ({ ...prev, shouldShowDialog: false }))
-  }
-
-  const handleCacheCleared = () => {
-    // Seite neu laden nach Cache-Clear
-    window.location.reload()
-  }
-
-  return {
-    versionCheck,
-    handleVersionDialogClose,
-    handleCacheCleared
-  }
 }
-

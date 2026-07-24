@@ -7,7 +7,6 @@
 
 import { useVersionCheck } from '@/hooks/useVersionCheck'
 import { useDatabaseUpdate } from '@/hooks/useDatabaseUpdate'
-import VersionCheckDialog from '@/components/VersionCheckDialog'
 import DatabaseUpdateBanner from '@/components/DatabaseUpdateBanner'
 import LegalFooter from '@/components/LegalFooter'
 
@@ -17,14 +16,14 @@ interface AppLayoutProps {
 
 /**
  * Layout-Komponente für die App
- * 
+ *
  * Verantwortlichkeiten:
  * - Bereitstellung des gemeinsamen Layouts
- * - Integration des Versions-Check-Dialogs
+ * - Tägliche Hintergrundprüfung auf neue App-Version (unbemerkter Auto-Reload)
  * - Integration des Legal Footers
  */
 export function AppLayout({ children }: AppLayoutProps) {
-  const { versionCheck, handleVersionDialogClose, handleCacheCleared } = useVersionCheck()
+  useVersionCheck()
   const { updateState, performUpdate } = useDatabaseUpdate()
 
   return (
@@ -34,22 +33,13 @@ export function AppLayout({ children }: AppLayoutProps) {
         updateState={updateState}
         onUpdate={performUpdate}
       />
-      
+
       {/* Hauptinhalt */}
       <div>
         {children}
       </div>
-      
+
       <LegalFooter />
-      
-      {/* App-Versions-Check-Dialog */}
-      <VersionCheckDialog
-        isOpen={versionCheck.shouldShowDialog}
-        lastVersion={versionCheck.lastVersion}
-        currentVersion={versionCheck.currentVersion}
-        onClose={handleVersionDialogClose}
-        onCacheCleared={handleCacheCleared}
-      />
     </>
   )
 }

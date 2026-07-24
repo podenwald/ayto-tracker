@@ -1,128 +1,86 @@
 import { getDisplayVersion } from './version'
 
 const VERSION_STORAGE_KEY = 'ayto-last-version'
-const VERSION_CHECK_DISABLED_KEY = 'ayto-version-check-disabled'
+const LAST_POLL_KEY = 'ayto-version-last-poll'
+
+/** Wie oft im Hintergrund auf eine neue Version geprüft wird (einmal täglich) */
+const POLL_INTERVAL_MS = 24 * 60 * 60 * 1000
 
 export interface VersionCheckResult {
   isNewVersion: boolean
   lastVersion: string | null
   currentVersion: string
-  shouldShowDialog: boolean
 }
 
 /**
- * Überprüft, ob sich die Version seit dem letzten Besuch geändert hat
+ * Überprüft, ob sich die (bereits geladene) Version seit dem letzten Besuch geändert hat.
+ * Erkennt eine neue Version erst NACH einem Reload, der den neuen Build lädt.
  */
 export function checkVersionChange(): VersionCheckResult {
   const currentVersion = getDisplayVersion()
   const lastVersion = localStorage.getItem(VERSION_STORAGE_KEY)
-  const isDisabled = localStorage.getItem(VERSION_CHECK_DISABLED_KEY) === 'true'
-  
   const isNewVersion = lastVersion !== null && lastVersion !== currentVersion
-  const shouldShowDialog = isNewVersion && !isDisabled
-  
-  return {
-    isNewVersion,
-    lastVersion,
-    currentVersion,
-    shouldShowDialog
-  }
+
+  return { isNewVersion, lastVersion, currentVersion }
 }
 
 /**
- * Speichert die aktuelle Version als letzte bekannte Version
+ * Speichert die aktuelle Version als letzte bekannte Version.
+ * Markiert damit eine erkannte neue Version als "gesehen".
  */
 export function saveCurrentVersion(): void {
-  const currentVersion = getDisplayVersion()
-  localStorage.setItem(VERSION_STORAGE_KEY, currentVersion)
+  localStorage.setItem(VERSION_STORAGE_KEY, getDisplayVersion())
 }
 
 /**
- * Deaktiviert die Versions-Check-Warnung dauerhaft
- */
-export function disableVersionCheck(): void {
-  localStorage.setItem(VERSION_CHECK_DISABLED_KEY, 'true')
-}
-
-/**
- * Aktiviert die Versions-Check-Warnung wieder
- */
-export function enableVersionCheck(): void {
-  localStorage.removeItem(VERSION_CHECK_DISABLED_KEY)
-}
-
-/**
- * Löscht den Browsercache und alle gespeicherten Daten (außer Datenbank)
- */
-export async function clearBrowserCache(): Promise<void> {
-  try {
-    // Service Worker Cache löschen
-    if ('caches' in window) {
-      const cacheNames = await caches.keys()
-      await Promise.all(
-        cacheNames.map(cacheName => caches.delete(cacheName))
-      )
-    }
-    
-    // Local Storage löschen (außer Datenbank und Versions-Info)
-    const keysToKeep = [
-      'dexie-database-version', 
-      'dexie-database-schema',
-      VERSION_STORAGE_KEY,
-      VERSION_CHECK_DISABLED_KEY
-    ]
-    const allKeys = Object.keys(localStorage)
-    allKeys.forEach(key => {
-      if (!keysToKeep.some(keepKey => key.includes(keepKey))) {
-        localStorage.removeItem(key)
-      }
-    })
-    
-    // Session Storage löschen
-    sessionStorage.clear()
-    
-    // Cookies löschen
-    if (document.cookie) {
-      document.cookie.split(";").forEach(cookie => {
-        const eqPos = cookie.indexOf("=")
-        const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie
-        document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
-        document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`
-        document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`
-      })
-    }
-    
-    // Service Worker neu registrieren
-    if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations()
-      await Promise.all(registrations.map(registration => registration.unregister()))
-    }
-    
-    console.log('✅ Browser-Cache erfolgreich gelöscht')
-  } catch (error) {
-    console.error('❌ Fehler beim Löschen des Browser-Caches:', error)
-    throw error
-  }
-}
-
-/**
- * Initialisiert die Versionsverwaltung beim App-Start
+ * Initialisiert die Versionsverwaltung beim App-Start (merkt sich die Version beim ersten Besuch)
  */
 export function initializeVersionCheck(): VersionCheckResult {
   const result = checkVersionChange()
-  
-  // Speichere die aktuelle Version, wenn es der erste Besuch ist
+
   if (result.lastVersion === null) {
     saveCurrentVersion()
   }
-  
-  // Debugging: Zeige Versionsinformationen
-  console.log('🔍 Versions-Check:', {
-    lastVersion: result.lastVersion,
-    currentVersion: result.currentVersion,
-    isNewVersion: result.isNewVersion,
-    shouldShowDialog: result.shouldShowDialog
-  })
-  
+
   return result
+}
+
+/** Prüft, ob seit der letzten Hintergrundprüfung genug Zeit vergangen ist (einmal täglich) */
+function shouldPollForNewVersion(): boolean {
+  const lastPoll = localStorage.getItem(LAST_POLL_KEY)
+  if (!lastPoll) return true
+  return Date.now() - Number(lastPoll) >= POLL_INTERVAL_MS
+}
+
+function markPolled(): void {
+  localStorage.setItem(LAST_POLL_KEY, String(Date.now()))
+}
+
+/** Fragt die tatsächlich auf dem Server ausgelieferte Version ab (Cache-umgehend) */
+async function fetchServerVersion(): Promise<string | null> {
+  try {
+    const response = await fetch(`/manifest.json?t=${Date.now()}`, { cache: 'no-store' })
+    if (!response.ok) return null
+    const manifest = await response.json()
+    return typeof manifest.version === 'string' ? manifest.version : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Prüft im Hintergrund (höchstens einmal täglich), ob eine neue Version auf dem Server liegt,
+ * und lädt die Seite bei Bedarf unbemerkt neu. Das eigentliche "neue Version"-Signal für die UI
+ * entsteht danach ganz normal über checkVersionChange() beim nächsten Start mit dem neuen Build.
+ */
+export async function checkAndApplyBackgroundUpdate(): Promise<void> {
+  if (!shouldPollForNewVersion()) return
+  markPolled()
+
+  const serverVersion = await fetchServerVersion()
+  if (!serverVersion) return
+
+  if (serverVersion !== getDisplayVersion()) {
+    window.location.reload()
+  }
 }

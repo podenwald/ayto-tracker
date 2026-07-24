@@ -16,13 +16,15 @@ import type { Participant } from '@/types'
 
 interface ParticipantsViewProps {
   participants: Participant[]
+  /** Namen aller Teilnehmer*innen mit bestätigter Perfect-Match-Matchbox (siehe utils/matchStatus) */
+  confirmedPerfectMatchNames: Set<string>
 }
 
 /**
  * Komponente zur Anzeige der Teilnehmer ohne Edit/Delete-Funktionen
  * Wird im Frontend verwendet
  */
-const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => {
+const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants, confirmedPerfectMatchNames }) => {
   const [womenLimit, setWomenLimit] = useState(6)
   const [menLimit, setMenLimit] = useState(6)
   
@@ -115,8 +117,8 @@ const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => 
                         height: 12,
                         borderRadius: '50%',
                         border: '2px solid white',
-                        backgroundColor: participant.active !== false ? 'success.main' : '#EC4899',
-                        ...(participant.active === false && {
+                        backgroundColor: !confirmedPerfectMatchNames.has(participant.name || '') ? 'success.main' : '#EC4899',
+                        ...(confirmedPerfectMatchNames.has(participant.name || '') && {
                           backgroundColor: '#EC4899 !important'
                         })
                       }
@@ -319,8 +321,8 @@ const ParticipantsView: React.FC<ParticipantsViewProps> = ({ participants }) => 
                         height: 12,
                         borderRadius: '50%',
                         border: '2px solid white',
-                        backgroundColor: participant.active !== false ? 'success.main' : '#EC4899',
-                        ...(participant.active === false && {
+                        backgroundColor: !confirmedPerfectMatchNames.has(participant.name || '') ? 'success.main' : '#EC4899',
+                        ...(confirmedPerfectMatchNames.has(participant.name || '') && {
                           backgroundColor: '#EC4899 !important'
                         })
                       }

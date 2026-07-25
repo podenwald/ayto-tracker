@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3] - 2026-07-25
+
+### 🛠️ Verbesserungen
+- Die Update-Infobox (`UpdateInfoBox.tsx`) zeigt die Release-Notes jetzt als Modal (weiße Karte, zentriert), passend zu Impressum/Datenschutz/Versionsinformationen — statt der bisherigen blauen Inline-Box.
+
+---
+
 ## [1.4.2] - 2026-07-25
 
 ### 🚀 Neue Features

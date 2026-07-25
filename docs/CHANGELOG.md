@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.1] - 2026-07-25
+
+### 🚀 Neue Features
+- Eigenes Favicon und echte PWA-Icons (`pwa-192x192.png`, `pwa-512x512.png`, `apple-touch-icon.png` waren bisher leere 0-Byte-Platzhalter, Favicon war Vites Standard-Logo).
+- `docs/CHANGELOG-USER.md`: separater, nutzerfreundlicher Changelog ohne technische Details — `UpdateInfoBox.tsx` liest jetzt daraus statt aus dem technischen `docs/CHANGELOG.md`.
+
+### 🔒 Rechtliches
+- Impressum: fehlende Postanschrift ergänzt; veraltete Zitation "§ 55 Abs. 2 RStV" auf "§ 18 Abs. 2 MStV" korrigiert (RStV wurde 2020 vom Medienstaatsvertrag abgelöst).
+- Datenschutzerklärung: Hosting-Anbieter (netcup) und Log-Aufbewahrungsdauer (14 Tage) ergänzt, lokale IndexedDB-Datenspeicherung erklärt, Beschwerderecht bei einer Aufsichtsbehörde ergänzt (Art. 13 Abs. 2 lit. d DSGVO), Stand aktualisiert.
+- Google Fonts (Inter) werden nicht mehr von Googles Servern geladen, sondern selbst gehostet (`@fontsource/inter`) — vermeidet die unter DSGVO abgemahnte IP-Übertragung an Google. Die ungenutzte Material-Icons-Web-Font wurde entfernt.
+
+### 🐛 Bugfixes
+- `/sw.js` und andere Assets wurden vom Hosting ganz ohne `Cache-Control`-Header ausgeliefert, wodurch Browser auf altem Code hängen blieben (u. a. Ursache dafür, dass Updates bisher nur nach manuellem Reload ankamen). Die `_headers`/`_redirects`-Dateien im Projekt sind Netlify-spezifisch und wurden vom tatsächlichen Apache/Plesk-Hosting (netcup) nie ausgewertet. Ersetzt durch eine `.htaccess` mit den nötigen Cache-Control-Headern und SPA-Fallback (`/admin` etc. funktioniert jetzt auch bei direktem Aufruf/Reload).
+
+---
+
 ## [1.4.0] - 2026-07-25
 
 ### 🚀 Neue Features

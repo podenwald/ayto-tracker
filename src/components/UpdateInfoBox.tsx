@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import { checkVersionChange, saveCurrentVersion } from '@/utils/versionCheck'
 import { parseLatestChangelogEntry, type ChangelogEntry } from '@/utils/changelog'
-import changelogRaw from '../../docs/CHANGELOG.md?raw'
+import changelogRaw from '../../docs/CHANGELOG-USER.md?raw'
 
 export default function UpdateInfoBox() {
   // Einmalig (lazy) beim Mount ausgewertet, damit der Wert über StrictModes

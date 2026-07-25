@@ -46,6 +46,10 @@ Tailwind v4 is wired via the native `@tailwindcss/vite` plugin (no `postcss.conf
 1. `vite-plugin-pwa` (`VitePWA({registerType: 'autoUpdate', ...})` in `vite.config.ts`) — standard service-worker asset caching/auto-update.
 2. A separate, hand-rolled data-update system: `scripts/update-manifest.cjs` (run in `prebuild`) hashes `public/ayto-vip-2025.json` and writes `{version, dataHash, released}` to `public/manifest.json`; `src/services/databaseUpdateService.ts` polls that manifest client-side and drives a user-gated "apply update" flow (`useDatabaseUpdate.ts`, `DatabaseUpdateBanner.tsx`, `VersionCheckDialog.tsx`). This is about detecting new *seed data* releases, unrelated to the service worker's own asset updates — don't conflate the two when debugging update issues.
 
+### Two changelogs — update both on release
+
+`docs/CHANGELOG.md` is the technical changelog (git/GitHub-facing, may reference file/function names). `docs/CHANGELOG-USER.md` is what `UpdateInfoBox.tsx` actually reads and shows to end users after an automatic update — keep it free of implementation details (no file paths, function names, or "how it works under the hood"); describe only what changed from the user's point of view. Only the topmost `## [x.y.z] - date` entry is ever shown, so every release needs a new entry there, not just in the technical changelog.
+
 ### Generated files — do not hand-edit
 
 - `src/utils/version.ts` is overwritten on every `prebuild` by `scripts/generate-version.cjs` from the nearest git tag + commit hash. Edits will be silently discarded on the next build.

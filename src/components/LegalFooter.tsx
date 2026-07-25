@@ -60,7 +60,7 @@ export default function LegalFooter() {
               <p style={{ margin: '8px 0' }}><strong>Angaben gemäß § 5 TMG</strong></p>
               <p style={{ margin: '8px 0' }}>Patrick Odenwald</p>
               <p style={{ margin: '8px 0' }}>📧 E-Mail: <a href="mailto:ayto-tracker@patrick-odenwald.de">ayto-tracker@patrick-odenwald.de</a></p>
-              <p style={{ margin: '8px 0' }}>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV: Patrick Odenwald, Adresse wie oben</p>
+              <p style={{ margin: '8px 0' }}>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV: Patrick Odenwald, Seilbahnweg 44, 42781 Haan Gruiten</p>
             </div>
           </div>
         </div>
@@ -79,12 +79,14 @@ export default function LegalFooter() {
             </div>
             <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.6 }}>
               <p style={{ margin: '8px 0' }}><strong>1. Verantwortlicher</strong><br/>Patrick Odenwald<br/>Adresse wie im Impressum<br/>E-Mail: <a href="mailto:ayto-tracker@patrick-odenwald.de">ayto-tracker@patrick-odenwald.de</a></p>
-              <p style={{ margin: '8px 0' }}><strong>2. Erhebung und Speicherung personenbezogener Daten</strong><br/>Beim Besuch der Website werden automatisch Daten wie IP-Adresse, Browsertyp und Zeitpunkt erfasst (Server-Logs). Eine weitergehende Verarbeitung findet nicht statt.</p>
-              <p style={{ margin: '8px 0' }}><strong>3. Cookies</strong><br/>Diese Website verwendet keine Cookies, außer technisch notwendige (z. B. Session-Cookies).</p>
-              <p style={{ margin: '8px 0' }}><strong>4. Nutzung von GitHub für Feedback</strong><br/>Für Feedback verweisen wir auf GitHub Issues. Bitte beachten: Daten unterliegen den Datenschutzbestimmungen von GitHub (GitHub Inc.).</p>
-              <p style={{ margin: '8px 0' }}><strong>5. Social Media</strong><br/>Wir nutzen ggf. Social-Media-Kanäle (z. B. Instagram, LinkedIn, TikTok). Bei Besuch unserer Profile gelten die Datenschutzbestimmungen der jeweiligen Plattformen.</p>
-              <p style={{ margin: '8px 0' }}><strong>6. Ihre Rechte</strong><br/>Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer Daten. Wenden Sie sich dazu an die im Impressum angegebene E-Mail-Adresse.</p>
-              <p style={{ margin: '8px 0' }}><strong>7. Stand</strong><br/>Diese Datenschutzerklärung hat den Stand: 08.09.2025</p>
+              <p style={{ margin: '8px 0' }}><strong>2. Hosting und Server-Logs</strong><br/>Diese Website wird bei der netcup GmbH (Karlsfeld, Deutschland) gehostet. Beim Besuch der Website werden automatisch Daten wie IP-Adresse, Browsertyp und Zeitpunkt des Zugriffs erfasst (Server-Logs). Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren und stabilen Betrieb der Website (Art. 6 Abs. 1 lit. f DSGVO). Die Logs werden täglich rotiert und nach spätestens 14 Tagen automatisiert gelöscht. Eine weitergehende Verarbeitung findet nicht statt.</p>
+              <p style={{ margin: '8px 0' }}><strong>3. Lokale Datenspeicherung im Browser (IndexedDB)</strong><br/>Alle Inhalte, die Sie in AYTO-Tracker eingeben oder ansehen (z. B. Kandidat*innen, Matching Nights, Matchboxes), werden ausschließlich lokal in Ihrem Browser gespeichert (IndexedDB). Diese Daten werden nicht an unsere Server oder Dritte übertragen und verlassen Ihr Gerät nicht. Löschen Sie den Browser-Speicher (bzw. die Website-Daten) Ihres Browsers, werden auch diese lokalen Daten gelöscht.</p>
+              <p style={{ margin: '8px 0' }}><strong>4. Schriftarten</strong><br/>Die auf dieser Website verwendete Schriftart (Inter) wird selbst gehostet und lokal von unserem Server ausgeliefert. Es findet keine Verbindung zu externen Font-Anbietern (z. B. Google Fonts) statt, wodurch keine Daten an Dritte übertragen werden.</p>
+              <p style={{ margin: '8px 0' }}><strong>5. Cookies</strong><br/>Diese Website verwendet keine Cookies, außer technisch notwendige (z. B. Session-Cookies).</p>
+              <p style={{ margin: '8px 0' }}><strong>6. Nutzung von GitHub für Feedback</strong><br/>Für Feedback verweisen wir auf GitHub Issues. Bitte beachten: Daten unterliegen den Datenschutzbestimmungen von GitHub (GitHub Inc.).</p>
+              <p style={{ margin: '8px 0' }}><strong>7. Social Media</strong><br/>Wir nutzen ggf. Social-Media-Kanäle (z. B. Instagram, LinkedIn, TikTok). Bei Besuch unserer Profile gelten die Datenschutzbestimmungen der jeweiligen Plattformen.</p>
+              <p style={{ margin: '8px 0' }}><strong>8. Ihre Rechte</strong><br/>Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung und Datenübertragbarkeit bezüglich Ihrer bei uns gespeicherten Daten sowie ein Widerspruchsrecht gegen die Verarbeitung. Wenden Sie sich dazu an die im Impressum angegebene E-Mail-Adresse. Außerdem haben Sie das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren. Zuständig ist in der Regel die Aufsichtsbehörde Ihres Bundeslandes bzw. gewöhnlichen Aufenthaltsortes.</p>
+              <p style={{ margin: '8px 0' }}><strong>9. Stand</strong><br/>Diese Datenschutzerklärung hat den Stand: 25.07.2026</p>
             </div>
           </div>
         </div>

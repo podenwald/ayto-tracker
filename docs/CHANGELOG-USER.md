@@ -2,6 +2,12 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.4.2] - 2026-07-25
+- Du kannst dir "Was ist neu?" jetzt jederzeit über die Versionsinformationen ansehen, nicht nur direkt nach einem Update
+- Einheitlicheres Design der Versionsinformationen
+
+---
+
 ## [1.4.1] - 2026-07-25
 - Neues App-Icon
 - Rechtliche Hinweise (Impressum & Datenschutz) aktualisiert

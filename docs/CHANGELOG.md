@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.2] - 2026-07-25
+
+### 🚀 Neue Features
+- "Was ist neu?"-Link im Versionsinformationen-Modal: klappt den letzten Eintrag aus `docs/CHANGELOG-USER.md` direkt inline auf, ohne auf die einmalige Auto-Update-Infobox warten zu müssen.
+- "Git Tag" im Versionsinformationen-Modal verlinkt jetzt auf die zugehörige GitHub-Release-Seite.
+
+### 🛠️ Verbesserungen
+- Das Versionsinformationen-Modal nutzt jetzt dieselbe Typografie/Optik wie Impressum und Datenschutz, statt einer abweichenden Monospace-Darstellung.
+
+---
+
 ## [1.4.1] - 2026-07-25
 
 ### 🚀 Neue Features

@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { getDisplayVersion, VERSION_INFO } from '@/utils/version'
+import { parseLatestChangelogEntry } from '@/utils/changelog'
+import changelogUserRaw from '../../docs/CHANGELOG-USER.md?raw'
+
+const latestUserChangelogEntry = parseLatestChangelogEntry(changelogUserRaw)
 
 export default function LegalFooter() {
   const [showImpressum, setShowImpressum] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showVersionDetails, setShowVersionDetails] = useState(false)
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false)
 
   return (
     <>
@@ -99,26 +104,51 @@ export default function LegalFooter() {
           <div onClick={e => e.stopPropagation()} style={{
             background: 'white', maxWidth: 480, width: '90%', padding: 20, borderRadius: 12, boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <h3 style={{ margin: 0, fontSize: 18 }}>Versionsinformationen</h3>
               <button onClick={() => setShowVersionDetails(false)} aria-label="Schließen" style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
             </div>
-            <div style={{ fontFamily: 'monospace', fontSize: 14, lineHeight: 1.6 }}>
-              <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.6 }}>
+              <p style={{ margin: '8px 0' }}>
                 <strong>Version:</strong> {getDisplayVersion()}
-              </div>
-              <div style={{ marginBottom: 8 }}>
-                <strong>Git Tag:</strong> {VERSION_INFO.gitTag || 'Kein Tag'}
-              </div>
-              <div style={{ marginBottom: 8 }}>
-                <strong>Commit:</strong> {VERSION_INFO.gitCommit.substring(0, 7)}
-              </div>
-              <div style={{ marginBottom: 8 }}>
-                <strong>Build Date:</strong> {new Date(VERSION_INFO.buildDate).toLocaleString('de-DE')}
-              </div>
-              <div style={{ marginBottom: 8 }}>
-                <strong>Environment:</strong> {VERSION_INFO.isProduction ? 'Production' : 'Development'}
-              </div>
+                {latestUserChangelogEntry && (
+                  <button
+                    onClick={() => setShowReleaseNotes(prev => !prev)}
+                    style={{ marginLeft: 8, color: '#2563eb', background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', textDecoration: 'underline' }}
+                  >
+                    {showReleaseNotes ? 'Was ist neu? ausblenden' : 'Was ist neu?'}
+                  </button>
+                )}
+              </p>
+              {showReleaseNotes && latestUserChangelogEntry && (
+                <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 14px', margin: '8px 0' }}>
+                  {latestUserChangelogEntry.sections.map((section, i) => (
+                    <div key={i} style={{ marginBottom: i === latestUserChangelogEntry.sections.length - 1 ? 0 : 8 }}>
+                      {section.heading && <strong>{section.heading}</strong>}
+                      <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+                        {section.items.map((item, j) => (
+                          <li key={j}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p style={{ margin: '8px 0' }}>
+                <strong>Git Tag:</strong>{' '}
+                {VERSION_INFO.gitTag ? (
+                  <a
+                    href={`https://github.com/podenwald/ayto-tracker/releases/tag/${VERSION_INFO.gitTag}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {VERSION_INFO.gitTag}
+                  </a>
+                ) : 'Kein Tag'}
+              </p>
+              <p style={{ margin: '8px 0' }}><strong>Commit:</strong> {VERSION_INFO.gitCommit.substring(0, 7)}</p>
+              <p style={{ margin: '8px 0' }}><strong>Build Date:</strong> {new Date(VERSION_INFO.buildDate).toLocaleString('de-DE')}</p>
+              <p style={{ margin: '8px 0' }}><strong>Environment:</strong> {VERSION_INFO.isProduction ? 'Production' : 'Development'}</p>
             </div>
           </div>
         </div>

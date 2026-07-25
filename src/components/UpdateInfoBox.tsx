@@ -1,6 +1,7 @@
 /**
- * Infobox auf der Startseite: zeigt einmalig den letzten Changelog-Eintrag,
+ * Modal auf der Startseite: zeigt einmalig den letzten Changelog-Eintrag,
  * nachdem die App automatisch im Hintergrund auf eine neue Version aktualisiert wurde.
+ * Design passend zu Impressum/Datenschutz/Versionsinformationen (LegalFooter.tsx).
  * Wird manuell über den Schließen-Button weggeklickt.
  */
 
@@ -24,63 +25,33 @@ export default function UpdateInfoBox() {
 
   if (!entry || dismissed) return null
 
-  return (
-    <div
-      style={{
-        position: 'relative',
-        background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-        color: 'white',
-        borderRadius: '14px',
-        boxShadow: '0 12px 28px rgba(0, 0, 0, 0.2)',
-        border: '1px solid rgba(255,255,255,0.18)',
-        padding: '24px',
-        paddingRight: '52px',
-        marginBottom: '24px'
-      }}
-    >
-      <button
-        onClick={() => setDismissed(true)}
-        aria-label="Schließen"
-        style={{
-          position: 'absolute',
-          top: '14px',
-          right: '14px',
-          width: '32px',
-          height: '32px',
-          borderRadius: '50%',
-          border: 'none',
-          background: 'rgba(255, 255, 255, 0.18)',
-          color: 'white',
-          fontSize: '18px',
-          lineHeight: 1,
-          cursor: 'pointer'
-        }}
-      >
-        ×
-      </button>
+  const close = () => setDismissed(true)
 
-      <div style={{ fontSize: '22px', fontWeight: 700, marginBottom: '6px' }}>
-        ✨ Neue Version {entry.version}
-      </div>
-      <div style={{ fontSize: '15px', opacity: 0.85, marginBottom: '16px' }}>
-        {entry.date}
-      </div>
-      {entry.sections.map((section, i) => (
-        <div key={i} style={{ marginBottom: '14px' }}>
-          {section.heading && (
-            <div style={{ fontSize: '17px', fontWeight: 600, marginBottom: '6px' }}>
-              {section.heading}
-            </div>
-          )}
-          <ul style={{ margin: 0, paddingLeft: '22px' }}>
-            {section.items.map((item, j) => (
-              <li key={j} style={{ fontSize: '16px', lineHeight: 1.6, opacity: 0.95, marginBottom: '4px' }}>
-                {item}
-              </li>
-            ))}
-          </ul>
+  return (
+    <div role="dialog" aria-modal="true" onClick={close} style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: 'white', maxWidth: 480, width: '90%', padding: 20, borderRadius: 12, boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h3 style={{ margin: 0, fontSize: 18 }}>✨ Neue Version {entry.version}</h3>
+          <button onClick={close} aria-label="Schließen" style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
         </div>
-      ))}
+        <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.6 }}>
+          <p style={{ margin: '8px 0', color: '#6b7280' }}>{entry.date}</p>
+          {entry.sections.map((section, i) => (
+            <div key={i} style={{ margin: '8px 0' }}>
+              {section.heading && <p style={{ margin: '0 0 4px', fontWeight: 600 }}>{section.heading}</p>}
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {section.items.map((item, j) => (
+                  <li key={j} style={{ margin: '4px 0' }}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

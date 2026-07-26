@@ -1015,31 +1015,17 @@ const OverviewMUI: React.FC = () => {
 
   const saveMatchbox = async () => {
     try {
-      if (!matchboxForm.woman || !matchboxForm.man) {
-        setSnackbar({ open: true, message: 'Bitte wähle eine Frau und einen Mann aus!', severity: 'error' })
+      const validationErrors = MatchboxService.validateMatchbox(matchboxForm)
+      if (validationErrors.length > 0) {
+        setSnackbar({ open: true, message: validationErrors[0], severity: 'error' })
         return
       }
 
       // Check if this pair already exists as a Perfect Match
       if (matchboxForm.matchType === 'perfect') {
-        const existingPerfectMatch = matchboxes.find(mb => 
-          mb.matchType === 'perfect' && 
-          mb.woman === matchboxForm.woman && 
-          mb.man === matchboxForm.man
-        )
-        if (existingPerfectMatch) {
+        const isDuplicate = await MatchboxService.isPerfectMatch(matchboxForm.woman, matchboxForm.man)
+        if (isDuplicate) {
           setSnackbar({ open: true, message: 'Dieses Paar ist bereits als Perfect Match bestätigt!', severity: 'error' })
-          return
-        }
-      }
-
-      if (matchboxForm.matchType === 'sold') {
-        if (matchboxForm.price === undefined || matchboxForm.price === null || (typeof matchboxForm.price === 'number' && isNaN(matchboxForm.price))) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matchboxes muss ein Betrag angegeben werden (Plus = Einnahme, Minus = Ausgabe)!', severity: 'error' })
-          return
-        }
-        if (!matchboxForm.buyer?.trim()) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matchboxes muss ein Käufer ausgewählt werden!', severity: 'error' })
           return
         }
       }

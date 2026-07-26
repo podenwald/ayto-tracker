@@ -74,9 +74,11 @@ import BroadcastManagement from './BroadcastManagement'
 import { db, DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
 import { getConfirmedPerfectMatchNames } from '@/utils/matchStatus'
 import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
-import { updateParticipantInJson, addParticipantToJson, deleteParticipantFromJson, updateMatchboxInJson, deleteMatchboxFromJson, updateMatchingNightInJson, deleteMatchingNightFromJson, updatePenaltyInJson, addPenaltyToJson, deletePenaltyFromJson } from '@/services/jsonDataService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
 import { MatchboxService } from '@/services/matchboxService'
+import { MatchingNightService } from '@/services/matchingNightService'
+import { PenaltyService } from '@/services/penaltyService'
+import { ParticipantService } from '@/services/participantService'
 import {
   DEFAULT_COLOR_PREFERENCES,
   isHexColor,
@@ -119,15 +121,12 @@ const ParticipantForm: React.FC<{
       const oldName = initial?.name?.trim()
       const newName = form.name.trim()
 
-       // Verwende JSON-Service für das Speichern
-       const result = form.id 
-         ? await updateParticipantInJson(form)
-         : await addParticipantToJson(form)
-       
-       if (!result.success) {
-         console.error('Fehler beim Speichern:', result.message)
-         return
-       }
+      // Verwende den ParticipantService, damit die Season-Zugehörigkeits-Prüfung greift
+      if (form.id) {
+        await ParticipantService.updateParticipant(form.id, form)
+      } else {
+        await ParticipantService.createParticipant(form)
+      }
 
       // Wenn der Name geändert wurde, referenzierte Einträge mitziehen (nur aktive Staffel)
       if (oldName && oldName !== newName) {
@@ -827,56 +826,29 @@ const MatchboxManagement: React.FC<{
 
   const saveMatchbox = async () => {
     try {
-      if (!matchboxForm.woman || !matchboxForm.man) {
-        setSnackbar({ open: true, message: 'Bitte wähle eine Frau und einen Mann aus!', severity: 'error' })
+      const validationErrors = MatchboxService.validateMatchbox(matchboxForm)
+      if (validationErrors.length > 0) {
+        setSnackbar({ open: true, message: validationErrors[0], severity: 'error' })
         return
       }
 
-      if (matchboxForm.matchType === 'sold') {
-        if (matchboxForm.price === undefined || matchboxForm.price === null || typeof matchboxForm.price !== 'number') {
-          setSnackbar({ open: true, message: 'Bei verkauften Matchboxes muss ein Betrag angegeben werden (Plus = Einnahme, Minus = Ausgabe)!', severity: 'error' })
-          return
-        }
-        if (!matchboxForm.buyer?.trim()) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matchboxes muss ein Käufer ausgewählt werden!', severity: 'error' })
+      if (matchboxForm.matchType === 'perfect') {
+        const isDuplicate = await MatchboxService.isPerfectMatch(matchboxForm.woman, matchboxForm.man, editingMatchbox?.id)
+        if (isDuplicate) {
+          setSnackbar({ open: true, message: 'Dieses Paar ist bereits als Perfect Match bestätigt!', severity: 'error' })
           return
         }
       }
 
-      const now = new Date()
-      
-        if (editingMatchbox) {
-         // Verwende JSON-Service für das Aktualisieren
-         const result = await updateMatchboxInJson({
-           ...editingMatchbox,
-           ...matchboxForm,
-           updatedAt: now,
-         })
-         
-         if (!result.success) {
-           setSnackbar({ open: true, message: `Fehler beim Aktualisieren: ${result.message}`, severity: 'error' })
-           return
-         }
-        // Wenn Perfect Match, setze beide Kandidat*innen auf inaktiv
-        if (matchboxForm.matchType === 'perfect') {
-          const seasonId = await getActiveSeasonId()
-          await db.participants.where('seasonId').equals(seasonId).modify((p: any) => {
-            if (p.name === matchboxForm.woman || p.name === matchboxForm.man) p.active = false
-          })
-        }
+      if (editingMatchbox) {
+        // Verwende den MatchboxService, damit Season-Prüfung und Perfect-Match-Nebenwirkung greifen
+        await MatchboxService.updateMatchbox(editingMatchbox.id!, matchboxForm)
         setSnackbar({ open: true, message: 'Matchbox wurde erfolgreich aktualisiert!', severity: 'success' })
       } else {
         // Verwende den MatchboxService für die Erstellung
         await MatchboxService.createMatchbox({
           ...matchboxForm,
         })
-        // Wenn Perfect Match, setze beide Kandidat*innen auf inaktiv
-        if (matchboxForm.matchType === 'perfect') {
-          const seasonId = await getActiveSeasonId()
-          await db.participants.where('seasonId').equals(seasonId).modify((p: any) => {
-            if (p.name === matchboxForm.woman || p.name === matchboxForm.man) p.active = false
-          })
-        }
         setSnackbar({ open: true, message: 'Matchbox wurde erfolgreich erstellt!', severity: 'success' })
       }
 
@@ -890,14 +862,9 @@ const MatchboxManagement: React.FC<{
 
     const deleteMatchbox = async (id: number) => {
       try {
-       // Verwende JSON-Service für das Löschen
-       const result = await deleteMatchboxFromJson(id)
-       
-       if (!result.success) {
-         setSnackbar({ open: true, message: `Fehler beim Löschen: ${result.message}`, severity: 'error' })
-         return
-       }
-       
+       // Verwende den MatchboxService, damit die Season-Zugehörigkeits-Prüfung greift
+       await MatchboxService.deleteMatchbox(id)
+
         onUpdate()
         setSnackbar({ open: true, message: 'Matchbox wurde erfolgreich gelöscht!', severity: 'success' })
     } catch (error) {
@@ -1396,19 +1363,14 @@ const MatchingNightManagement: React.FC<{
         return
       }
 
-      const result = await updateMatchingNightInJson({
-        ...editingMatchingNight,
+      // Verwende den MatchingNightService, damit die Season-Zugehörigkeits-Prüfung greift
+      await MatchingNightService.updateMatchingNight(editingMatchingNight.id!, {
         name: matchingNightForm.name,
         totalLights: isSold ? undefined : matchingNightForm.totalLights,
         pairs: matchingNightForm.pairs,
         matchType: isSold ? 'sold' : 'normal',
         ...(isSold ? { price: matchingNightForm.price, buyer: matchingNightForm.buyer } : { price: undefined, buyer: undefined })
       })
-
-      if (!result.success) {
-        setSnackbar({ open: true, message: `Fehler beim Aktualisieren: ${result.message}`, severity: 'error' })
-        return
-      }
 
       setSnackbar({ open: true, message: 'Matching Night wurde erfolgreich aktualisiert!', severity: 'success' })
       resetForm()
@@ -1421,14 +1383,9 @@ const MatchingNightManagement: React.FC<{
 
     const deleteMatchingNight = async (id: number) => {
       try {
-       // Verwende JSON-Service für das Löschen
-       const result = await deleteMatchingNightFromJson(id)
-       
-       if (!result.success) {
-         setSnackbar({ open: true, message: `Fehler beim Löschen: ${result.message}`, severity: 'error' })
-         return
-       }
-       
+        // Verwende den MatchingNightService, damit die Season-Zugehörigkeits-Prüfung greift
+        await MatchingNightService.deleteMatchingNight(id)
+
         onUpdate()
         setSnackbar({ open: true, message: 'Matching Night wurde erfolgreich gelöscht!', severity: 'success' })
     } catch (error) {
@@ -1993,41 +1950,27 @@ const SettingsManagement: React.FC<{
         return
       }
 
-      const now = new Date()
-      
       if (editingPenalty) {
-        // Verwende JSON-Service für das Aktualisieren
-        const result = await updatePenaltyInJson({
-          ...editingPenalty,
+        // Verwende den PenaltyService, damit die Season-Zugehörigkeits-Prüfung greift
+        await PenaltyService.updatePenalty(editingPenalty.id!, {
           participantName: penaltyForm.participantName,
           reason: penaltyForm.reason,
           amount: amount,
           description: penaltyForm.description,
           date: new Date().toISOString().split('T')[0]
         })
-        
-        if (!result.success) {
-          setSnackbar({ open: true, message: `Fehler beim Aktualisieren: ${result.message}`, severity: 'error' })
-          return
-        }
-        
+
         setSnackbar({ open: true, message: '✅ Transaktion wurde erfolgreich aktualisiert!', severity: 'success' })
       } else {
-        // Verwende JSON-Service für das Hinzufügen
-        const result = await addPenaltyToJson({
+        // Verwende den PenaltyService für das Hinzufügen
+        await PenaltyService.createPenalty({
           participantName: penaltyForm.participantName,
           reason: penaltyForm.reason,
           amount: amount,
           description: penaltyForm.description,
-          date: new Date().toISOString().split('T')[0],
-          createdAt: now
+          date: new Date().toISOString().split('T')[0]
         })
-        
-        if (!result.success) {
-          setSnackbar({ open: true, message: `Fehler beim Hinzufügen: ${result.message}`, severity: 'error' })
-          return
-        }
-        
+
         setSnackbar({ open: true, message: '✅ Transaktion wurde erfolgreich hinzugefügt!', severity: 'success' })
       }
 
@@ -2047,14 +1990,9 @@ const SettingsManagement: React.FC<{
       severity: 'warning',
       onConfirm: async () => {
         try {
-          // Verwende JSON-Service für das Löschen
-          const result = await deletePenaltyFromJson(id)
-          
-          if (!result.success) {
-            setSnackbar({ open: true, message: `Fehler beim Löschen: ${result.message}`, severity: 'error' })
-            return
-          }
-          
+          // Verwende den PenaltyService, damit die Season-Zugehörigkeits-Prüfung greift
+          await PenaltyService.deletePenalty(id)
+
           await onUpdate()
           setSnackbar({ open: true, message: 'Transaktion wurde erfolgreich gelöscht!', severity: 'success' })
         } catch (error) {
@@ -3727,15 +3665,12 @@ const AdminPanelMUI: React.FC = () => {
   const handleDeleteParticipant = async (id: number) => {
     if (!confirm('Wirklich löschen?')) return
     try {
-      const result = await deleteParticipantFromJson(id)
-      if (result.success) {
-        loadAllData()
-      } else {
-        console.error('Fehler beim Löschen:', result.message)
-        alert(`Fehler beim Löschen: ${result.message}`)
-      }
+      // Verwende den ParticipantService, damit die Season-Zugehörigkeits-Prüfung greift
+      await ParticipantService.deleteParticipant(id)
+      loadAllData()
     } catch (error) {
       console.error('Fehler beim Löschen:', error)
+      alert(`Fehler beim Löschen: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
     }
   }
 

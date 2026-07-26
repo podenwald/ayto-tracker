@@ -6,9 +6,10 @@
  */
 
 import { db } from '@/lib/db'
-import type { Matchbox, MatchboxDTO, MatchType } from '@/types'
+import type { Matchbox, MatchboxDTO, MatchType, Participant } from '@/types'
 import { createBroadcastDateTime, sortBroadcastsChronologically, ensureMatchboxBroadcastData } from '@/utils/broadcastUtils'
 import { assertSeasonWritable, getActiveSeasonId } from '@/services/seasonService'
+import { getConfirmedPerfectMatchNames } from '@/utils/matchStatus'
 
 export class MatchboxService {
   private static async sid(): Promise<number> {
@@ -69,16 +70,33 @@ export class MatchboxService {
   }
 
   /**
+   * Gleicht das active-Flag aller Teilnehmer*innen mit den aktuell bestätigten
+   * Perfect Matches ab. Läuft nach jedem Create/Update/Delete, damit ein
+   * Teilnehmer reaktiviert wird, wenn sein Perfect Match nachträglich geändert
+   * oder entfernt wird (sonst bleibt active=false stehen, siehe matchStatus.ts).
+   * status: 'Inaktiv' wird nicht angerührt, da das ein bewusster, von Perfect
+   * Match unabhängiger Zustand ist (z.B. jemand hat die Show verlassen).
+   */
+  private static async reconcileParticipantActiveStatus(seasonId: number): Promise<void> {
+    const currentMatchboxes = await db.matchboxes.where('seasonId').equals(seasonId).toArray()
+    const confirmedNames = getConfirmedPerfectMatchNames(currentMatchboxes)
+    await db.participants.where('seasonId').equals(seasonId).modify((p: Participant) => {
+      if (p.status === 'Inaktiv') return
+      p.active = !confirmedNames.has(p.name)
+    })
+  }
+
+  /**
    * Erstellt eine neue Matchbox
    */
   static async createMatchbox(matchbox: Omit<Matchbox, 'id' | 'createdAt' | 'updatedAt' | 'seasonId'>): Promise<number> {
     const seasonId = await this.sid()
     await assertSeasonWritable(seasonId)
     const now = new Date()
-    
+
     // Stelle sicher, dass Ausstrahlungsdaten gesetzt sind
     const matchboxWithBroadcastData = ensureMatchboxBroadcastData(matchbox)
-    
+
     const newMatchbox: Omit<Matchbox, 'id'> = {
       ...matchboxWithBroadcastData,
       seasonId,
@@ -87,9 +105,11 @@ export class MatchboxService {
       ausstrahlungsdatum: matchbox.ausstrahlungsdatum || now.toISOString().split('T')[0], // Heutiges Datum als Standard
       ausstrahlungszeit: matchbox.ausstrahlungszeit || '20:15' // Standard AYTO Zeit für Matchboxes
     }
-    
+
     console.log('🔧 MatchboxService: Erstelle neue Matchbox mit Ausstrahlungsdaten:', newMatchbox)
-    return await db.matchboxes.add(newMatchbox)
+    const newId = await db.matchboxes.add(newMatchbox)
+    await this.reconcileParticipantActiveStatus(seasonId)
+    return newId
   }
 
   /**
@@ -107,6 +127,7 @@ export class MatchboxService {
       updatedAt: new Date()
     }
     await db.matchboxes.update(id, updateData)
+    await this.reconcileParticipantActiveStatus(seasonId)
   }
 
   /**
@@ -120,6 +141,7 @@ export class MatchboxService {
       throw new Error('Matchbox gehört nicht zur aktiven Staffel.')
     }
     await db.matchboxes.delete(id)
+    await this.reconcileParticipantActiveStatus(seasonId)
   }
 
   /**
@@ -202,13 +224,14 @@ export class MatchboxService {
   }
 
   /**
-   * Prüft, ob ein Paar bereits als Perfect Match bestätigt ist
+   * Prüft, ob ein Paar bereits als Perfect Match bestätigt ist.
+   * `excludeId` lässt beim Bearbeiten einer bestehenden Matchbox zu, dass sie sich nicht selbst als Duplikat meldet.
    */
-  static async isPerfectMatch(woman: string, man: string): Promise<boolean> {
+  static async isPerfectMatch(woman: string, man: string, excludeId?: number): Promise<boolean> {
     const perfectMatches = await this.getPerfectMatches()
-    return perfectMatches.some(mb => 
-      (mb.woman === woman && mb.man === man) ||
-      (mb.woman === man && mb.man === woman)
+    return perfectMatches.some(mb =>
+      mb.id !== excludeId &&
+      ((mb.woman === woman && mb.man === man) || (mb.woman === man && mb.man === woman))
     )
   }
 

@@ -79,6 +79,7 @@ import { MatchboxService } from '@/services/matchboxService'
 import { MatchingNightService } from '@/services/matchingNightService'
 import { PenaltyService } from '@/services/penaltyService'
 import { ParticipantService } from '@/services/participantService'
+import { buildDeploymentExport } from '@/utils/deploymentExport'
 import {
   DEFAULT_COLOR_PREFERENCES,
   isHexColor,
@@ -2114,80 +2115,29 @@ const SettingsManagement: React.FC<{
   const exportForDeploy = async () => {
     try {
       setIsLoading(true)
-      
-      const {
-        participants: participantsData,
-        matchingNights: rawMatchingNights,
-        matchboxes: rawMatchboxes,
-        penalties: penaltiesData,
-        probabilityCache: probabilityCacheData,
-        broadcastNotes: broadcastNotesData
-      } = await DatabaseUtils.exportData()
 
-      // Export-Normalisierung: DTO-kompatibel inkl. verkaufte MN (matchType, price, buyer, date, createdAt)
-      const matchingNightsData = rawMatchingNights.map(m => ({
-        id: m.id,
-        name: m.name,
-        date: m.date,
-        pairs: m.pairs,
-        totalLights: m.totalLights,
-        matchType: m.matchType,
-        price: m.price,
-        buyer: m.buyer,
-        createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : String(m.createdAt),
-        ausstrahlungsdatum: m.ausstrahlungsdatum,
-        ausstrahlungszeit: m.ausstrahlungszeit
-      }))
+      const exportInput = await DatabaseUtils.exportData()
+      const result = buildDeploymentExport({
+        ...exportInput,
+        // Version: Git-Tag falls vorhanden, sonst Package-Version aus VERSION_INFO
+        version: VERSION_INFO.gitTag ?? VERSION_INFO.version
+      })
 
-      const matchboxesData = rawMatchboxes.map(m => ({
-        id: m.id,
-        woman: m.woman,
-        man: m.man,
-        matchType: m.matchType,
-        price: m.price,
-        buyer: m.buyer,
-        ausstrahlungsdatum: m.ausstrahlungsdatum,
-        ausstrahlungszeit: m.ausstrahlungszeit,
-        createdAt: m.createdAt,
-        updatedAt: m.updatedAt
-      }))
-
-      // Validierung: Ausstrahlungsdaten vollständig (verkaufte MN optional – oft nur im Ausstrahlungsplan gepflegt)
-      const invalidMN = matchingNightsData.filter(
-        m => m.matchType !== 'sold' && (!m.ausstrahlungsdatum || !m.ausstrahlungszeit)
-      )
-      const invalidMB = matchboxesData.filter(m => !m.ausstrahlungsdatum || !m.ausstrahlungszeit)
-      if (invalidMN.length > 0 || invalidMB.length > 0) {
+      if (!result.success) {
         setSnackbar({
           open: true,
-          message: `❌ Export abgebrochen: Es fehlen Ausstrahlungsdaten bei ${invalidMN.length} Matching Night(s) und ${invalidMB.length} Matchbox(es).\nBitte Ausstrahlungsplan im Admin-Panel vervollständigen und erneut exportieren.`,
+          message: `❌ Export abgebrochen: Es fehlen Ausstrahlungsdaten bei ${result.invalidMatchingNightsCount} Matching Night(s) und ${result.invalidMatchboxesCount} Matchbox(es).\nBitte Ausstrahlungsplan im Admin-Panel vervollständigen und erneut exportieren.`,
           severity: 'error'
         })
         setIsLoading(false)
         return
       }
-      
-      // Komplette Datenstruktur erstellen
-      const allData = {
-        participants: participantsData,
-        matchingNights: matchingNightsData,
-        matchboxes: matchboxesData,
-        penalties: penaltiesData,
-        probabilityCache: probabilityCacheData,
-        broadcastNotes: broadcastNotesData,
-        exportedAt: new Date().toISOString(),
-        // Version: Git-Tag falls vorhanden, sonst Package-Version aus VERSION_INFO
-        version: VERSION_INFO.gitTag ?? VERSION_INFO.version,
-        deploymentReady: true
-      }
-      
-      // Dateiname mit aktuellem Datum erstellen
-      const today = new Date().toISOString().split('T')[0]
-      const fileName = `ayto-complete-export-${today}.json`
-      
+
+      const { data, fileName } = result
+
       // JSON-String erstellen
-      const jsonString = JSON.stringify(allData, null, 2)
-      
+      const jsonString = JSON.stringify(data, null, 2)
+
       // Blob erstellen und Download auslösen
       const blob = new Blob([jsonString], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -2196,18 +2146,18 @@ const SettingsManagement: React.FC<{
       a.download = fileName
       a.click()
       URL.revokeObjectURL(url)
-      
+
       // Index.json aktualisieren (simuliert)
       await updateIndexJsonForDeploy(fileName)
-      
-      const totalItems = participantsData.length + matchingNightsData.length + matchboxesData.length + penaltiesData.length + broadcastNotesData.length
-      
-      setSnackbar({ 
-        open: true, 
-        message: `✅ Datenbankstand für Deployment exportiert!\n\n📁 Datei: ${fileName}\n📊 ${participantsData.length} Kandidat*innen, ${matchingNightsData.length} Matching Nights, ${matchboxesData.length} Matchboxes, ${penaltiesData.length} Strafen, ${broadcastNotesData.length} Notizen\n📈 Gesamt: ${totalItems} Einträge\n\n💡 Diese Datei muss in public/json/ gespeichert und deployed werden.`, 
-        severity: 'success' 
+
+      const totalItems = data.participants.length + data.matchingNights.length + data.matchboxes.length + data.penalties.length + data.broadcastNotes.length
+
+      setSnackbar({
+        open: true,
+        message: `✅ Datenbankstand für Deployment exportiert!\n\n📁 Datei: ${fileName}\n📊 ${data.participants.length} Kandidat*innen, ${data.matchingNights.length} Matching Nights, ${data.matchboxes.length} Matchboxes, ${data.penalties.length} Strafen, ${data.broadcastNotes.length} Notizen\n📈 Gesamt: ${totalItems} Einträge\n\n💡 Diese Datei muss in public/json/ gespeichert und deployed werden.`,
+        severity: 'success'
       })
-      
+
     } catch (error) {
       console.error('Fehler beim Export für Deploy:', error)
       setSnackbar({ 

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.4] - 2026-07-27
+
+### 🐛 Bugfixes
+- Perfect-Match-Validierung (Duplikat-Check, Betrag/Käufer bei `matchType: 'sold'`) war zwischen Admin (`AdminPanelMUI.tsx`) und Overview (`OverviewMUI.tsx`) unterschiedlich implementiert und ist jetzt in `MatchboxService.validateMatchbox`/`isPerfectMatch` vereinheitlicht.
+- `participant.active` wurde beim Anlegen einer Perfect-Match-Matchbox nur auf `false` gesetzt, aber nie zurückgesetzt, wenn die Matchbox später geändert oder gelöscht wurde — Kandidat*innen konnten dadurch dauerhaft fälschlich als "vergeben" markiert bleiben. `MatchboxService` gleicht den Status jetzt bei jedem Create/Update/Delete über `reconcileParticipantActiveStatus` mit den aktuell bestätigten Perfect Matches ab.
+
+### 🔄 Verbesserungen
+- Admin-seitige Schreibzugriffe auf Teilnehmer*innen, Matching Nights, Strafen und Matchboxes laufen jetzt über die jeweiligen Services (`ParticipantService`, `MatchingNightService`, `PenaltyService`, `MatchboxService`) statt über den separaten `jsonDataService` — dadurch greift die Season-Zugehörigkeits-Prüfung konsistent für alle Schreibzugriffe (ODI-275, ODI-276).
+
+---
+
 ## [1.4.3] - 2026-07-25
 
 ### 🛠️ Verbesserungen

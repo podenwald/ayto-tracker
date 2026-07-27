@@ -33,7 +33,9 @@ import {
   Notes as NotesIcon,
   Save as SaveIcon
 } from '@mui/icons-material'
-import { db, DatabaseUtils, type MatchingNight, type Matchbox, type BroadcastNote } from '../../lib/db'
+import { DatabaseUtils, type MatchingNight, type Matchbox, type BroadcastNote } from '../../lib/db'
+import { MatchingNightService } from '@/services/matchingNightService'
+import { MatchboxService } from '@/services/matchboxService'
 // import { 
 //   createBroadcastSortKey,
 //   formatBroadcastDateTime
@@ -222,20 +224,15 @@ const BroadcastManagement: React.FC<BroadcastManagementProps> = ({
     if (!editingEvent) return
 
     try {
-      const { getActiveSeasonId, assertSeasonWritable } = await import('@/services/seasonService')
-      const sid = await getActiveSeasonId()
-      await assertSeasonWritable(sid)
       if (editingEvent.type === 'matching-night') {
         const matchingNight = editingEvent.data as MatchingNight
-        if (matchingNight.seasonId !== sid) throw new Error('Falsche Staffel')
-        await db.matchingNights.update(matchingNight.id!, {
+        await MatchingNightService.updateMatchingNight(matchingNight.id!, {
           ausstrahlungsdatum: editingEvent.ausstrahlungsdatum,
           ausstrahlungszeit: editingEvent.ausstrahlungszeit
         })
       } else {
         const matchbox = editingEvent.data as Matchbox
-        if (matchbox.seasonId !== sid) throw new Error('Falsche Staffel')
-        await db.matchboxes.update(matchbox.id!, {
+        await MatchboxService.updateMatchbox(matchbox.id!, {
           ausstrahlungsdatum: editingEvent.ausstrahlungsdatum,
           ausstrahlungszeit: editingEvent.ausstrahlungszeit
         })

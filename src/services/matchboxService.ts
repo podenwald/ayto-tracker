@@ -253,4 +253,26 @@ export class MatchboxService {
     const soldMatchboxes = await this.getSoldMatchboxes()
     return soldMatchboxes.reduce((total, matchbox) => total + (matchbox.price || 0), 0)
   }
+
+  /**
+   * Zieht eine Teilnehmer*innen-Umbenennung in alle Matchboxes der aktiven
+   * Staffel nach, die auf den alten Namen verweisen.
+   */
+  static async renameParticipant(oldName: string, newName: string): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    await db.matchboxes.where('seasonId').equals(seasonId).modify((mb: Matchbox) => {
+      if (mb.woman === oldName) mb.woman = newName
+      if (mb.man === oldName) mb.man = newName
+    })
+  }
+
+  /**
+   * Löscht alle Matchboxes der aktiven Staffel.
+   */
+  static async deleteAllForActiveSeason(): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    await db.matchboxes.where('seasonId').equals(seasonId).delete()
+  }
 }

@@ -106,6 +106,29 @@ export class ParticipantService {
   }
 
   /**
+   * Löscht alle Teilnehmer der aktiven Staffel.
+   */
+  static async deleteAllForActiveSeason(): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    await db.participants.where('seasonId').equals(seasonId).delete()
+  }
+
+  /**
+   * Ersetzt alle Teilnehmer der aktiven Staffel durch die übergebenen Zeilen
+   * (JSON-Import: bestehende Kandidat*innen werden vollständig ersetzt).
+   * Läuft als atomare Transaktion.
+   */
+  static async replaceAllForActiveSeason(rows: Array<Omit<Participant, 'id'>>): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    await db.transaction('rw', db.participants, async () => {
+      await db.participants.where('seasonId').equals(seasonId).delete()
+      await db.participants.bulkPut(rows)
+    })
+  }
+
+  /**
    * Konvertiert DTO zu Domain-Objekt
    */
   static fromDTO(dto: ParticipantDTO): Participant {

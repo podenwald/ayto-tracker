@@ -71,7 +71,7 @@ import {
 import AdminLayout from '@/components/layout/AdminLayout'
 import { VERSION_INFO } from '@/utils/version'
 import BroadcastManagement from './BroadcastManagement'
-import { db, DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
+import { DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
 import { getConfirmedPerfectMatchNames } from '@/utils/matchStatus'
 import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
@@ -120,20 +120,8 @@ const ParticipantForm: React.FC<{
 
       // Wenn der Name geändert wurde, referenzierte Einträge mitziehen (nur aktive Staffel)
       if (oldName && oldName !== newName) {
-        const seasonId = await getActiveSeasonId()
-        await db.matchboxes.where('seasonId').equals(seasonId).modify((mb: any) => {
-          if (mb.woman === oldName) mb.woman = newName
-          if (mb.man === oldName) mb.man = newName
-        })
-
-        await db.matchingNights.where('seasonId').equals(seasonId).modify((mn: any) => {
-          if (!Array.isArray(mn.pairs)) return
-          mn.pairs = mn.pairs.map((p: any) => {
-            if (p?.woman === oldName) return { ...p, woman: newName }
-            if (p?.man === oldName) return { ...p, man: newName }
-            return p
-          })
-        })
+        await MatchboxService.renameParticipant(oldName, newName)
+        await MatchingNightService.renameParticipantInPairs(oldName, newName)
       }
       onSaved()
     } catch (error) {
@@ -1996,8 +1984,7 @@ const SettingsManagement: React.FC<{
   // ** Export Functions **
   const exportParticipants = async () => {
     try {
-      const sid = await getActiveSeasonId()
-      const data = await db.participants.where('seasonId').equals(sid).toArray()
+      const data = await ParticipantService.getAllParticipants()
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -2014,8 +2001,7 @@ const SettingsManagement: React.FC<{
 
   const exportMatchingNights = async () => {
     try {
-      const sid = await getActiveSeasonId()
-      const data = await db.matchingNights.where('seasonId').equals(sid).toArray()
+      const data = await MatchingNightService.getAllMatchingNights()
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -2032,8 +2018,7 @@ const SettingsManagement: React.FC<{
 
   const exportMatchboxes = async () => {
     try {
-      const sid = await getActiveSeasonId()
-      const data = await db.matchboxes.where('seasonId').equals(sid).toArray()
+      const data = await MatchboxService.getAllMatchboxes()
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -2050,8 +2035,7 @@ const SettingsManagement: React.FC<{
 
   const exportPenalties = async () => {
     try {
-      const sid = await getActiveSeasonId()
-      const data = await db.penalties.where('seasonId').equals(sid).toArray()
+      const data = await PenaltyService.getAllPenalties()
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -2070,15 +2054,14 @@ const SettingsManagement: React.FC<{
     try {
       setIsLoading(true)
       
-      const sid = await getActiveSeasonId()
-      const [participantsData, rawMatchingNights, rawMatchboxes, penaltiesData, probabilityCacheData, broadcastNotesData] = await Promise.all([
-        db.participants.where('seasonId').equals(sid).toArray(),
-        db.matchingNights.where('seasonId').equals(sid).toArray(),
-        db.matchboxes.where('seasonId').equals(sid).toArray(),
-        db.penalties.where('seasonId').equals(sid).toArray(),
-        db.probabilityCache.where('seasonId').equals(sid).toArray(),
-        db.broadcastNotes.where('seasonId').equals(sid).toArray()
-      ])
+      const {
+        participants: participantsData,
+        matchingNights: rawMatchingNights,
+        matchboxes: rawMatchboxes,
+        penalties: penaltiesData,
+        probabilityCache: probabilityCacheData,
+        broadcastNotes: broadcastNotesData
+      } = await DatabaseUtils.exportData()
 
       // Export-Normalisierung: DTO-kompatibel inkl. verkaufte MN (matchType, price, buyer, date, createdAt)
       const matchingNightsData = rawMatchingNights.map(m => ({
@@ -2215,8 +2198,7 @@ const SettingsManagement: React.FC<{
       onConfirm: async () => {
         try {
           setIsLoading(true)
-          const sid = await getActiveSeasonId()
-          await db.participants.where('seasonId').equals(sid).delete()
+          await ParticipantService.deleteAllForActiveSeason()
           await onUpdate()
           setSnackbar({ open: true, message: 'Alle Kandidat*innen wurden erfolgreich gelöscht!', severity: 'success' })
         } catch (error) {
@@ -2238,8 +2220,7 @@ const SettingsManagement: React.FC<{
       onConfirm: async () => {
         try {
           setIsLoading(true)
-          const sid = await getActiveSeasonId()
-          await db.matchingNights.where('seasonId').equals(sid).delete()
+          await MatchingNightService.deleteAllForActiveSeason()
           await onUpdate()
           setSnackbar({ open: true, message: 'Alle Matching Nights wurden erfolgreich gelöscht!', severity: 'success' })
         } catch (error) {
@@ -2261,8 +2242,7 @@ const SettingsManagement: React.FC<{
       onConfirm: async () => {
         try {
           setIsLoading(true)
-          const sid = await getActiveSeasonId()
-          await db.matchboxes.where('seasonId').equals(sid).delete()
+          await MatchboxService.deleteAllForActiveSeason()
           await onUpdate()
           setSnackbar({ open: true, message: 'Alle Matchboxes wurden erfolgreich gelöscht!', severity: 'success' })
         } catch (error) {
@@ -2286,10 +2266,9 @@ const SettingsManagement: React.FC<{
           setIsLoading(true)
           console.log('🔧 Starte Matching Nights Korrektur...')
           
-          const sid = await getActiveSeasonId()
           const [allParticipants, allMatchingNights] = await Promise.all([
-            db.participants.where('seasonId').equals(sid).toArray(),
-            db.matchingNights.where('seasonId').equals(sid).toArray()
+            ParticipantService.getAllParticipants(),
+            MatchingNightService.getAllMatchingNights()
           ])
           
           // Extrahiere Männer- und Frauen-Listen
@@ -2320,7 +2299,7 @@ const SettingsManagement: React.FC<{
               }))
               
               // Speichere in der Datenbank
-              await db.matchingNights.update(night.id!, { pairs: correctedPairs })
+              await MatchingNightService.updateMatchingNight(night.id!, { pairs: correctedPairs })
               
               console.log(`✅ Matching Night "${night.name}" korrigiert!`)
               correctedCount++
@@ -2359,10 +2338,9 @@ const SettingsManagement: React.FC<{
           setIsLoading(true)
           console.log('📅 Starte Zeitstempel-Korrektur...')
           
-          const sid = await getActiveSeasonId()
           const [allMatchingNights, allMatchboxes] = await Promise.all([
-            db.matchingNights.where('seasonId').equals(sid).toArray(),
-            db.matchboxes.where('seasonId').equals(sid).toArray()
+            MatchingNightService.getAllMatchingNights(),
+            MatchboxService.getAllMatchboxes()
           ])
           
           let nightsUpdated = 0
@@ -2373,7 +2351,7 @@ const SettingsManagement: React.FC<{
           for (const night of allMatchingNights) {
             if (!night.id) continue
             
-            await db.matchingNights.update(night.id, {
+            await MatchingNightService.updateMatchingNight(night.id, {
               ausstrahlungszeit: '21:00'
             })
             
@@ -2386,7 +2364,7 @@ const SettingsManagement: React.FC<{
           for (const box of allMatchboxes) {
             if (!box.id) continue
             
-            await db.matchboxes.update(box.id, {
+            await MatchboxService.updateMatchbox(box.id, {
               ausstrahlungszeit: '20:15'
             })
             
@@ -2603,12 +2581,8 @@ Alle Daten gehen unwiderruflich verloren!`)
         severity: 'warning',
         onConfirm: async () => {
           try {
-            await assertSeasonWritable(seasonId)
-            await db.transaction('rw', db.participants, async () => {
-              await db.participants.where('seasonId').equals(seasonId).delete()
-              await db.participants.bulkPut(normalizedParticipants)
-            })
-            
+            await ParticipantService.replaceAllForActiveSeason(normalizedParticipants)
+
             await onUpdate()
             setSnackbar({ open: true, message: `✅ Import erfolgreich! ${normalizedParticipants.length} Kandidat*innen wurden importiert.`, severity: 'success' })
           } catch (error) {
@@ -2651,43 +2625,36 @@ Alle Daten gehen unwiderruflich verloren!`)
             const seasonId = await getActiveSeasonId()
             await assertSeasonWritable(seasonId)
             await clearAllDataForSeason(seasonId)
-            await db.transaction('rw', [db.participants, db.matchingNights, db.matchboxes, db.penalties], async () => {
-              if (data.participants.length > 0) {
-                await db.participants.bulkPut(
-                  data.participants.map((p: any) => ({ ...p, seasonId }))
-                )
-              }
-              if (data.matchingNights.length > 0) {
-                const transformedMatchingNights = data.matchingNights.map((matchingNight: any) => ({
-                  ...matchingNight,
-                  seasonId,
-                  createdAt: matchingNight.createdAt ? new Date(matchingNight.createdAt) : new Date()
-                }))
-                await db.matchingNights.bulkPut(transformedMatchingNights)
-              }
-              if (data.matchboxes.length > 0) {
-                const transformedMatchboxes = data.matchboxes.map((matchbox: any) => ({
-                  ...matchbox,
-                  seasonId,
-                  woman: matchbox.womanId || matchbox.woman,
-                  man: matchbox.manId || matchbox.man,
-                  womanId: undefined,
-                  manId: undefined,
-                  createdAt: matchbox.createdAt ? new Date(matchbox.createdAt) : new Date(),
-                  updatedAt: matchbox.updatedAt ? new Date(matchbox.updatedAt) : new Date()
-                }))
-                await db.matchboxes.bulkPut(transformedMatchboxes)
-              }
-              if (data.penalties && data.penalties.length > 0) {
-                const transformedPenalties = data.penalties.map((penalty: any) => ({
-                  ...penalty,
-                  seasonId,
-                  createdAt: penalty.createdAt ? new Date(penalty.createdAt) : new Date()
-                }))
-                await db.penalties.bulkPut(transformedPenalties)
-              }
+
+            const transformedParticipants = data.participants.map((p: any) => ({ ...p, seasonId }))
+            const transformedMatchingNights = data.matchingNights.map((matchingNight: any) => ({
+              ...matchingNight,
+              seasonId,
+              createdAt: matchingNight.createdAt ? new Date(matchingNight.createdAt) : new Date()
+            }))
+            const transformedMatchboxes = data.matchboxes.map((matchbox: any) => ({
+              ...matchbox,
+              seasonId,
+              woman: matchbox.womanId || matchbox.woman,
+              man: matchbox.manId || matchbox.man,
+              womanId: undefined,
+              manId: undefined,
+              createdAt: matchbox.createdAt ? new Date(matchbox.createdAt) : new Date(),
+              updatedAt: matchbox.updatedAt ? new Date(matchbox.updatedAt) : new Date()
+            }))
+            const transformedPenalties = (data.penalties || []).map((penalty: any) => ({
+              ...penalty,
+              seasonId,
+              createdAt: penalty.createdAt ? new Date(penalty.createdAt) : new Date()
+            }))
+
+            await DatabaseUtils.importData({
+              participants: transformedParticipants,
+              matchingNights: transformedMatchingNights,
+              matchboxes: transformedMatchboxes,
+              penalties: transformedPenalties
             })
-            
+
             await onUpdate()
             const totalImported = data.participants.length + data.matchingNights.length + data.matchboxes.length + (data.penalties?.length || 0)
             setSnackbar({ 
@@ -3615,12 +3582,11 @@ const AdminPanelMUI: React.FC = () => {
   const loadAllData = async () => {
     const requestId = ++latestLoadRequestRef.current
     try {
-      const sid = await getActiveSeasonId()
       const [participantsData, matchboxesData, matchingNightsData, penaltiesData] = await Promise.all([
-        db.participants.where('seasonId').equals(sid).toArray(),
-        db.matchboxes.where('seasonId').equals(sid).toArray(),
-        db.matchingNights.where('seasonId').equals(sid).toArray(),
-        db.penalties.where('seasonId').equals(sid).toArray()
+        ParticipantService.getAllParticipants(),
+        MatchboxService.getAllMatchboxes(),
+        MatchingNightService.getAllMatchingNights(),
+        PenaltyService.getAllPenalties()
       ])
 
       // Guard gegen Race-Conditions beim schnellen Staffelwechsel.
@@ -3723,11 +3689,8 @@ const AdminPanelMUI: React.FC = () => {
       }
       
       try {
-        await db.transaction('rw', db.participants, async () => {
-          await db.participants.where('seasonId').equals(seasonId).delete()
-          await db.participants.bulkPut(normalizedParticipants)
-        })
-        
+        await ParticipantService.replaceAllForActiveSeason(normalizedParticipants)
+
         await loadAllData()
         alert(`✅ Import erfolgreich! ${normalizedParticipants.length} Kandidat*innen wurden importiert.`)
       } catch (error) {

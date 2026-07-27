@@ -189,4 +189,30 @@ export class MatchingNightService {
 
     return errors
   }
+
+  /**
+   * Zieht eine Teilnehmer*innen-Umbenennung in die Paare aller Matching
+   * Nights der aktiven Staffel nach, die auf den alten Namen verweisen.
+   */
+  static async renameParticipantInPairs(oldName: string, newName: string): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    await db.matchingNights.where('seasonId').equals(seasonId).modify((mn: MatchingNight) => {
+      if (!Array.isArray(mn.pairs)) return
+      mn.pairs = mn.pairs.map(p => {
+        if (p?.woman === oldName) return { ...p, woman: newName }
+        if (p?.man === oldName) return { ...p, man: newName }
+        return p
+      })
+    })
+  }
+
+  /**
+   * Löscht alle Matching Nights der aktiven Staffel.
+   */
+  static async deleteAllForActiveSeason(): Promise<void> {
+    const seasonId = await this.sid()
+    await assertSeasonWritable(seasonId)
+    await db.matchingNights.where('seasonId').equals(seasonId).delete()
+  }
 }

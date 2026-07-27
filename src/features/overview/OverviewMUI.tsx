@@ -50,15 +50,16 @@ import {
   AutoAwesome as AutoAwesomeIcon
 } from '@mui/icons-material'
 import ThemeProvider from '@/theme/ThemeProvider'
-import { db, type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
-import { getActiveSeasonId } from '@/services/seasonService'
-import { 
+import { type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
+import {
   isPairConfirmedAsPerfectMatch,
   getMatchboxBroadcastDateTime
 } from '@/utils/broadcastUtils'
 import { useProbabilityCalculation } from '@/hooks/useProbabilityCalculation'
 import { MatchboxService } from '@/services/matchboxService'
 import { MatchingNightService } from '@/services/matchingNightService'
+import { ParticipantService } from '@/services/participantService'
+import { PenaltyService } from '@/services/penaltyService'
 import { getConfirmedPerfectMatchNames } from '@/utils/matchStatus'
 import ParticipantsView from '@/components/ParticipantsView'
 import UpdateInfoBox from '@/components/UpdateInfoBox'
@@ -596,12 +597,11 @@ const OverviewMUI: React.FC = () => {
   const loadAllData = async () => {
     const requestId = ++latestLoadRequestRef.current
     try {
-      const sid = await getActiveSeasonId()
       const [participantsData, matchingNightsData, matchboxesData, penaltiesData] = await Promise.all([
-        db.participants.where('seasonId').equals(sid).toArray(),
-        db.matchingNights.where('seasonId').equals(sid).toArray(),
-        db.matchboxes.where('seasonId').equals(sid).toArray(),
-        db.penalties.where('seasonId').equals(sid).toArray()
+        ParticipantService.getAllParticipants(),
+        MatchingNightService.getAllMatchingNights(),
+        MatchboxService.getAllMatchboxes(),
+        PenaltyService.getAllPenalties()
       ])
 
       // Verhindert UI-State-Leaks bei schnellem Staffelwechsel:
@@ -988,11 +988,10 @@ const OverviewMUI: React.FC = () => {
         ...(isSold ? { matchType: 'sold' as const, price: matchingNightForm.price, buyer: matchingNightForm.buyer } : {})
       })
 
-      const sid = await getActiveSeasonId()
       const [nightsAfter, boxesAfter, participantsAfter] = await Promise.all([
-        db.matchingNights.where('seasonId').equals(sid).toArray(),
-        db.matchboxes.where('seasonId').equals(sid).toArray(),
-        db.participants.where('seasonId').equals(sid).toArray()
+        MatchingNightService.getAllMatchingNights(),
+        MatchboxService.getAllMatchboxes(),
+        ParticipantService.getAllParticipants()
       ])
       if (nightsAfter.length === 10) {
         const tenthNight = nightsAfter.find(n => n.id === newMatchingNightId)
@@ -1200,11 +1199,10 @@ const OverviewMUI: React.FC = () => {
 
   const handleOpenSeasonFinale = useCallback(async () => {
     try {
-      const sid = await getActiveSeasonId()
       const [nightsArr, boxesArr, participantsArr] = await Promise.all([
-        db.matchingNights.where('seasonId').equals(sid).toArray(),
-        db.matchboxes.where('seasonId').equals(sid).toArray(),
-        db.participants.where('seasonId').equals(sid).toArray()
+        MatchingNightService.getAllMatchingNights(),
+        MatchboxService.getAllMatchboxes(),
+        ParticipantService.getAllParticipants()
       ])
       if (nightsArr.length < 10) {
         setSnackbar({

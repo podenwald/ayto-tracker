@@ -2,6 +2,12 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.5.0] - 2026-07-27
+- Code-Qualität im Hintergrund verbessert (aufgeräumter Code, klarere Struktur) – für dich als Nutzer*in ändert sich dabei nichts sichtbar
+- Hosting-Dokumentation aktualisiert und korrigiert
+
+---
+
 ## [1.4.4] - 2026-07-27
 - Perfect-Match-Prüfungen (z.B. doppelte Paare, Betrag bei verkauften Matchboxes) funktionieren jetzt in Admin und Übersicht einheitlich
 - Wenn ein Perfect Match nachträglich geändert oder gelöscht wird, wird der Status der betroffenen Kandidat*innen jetzt zuverlässig korrigiert (vorher blieb er manchmal fälschlich auf "vergeben" stehen)

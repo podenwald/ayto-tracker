@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.5.0] - 2026-07-27
+
+### 🔄 Verbesserungen
+- Toter Code entfernt: `StatisticsCards` in `AdminPanelMUI.tsx` nahm Props entgegen, rendert aber immer `null` (ODI-285)
+- Direkte Dexie-Zugriffe (`db.*`) in `AdminPanelMUI.tsx`, `OverviewMUI.tsx` und `BroadcastManagement.tsx` durch die jeweiligen Services ersetzt (`ParticipantService`, `MatchboxService`, `MatchingNightService`, `PenaltyService`); neue Service-Methoden für Bulk-Delete/Replace pro Staffel sowie Rename-Kaskade bei Teilnehmer-Umbenennung ergänzt (ODI-278)
+- `no-explicit-any`-Typen in den JSON-Import-Funktionen (`AdminPanelMUI.tsx`) und `BroadcastManagement.tsx` durch konkrete Legacy-JSON-Typen ersetzt (ODI-270, erste Tranche)
+- Export-Aufbereitung (`exportForDeploy`) in eine reine, DOM-unabhängige Funktion `buildDeploymentExport` ausgelagert (ODI-282)
+
+### 📚 Dokumentation
+- `VSERVER_HOSTING_GUIDE.md` und `PWA_HOSTING_GUIDE.md` beschrieben nie umgesetzte Hosting-Wege (eigener VServer, Netlify) widersprüchlich zur echten Lösung; zu `docs/HOSTING_ALTERNATIVES.md` zusammengelegt und klar als verworfene Alternativen markiert. `docs/DEPLOYMENT.md` bleibt alleinige Quelle der Wahrheit (ODI-267)
+
+---
+
 ## [1.4.4] - 2026-07-27
 
 ### 🐛 Bugfixes

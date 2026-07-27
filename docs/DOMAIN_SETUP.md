@@ -46,7 +46,7 @@ Du hast bereits eine funktionierende Domain! Jetzt gibt es zwei Optionen:
        root /var/www/ayto-tracker/dist;
        index index.html;
 
-       # ... (Rest der Konfiguration siehe VSERVER_HOSTING_GUIDE.md)
+       # ... (Rest der Konfiguration siehe HOSTING_ALTERNATIVES.md, Option A)
    }
    ```
 

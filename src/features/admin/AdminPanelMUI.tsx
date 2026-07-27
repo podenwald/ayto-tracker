@@ -89,16 +89,6 @@ import {
 // import { exportCurrentDatabaseState } from '@/utils/jsonImport' // Nicht mehr benötigt, da eigene Implementierung
 
 
-// ** Statistics Cards Component
-const StatisticsCards: React.FC<{
-  participants: Participant[]
-  matchboxes: Matchbox[]
-  matchingNights: MatchingNight[]
-  penalties: Penalty[]
-}> = () => {
-  return null
-}
-
 // ** Participant Form Component
 const ParticipantForm: React.FC<{
   initial?: Participant
@@ -3758,14 +3748,6 @@ const AdminPanelMUI: React.FC = () => {
   return (
     <AdminLayout activeTab={activeTab} onTabChange={setActiveTab} onDataUpdate={loadAllData}>
       <Box>
-        {/* Statistics Overview */}
-        <StatisticsCards 
-          participants={participants}
-          matchboxes={matchboxes}
-          matchingNights={matchingNights}
-          penalties={penalties}
-        />
-
         {/* Main Content */}
         <Card>
 

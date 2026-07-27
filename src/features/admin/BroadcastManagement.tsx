@@ -259,13 +259,13 @@ const BroadcastManagement: React.FC<BroadcastManagementProps> = ({
     }
   }
 
-  const getEventColor = (type: string, data: any) => {
+  const getEventColor = (type: string, data: MatchingNight | Matchbox) => {
     if (type === 'matching-night') {
       return 'primary'
     }
-    
+
     if (type === 'matchbox') {
-      switch (data.matchType) {
+      switch ((data as Matchbox).matchType) {
         case 'perfect':
           return 'success'
         case 'no-match':

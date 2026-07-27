@@ -88,6 +88,67 @@ import {
 } from '@/theme/colorPreferences'
 // import { exportCurrentDatabaseState } from '@/utils/jsonImport' // Nicht mehr benötigt, da eigene Implementierung
 
+// ** Legacy JSON Import Typen **
+// Lockere Typen für JSON-Import/Backup-Dateien unbekannter Herkunft (Feldnamen/-werte
+// variieren je nach Export-Version), die vor dem Speichern normalisiert werden.
+interface LegacyParticipantJSON {
+  name?: string
+  knownFrom?: string
+  age?: number | string
+  status?: string
+  active?: boolean
+  photoUrl?: string
+  source?: string
+  bio?: string
+  gender?: string
+  socialMediaAccount?: string
+}
+
+interface LegacyMatchingNightJSON {
+  id?: number
+  name?: string
+  date?: string
+  pairs?: Array<{ woman: string; man: string }>
+  totalLights?: number
+  matchType?: string
+  price?: number
+  buyer?: string
+  createdAt?: string
+  ausstrahlungsdatum?: string
+  ausstrahlungszeit?: string
+}
+
+interface LegacyMatchboxJSON {
+  id?: number
+  woman?: string
+  man?: string
+  womanId?: string
+  manId?: string
+  matchType?: string
+  price?: number
+  buyer?: string
+  createdAt?: string
+  updatedAt?: string
+  ausstrahlungsdatum?: string
+  ausstrahlungszeit?: string
+}
+
+interface LegacyPenaltyJSON {
+  id?: number
+  participantName?: string
+  reason?: string
+  amount?: number
+  date?: string
+  description?: string
+  createdAt?: string
+}
+
+interface LegacyBackupJSON {
+  participants: LegacyParticipantJSON[]
+  matchingNights: LegacyMatchingNightJSON[]
+  matchboxes: LegacyMatchboxJSON[]
+  penalties?: LegacyPenaltyJSON[]
+}
 
 // ** Participant Form Component
 const ParticipantForm: React.FC<{
@@ -2547,11 +2608,11 @@ Alle Daten gehen unwiderruflich verloren!`)
     try {
       setIsLoading(true)
       const text = await file.text()
-      const arr = JSON.parse(text)
+      const arr = JSON.parse(text) as LegacyParticipantJSON[]
       const seasonId = await getActiveSeasonId()
-      
+
       // Daten normalisieren und Gender-Mapping durchführen
-      const normalizedParticipants = arr.map((participant: any) => {
+      const normalizedParticipants = arr.map((participant) => {
         // Gender-Mapping: w/m -> F/M
         let gender = participant.gender
         if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
@@ -2566,11 +2627,11 @@ Alle Daten gehen unwiderruflich verloren!`)
           name: participant.name || 'Unbekannt',
           knownFrom: participant.knownFrom || '',
           age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
-          status: participant.status || 'Aktiv',
+          status: (participant.status || 'Aktiv') as Participant['status'],
           active: participant.active !== false, // Default: aktiv
           photoUrl: participant.photoUrl || '',
           bio: participant.bio || '',
-          gender: gender || 'F', // Default: weiblich falls unbekannt
+          gender: (gender || 'F') as Participant['gender'], // Default: weiblich falls unbekannt
         }
       })
       
@@ -2608,8 +2669,8 @@ Alle Daten gehen unwiderruflich verloren!`)
     try {
       setIsLoading(true)
       const text = await file.text()
-      const data = JSON.parse(text)
-      
+      const data = JSON.parse(text) as LegacyBackupJSON
+
       // Validiere das Format
       if (!data.participants || !data.matchingNights || !data.matchboxes) {
         throw new Error('Ungültiges Backup-Format. Fehlende Tabellen.')
@@ -2626,13 +2687,13 @@ Alle Daten gehen unwiderruflich verloren!`)
             await assertSeasonWritable(seasonId)
             await clearAllDataForSeason(seasonId)
 
-            const transformedParticipants = data.participants.map((p: any) => ({ ...p, seasonId }))
-            const transformedMatchingNights = data.matchingNights.map((matchingNight: any) => ({
+            const transformedParticipants = data.participants.map((p) => ({ ...p, seasonId }))
+            const transformedMatchingNights = data.matchingNights.map((matchingNight) => ({
               ...matchingNight,
               seasonId,
               createdAt: matchingNight.createdAt ? new Date(matchingNight.createdAt) : new Date()
             }))
-            const transformedMatchboxes = data.matchboxes.map((matchbox: any) => ({
+            const transformedMatchboxes = data.matchboxes.map((matchbox) => ({
               ...matchbox,
               seasonId,
               woman: matchbox.womanId || matchbox.woman,
@@ -2642,17 +2703,18 @@ Alle Daten gehen unwiderruflich verloren!`)
               createdAt: matchbox.createdAt ? new Date(matchbox.createdAt) : new Date(),
               updatedAt: matchbox.updatedAt ? new Date(matchbox.updatedAt) : new Date()
             }))
-            const transformedPenalties = (data.penalties || []).map((penalty: any) => ({
+            const transformedPenalties = (data.penalties || []).map((penalty) => ({
               ...penalty,
               seasonId,
               createdAt: penalty.createdAt ? new Date(penalty.createdAt) : new Date()
             }))
 
+            // Backup stammt aus unserem eigenen Export (exportForDeploy) und wird hier vertraut übernommen.
             await DatabaseUtils.importData({
-              participants: transformedParticipants,
-              matchingNights: transformedMatchingNights,
-              matchboxes: transformedMatchboxes,
-              penalties: transformedPenalties
+              participants: transformedParticipants as Participant[],
+              matchingNights: transformedMatchingNights as MatchingNight[],
+              matchboxes: transformedMatchboxes as Matchbox[],
+              penalties: transformedPenalties as Penalty[]
             })
 
             await onUpdate()
@@ -3636,10 +3698,10 @@ const AdminPanelMUI: React.FC = () => {
     
     try {
       const text = await file.text()
-      const arr = JSON.parse(text)
-      
+      const arr = JSON.parse(text) as LegacyParticipantJSON[] | { participants?: LegacyParticipantJSON[] }
+
       // Prüfe, ob es ein Array oder ein Objekt mit participants-Key ist
-      const participantsArray = Array.isArray(arr) ? arr : (arr.participants || [])
+      const participantsArray: LegacyParticipantJSON[] = Array.isArray(arr) ? arr : (arr.participants || [])
       
       if (!Array.isArray(participantsArray) || participantsArray.length === 0) {
         alert('Die JSON-Datei enthält keine gültigen Kandidat*innen-Daten.')
@@ -3649,32 +3711,32 @@ const AdminPanelMUI: React.FC = () => {
       const seasonId = await getActiveSeasonId()
       await assertSeasonWritable(seasonId)
 
-      const normalizedParticipants = participantsArray.map((participant: any) => {
+      const normalizedParticipants = participantsArray.map((participant) => {
         let gender = participant.gender
         if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
           gender = 'F'
         } else if (gender === 'm' || gender === 'männlich' || gender === 'male') {
           gender = 'M'
         }
-        
+
         let status = participant.status
         if (status === 'aktiv' || status === 'Aktiv') {
           status = 'Aktiv'
         } else if (status === 'perfekt match' || status === 'Perfekt Match') {
           status = 'Perfekt Match'
         }
-        
+
         return {
           seasonId,
           name: participant.name || 'Unbekannt',
           knownFrom: participant.knownFrom || '',
           age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
-          status: status || 'Aktiv',
+          status: (status || 'Aktiv') as Participant['status'],
           active: participant.active !== false,
           photoUrl: participant.photoUrl || '',
           source: participant.source || '',
           bio: participant.bio || '',
-          gender: gender || 'F',
+          gender: (gender || 'F') as Participant['gender'],
           socialMediaAccount: participant.socialMediaAccount || '',
         }
       })

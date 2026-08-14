@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.5.1] - 2026-08-14
+- Header auf dem Handy repariert: Die Buttons oben rechts wurden auf schmalen Bildschirmen abgeschnitten – jetzt passen sie immer auf den Bildschirm
+
+---
+
 ## [1.5.0] - 2026-07-27
 - Code-Qualität im Hintergrund verbessert (aufgeräumter Code, klarere Struktur) – für dich als Nutzer*in ändert sich dabei nichts sichtbar
 - Hosting-Dokumentation aktualisiert und korrigiert

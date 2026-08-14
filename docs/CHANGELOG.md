@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1] - 2026-08-14
+
+### 🐛 Bugfixes
+- Icon-Reihe im Header (Pokal, Neue Matching Night, Neue Matchbox, Einstellungen) lief auf schmalen Mobile-Viewports über den Bildschirmrand hinaus und wurde abgeschnitten; Titel konnte nicht schrumpfen. Titel bekommt jetzt Ellipsis-Truncation, Icon-Reihe ist `flexShrink: 0` mit angepassten Größen/Abständen auf `xs` (`MenuLayout.tsx`, ODI-322)
+
+---
+
 ## [1.5.0] - 2026-07-27
 
 ### 🔄 Verbesserungen

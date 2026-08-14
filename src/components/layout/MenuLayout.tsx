@@ -359,15 +359,15 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
           >
             <MenuIcon />
           </IconButton>
-          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-            <Typography variant="h6" component="div" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+          <Box sx={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {activeSeasonTitle || 'AYTO Live-Tracker'}
             </Typography>
-            <Typography variant="body2" component="div" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+            <Typography variant="body2" component="div" sx={{ fontWeight: 500, color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               Live-Tracker
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: { xs: 0.5, sm: 1 }, mr: { xs: 1, sm: 2 } }}>
             {onOpenSeasonFinale && (
               <Tooltip title={seasonFinaleTooltip} arrow>
                 <span style={{ display: 'inline-flex' }}>
@@ -376,9 +376,9 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
                     disabled={!seasonFinaleAvailable}
                     sx={{
                       display: { xs: 'flex', lg: 'none' },
-                      width: 44,
-                      height: 44,
-                      minWidth: 44,
+                      width: { xs: 40, sm: 44 },
+                      height: { xs: 40, sm: 44 },
+                      minWidth: { xs: 40, sm: 44 },
                       padding: 0,
                       borderRadius: 1,
                       color: 'primary.main',
@@ -410,13 +410,13 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
               <IconButton
                 color="secondary"
                 onClick={onCreateMatchingNight}
-                sx={{ 
+                sx={{
                   display: { xs: 'flex', lg: 'none' },
                   bgcolor: 'secondary.main',
                   color: 'white',
-                  width: 44,
-                  height: 44,
-                  minWidth: 44,
+                  width: { xs: 40, sm: 44 },
+                  height: { xs: 40, sm: 44 },
+                  minWidth: { xs: 40, sm: 44 },
                   padding: 0,
                   borderRadius: 1,
                   '&:hover': {
@@ -435,13 +435,13 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
               <IconButton
                 color="primary"
                 onClick={onCreateMatchbox}
-                sx={{ 
+                sx={{
                   display: { xs: 'flex', lg: 'none' },
                   bgcolor: 'primary.main',
                   color: 'white',
-                  width: 44,
-                  height: 44,
-                  minWidth: 44,
+                  width: { xs: 40, sm: 44 },
+                  height: { xs: 40, sm: 44 },
+                  minWidth: { xs: 40, sm: 44 },
                   padding: 0,
                   borderRadius: 1,
                   '&:hover': {
@@ -504,7 +504,7 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
               Neue Matchbox
             </Button>
           </Box>
-          <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             {showOnboarding && (
               <Box
                 sx={{

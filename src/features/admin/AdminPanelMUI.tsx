@@ -340,11 +340,13 @@ const ParticipantsList: React.FC<{
               {women.slice(0, womenLimit).map((participant) => (
                 <Card 
                   key={participant.id} 
-                  sx={{ 
+                  sx={{
                     height: 300,
                     borderRadius: 3,
                     overflow: 'hidden',
                     position: 'relative',
+                    contentVisibility: 'auto',
+                    containIntrinsicSize: '0 300px',
                     backgroundImage: (theme) => (participant.photoUrl && participant.photoUrl.trim() !== '')
                       ? `url(${participant.photoUrl})`
                       : participant.gender === 'F'
@@ -575,11 +577,13 @@ const ParticipantsList: React.FC<{
               {men.slice(0, menLimit).map((participant) => (
                 <Card 
                   key={participant.id} 
-                  sx={{ 
+                  sx={{
                     height: 300,
                     borderRadius: 3,
                     overflow: 'hidden',
                     position: 'relative',
+                    contentVisibility: 'auto',
+                    containIntrinsicSize: '0 300px',
                     backgroundImage: (theme) => (participant.photoUrl && participant.photoUrl.trim() !== '')
                       ? `url(${participant.photoUrl})`
                       : participant.gender === 'F'

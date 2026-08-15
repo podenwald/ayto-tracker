@@ -326,13 +326,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       <AppBar
         position="fixed"
         sx={{
-          width: { lg: `calc(100% - ${drawerWidth}px)` },
+          left: 0,
+          right: 0,
+          width: { xs: 'auto', lg: `calc(100% - ${drawerWidth}px)` },
           ml: { lg: `${drawerWidth}px` },
           bgcolor: 'background.paper',
           color: 'text.primary',
           boxShadow: '0px 2px 4px rgba(165, 163, 174, 0.3)',
           borderBottom: '1px solid',
-          borderColor: 'divider'
+          borderColor: 'divider',
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)',
+          willChange: 'transform'
         }}
       >
         <Toolbar sx={{ minHeight: { xs: 72, sm: 64 }, py: { xs: 1, sm: 0 } }}>
@@ -345,13 +350,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
           >
             <MenuIcon />
           </IconButton>
-          <Box sx={{ flexGrow: 1 }}>
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             {/* Mobile: Two lines */}
             <Box sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', lineHeight: 1.2 }}>
-              <Typography variant="h6" component="div" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {activeSeasonTitle || 'AYTO Admin'}
               </Typography>
-              <Typography variant="body2" component="div" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+              <Typography variant="body2" component="div" sx={{ fontWeight: 500, color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 Admin
               </Typography>
             </Box>
@@ -360,7 +365,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
               {activeSeasonTitle || 'AYTO Admin'}
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 1, flexWrap: 'wrap', justifyContent: 'flex-end', rowGap: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 1, mr: 1, flexWrap: 'wrap', justifyContent: 'flex-end', rowGap: 0.5 }}>
             <Chip icon={<NightlifeIcon fontSize="small" />} label={`${stats.matchingNightsCount}`} size="small" color="primary" sx={{ fontWeight: 600, display: { xs: 'none', md: 'inline-flex' } }} />
             <Chip icon={<InventoryIcon fontSize="small" />} label={`${stats.matchboxesCount}`} size="small" color="secondary" sx={{ fontWeight: 600, display: { xs: 'none', md: 'inline-flex' } }} />
             <Chip icon={<FavoriteIcon fontSize="small" />} label={`${stats.perfectMatches}`} size="small" color="success" sx={{ fontWeight: 600 }} />
@@ -373,6 +378,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                 window.location.href = '/'
               }}
               sx={{
+                flexShrink: 0,
                 opacity: 0.6,
                 color: 'text.secondary',
                 '&:hover': {

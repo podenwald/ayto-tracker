@@ -340,13 +340,18 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
       <AppBar
         position="fixed"
         sx={{
-          width: { lg: `calc(100% - ${drawerWidth}px)` },
+          left: 0,
+          right: 0,
+          width: { xs: 'auto', lg: `calc(100% - ${drawerWidth}px)` },
           ml: { lg: `${drawerWidth}px` },
           bgcolor: 'background.paper',
           color: 'text.primary',
           boxShadow: '0px 2px 4px rgba(165, 163, 174, 0.3)',
           borderBottom: '1px solid',
-          borderColor: 'divider'
+          borderColor: 'divider',
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)',
+          willChange: 'transform'
         }}
       >
         <Toolbar sx={{ minHeight: { xs: 72, sm: 64 }, py: { xs: 1, sm: 0 } }}>

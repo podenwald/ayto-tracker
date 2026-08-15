@@ -2,6 +2,12 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.5.2] - 2026-08-16
+- Header auf dem Handy jetzt wirklich vollständig repariert: Er wurde beim Scrollen auf manchen Seiten (z.B. Wahrscheinlichkeit) abgeschnitten – das ist jetzt behoben
+- Tippfehler "Upcomming" im Staffel-Titel zu "Live" korrigiert
+
+---
+
 ## [1.5.1] - 2026-08-14
 - Header auf dem Handy repariert: Die Buttons oben rechts wurden auf schmalen Bildschirmen abgeschnitten – jetzt passen sie immer auf den Bildschirm
 

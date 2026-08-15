@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.5.2] - 2026-08-16
+
+### 🐛 Bugfixes
+- Admin-Header lief auf schmalen Mobile-Viewports ebenfalls über den Bildschirmrand hinaus (analog zu ODI-322); `minWidth: 0` + `flexShrink: 0` in `AdminLayout.tsx` ergänzt (ODI-323)
+- Seiten mit breiten Inhalten (z.B. die Wahrscheinlichkeits-Matrix-Tabelle in `OverviewMUI.tsx`) machten die gesamte Seite breiter als den Viewport, weil die `main`-Content-Box kein `minWidth: 0` hatte und dadurch nicht unter die bevorzugte Breite ihres Inhalts schrumpfen konnte; das ließ den Header beim Scrollen abgeschnitten erscheinen. `minWidth: 0` auf der `main`-Box in `MenuLayout.tsx`/`AdminLayout.tsx` ergänzt
+- `position: fixed` durch `position: sticky` für den App-Header ersetzt, da `fixed` in manchen mobilen Emulations-/Rendering-Umgebungen seine Breite gegen einen falschen (zu breiten) Viewport auflöste
+- Season-Titel "Upcomming" (Tippfehler) zu "Live" korrigiert
+
+### 🔄 Verbesserungen
+- `content-visibility: auto` auf den Kandidaten-Karten im Admin-Panel für flüssigeres Scrollen bei langen Listen
+
+---
+
 ## [1.5.1] - 2026-08-14
 
 ### 🐛 Bugfixes

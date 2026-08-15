@@ -321,14 +321,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   )
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ minHeight: '100vh' }}>
       {/* App Bar */}
       <AppBar
-        position="fixed"
+        position="sticky"
         sx={{
-          left: 0,
-          right: 0,
-          width: { xs: 'auto', lg: `calc(100% - ${drawerWidth}px)` },
+          top: 0,
+          width: { lg: `calc(100% - ${drawerWidth}px)` },
           ml: { lg: `${drawerWidth}px` },
           bgcolor: 'background.paper',
           color: 'text.primary',
@@ -394,64 +393,66 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         </Toolbar>
       </AppBar>
 
-      {/* Drawer */}
-      <Box
-        component="nav"
-        sx={{ width: { lg: drawerWidth }, flexShrink: { lg: 0 } }}
-      >
-        {/* Mobile drawer */}
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true
-          }}
-          sx={{
-            display: { xs: 'block', lg: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-              bgcolor: 'background.paper',
-              borderRight: '1px solid',
-              borderColor: 'divider'
-            }
-          }}
+      <Box sx={{ display: 'flex' }}>
+        {/* Drawer */}
+        <Box
+          component="nav"
+          sx={{ width: { lg: drawerWidth }, flexShrink: { lg: 0 } }}
         >
-          {drawer}
-        </Drawer>
-        {/* Desktop drawer */}
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', lg: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-              bgcolor: 'background.paper',
-              borderRight: '1px solid',
-              borderColor: 'divider'
-            }
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
+          {/* Mobile drawer */}
+          <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{
+              keepMounted: true
+            }}
+            sx={{
+              display: { xs: 'block', lg: 'none' },
+              '& .MuiDrawer-paper': {
+                boxSizing: 'border-box',
+                width: drawerWidth,
+                bgcolor: 'background.paper',
+                borderRight: '1px solid',
+                borderColor: 'divider'
+              }
+            }}
+          >
+            {drawer}
+          </Drawer>
+          {/* Desktop drawer */}
+          <Drawer
+            variant="permanent"
+            sx={{
+              display: { xs: 'none', lg: 'block' },
+              '& .MuiDrawer-paper': {
+                boxSizing: 'border-box',
+                width: drawerWidth,
+                bgcolor: 'background.paper',
+                borderRight: '1px solid',
+                borderColor: 'divider'
+              }
+            }}
+            open
+          >
+            {drawer}
+          </Drawer>
+        </Box>
 
-      {/* Main content */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          width: { lg: `calc(100% - ${drawerWidth}px)` },
-          bgcolor: 'background.default',
-          minHeight: '100vh'
-        }}
-      >
-        <Toolbar sx={{ minHeight: '64px !important' }} />
-        <Box sx={{ p: 3 }}>
-          {children}
+        {/* Main content */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            minWidth: 0,
+            width: { lg: `calc(100% - ${drawerWidth}px)` },
+            bgcolor: 'background.default',
+            minHeight: '100vh'
+          }}
+        >
+          <Box sx={{ p: 3 }}>
+            {children}
+          </Box>
         </Box>
       </Box>
     </Box>

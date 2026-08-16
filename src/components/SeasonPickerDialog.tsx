@@ -134,6 +134,7 @@ const SeasonPickerDialog: React.FC<SeasonPickerDialogProps> = ({ open, onClose, 
       if (existing) {
         bySlug.set(entry.id, {
           ...existing,
+          title: entry.title?.trim() || existing.title,
           catalogEntry: entry,
           subtitle: entry.description || existing.subtitle,
           isActive: existing.localSeason?.id === activeId

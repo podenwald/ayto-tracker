@@ -92,3 +92,13 @@ export function pickDefaultCatalogEntry(catalog: SeasonCatalogFile): SeasonCatal
   const writable = catalog.entries.find(e => e.readOnly !== true)
   return writable ?? catalog.entries[0] ?? null
 }
+
+/**
+ * Einzige Quelle der Wahrheit für den angezeigten Staffel-Titel: Existiert ein
+ * Katalog-Eintrag zur lokalen Staffel, gewinnt konsequent dessen Titel (seasons.json
+ * bleibt so die maßgebliche Bezeichnung, auch wenn die lokale Zeile einen älteren
+ * Titel gespeichert hat). Sonst der lokal gespeicherte Titel.
+ */
+export function resolveSeasonTitle(localTitle: string, catalogTitle?: string | null): string {
+  return catalogTitle?.trim() || localTitle
+}

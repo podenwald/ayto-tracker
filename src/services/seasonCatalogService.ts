@@ -14,12 +14,13 @@ import {
   fetchSeasonCatalog,
   ensureSeasonRowFromCatalog,
   parseJsonFromText,
+  resolveSeasonTitle,
   type SeasonCatalogEntry,
   type SeasonCatalogFile
 } from '@/services/seasonCatalogCore'
 
 export type { SeasonCatalogEntry, SeasonCatalogFile }
-export { fetchSeasonCatalog, ensureSeasonRowFromCatalog, parseJsonFromText }
+export { fetchSeasonCatalog, ensureSeasonRowFromCatalog, parseJsonFromText, resolveSeasonTitle }
 
 function catalogBundleMetaKey(catalogEntryId: string): string {
   return `catalogBundleSha256:${catalogEntryId}`
@@ -198,15 +199,10 @@ export async function getActiveSeasonSummary(): Promise<{ id: number; title: str
     const sid = await getActiveSeasonId()
     const row = await db.seasons.get(sid)
     if (!row?.id) return null
-    let resolvedTitle = row.title
 
-    // Wenn die aktive Staffel im Server-Katalog existiert, nutze konsequent den Katalogtitel.
-    // So bleibt die UI-Bezeichnung stabil und folgt seasons.json.
     const catalog = await fetchSeasonCatalog()
     const catalogEntry = catalog?.entries.find(entry => entry.id === row.slug)
-    if (catalogEntry?.title?.trim()) {
-      resolvedTitle = catalogEntry.title.trim()
-    }
+    const resolvedTitle = resolveSeasonTitle(row.title, catalogEntry?.title)
 
     return { id: row.id, title: resolvedTitle, readOnly: row.readOnly === true }
   } catch {

@@ -151,6 +151,21 @@
   },
   {
     "seasonId": 4,
+    "name": "Joena",
+    "knownFrom": "Too Hot to Handle, Love Island VIP",
+    "age": 25,
+    "status": "Aktiv",
+    "active": true,
+    "photoUrl": "",
+    "source": "",
+    "bio": "Bekannt aus internationalen Dating-Formaten",
+    "gender": "F",
+    "socialMediaAccount": "https://www.instagram.com/joena.st",
+    "freeProfilePhotoUrl": "",
+    "id": 107
+  },
+  {
+    "seasonId": 4,
     "name": "Bennett",
     "knownFrom": "Temptation Island VIP, Bachelorette, Bachelor in Paradise",
     "age": 29,

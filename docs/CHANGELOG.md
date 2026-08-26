@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.3] - 2026-08-17
+
+### 🐛 Bugfixes
+- "Staffel wählen" zeigte weiterhin den veralteten Titel "Upcomming" statt "Live", weil `SeasonPickerDialog.tsx` beim Zusammenführen von lokaler Staffel und Katalog-Eintrag immer den lokal gespeicherten Titel behielt. Titel-Auflösung in `resolveSeasonTitle()` (`seasonCatalogCore.ts`) konsolidiert; `getActiveSeasonSummary()` und `SeasonPickerDialog.tsx` nutzen jetzt beide denselben Helper (Katalog-Titel gewinnt)
+
+### 📊 Daten
+- Joena (Too Hot to Handle, Love Island VIP) zum Kandidat*innen-Cast der aktuellen Staffel in `ayto-rsil-2026.json` ergänzt
+
+---
+
 ## [1.5.2] - 2026-08-16
 
 ### 🐛 Bugfixes

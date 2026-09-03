@@ -3,7 +3,8 @@
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
 ## [1.7.0] - 2026-09-03
-- Der aktuelle Stand der Staffel (Kandidat*innen, Matching Nights, Matchboxes) ist jetzt auf neuen Geräten direkt vollständig verfügbar, ohne dass du alles von Hand nachtragen musst
+- Wichtiger Fehler behoben: Das Bestätigen von "Jetzt aktualisieren" konnte bisher deine bereits eingetragenen Matching Nights und Matchbox-Entscheidungen löschen. Das passiert jetzt nicht mehr — ein Update ergänzt nur noch, statt zu löschen
+- Der aktuelle Stand der Staffel (Kandidat*innen, Matching Nights, Matchboxes) ist jetzt vollständig verfügbar, ohne dass du alles von Hand nachtragen musst
 
 ---
 

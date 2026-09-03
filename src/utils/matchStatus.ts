@@ -20,6 +20,24 @@ export const getConfirmedPerfectMatchNames = (matchboxes: Matchbox[]): Set<strin
 }
 
 /**
+ * Filtert eine Teilnehmer*innen-Liste auf noch "verfügbare" Personen (kein
+ * bestätigter Perfect Match). `excludeMatchboxId` lässt beim Bearbeiten einer
+ * bestehenden Matchbox deren eigenes Paar weiterhin auswählbar bleiben, ohne
+ * andere bereits vergebene Kandidat*innen freizugeben (ODI-271, ODI-286).
+ */
+export const getAvailableParticipants = <T extends { name: string }>(
+  participants: T[],
+  matchboxes: Matchbox[],
+  excludeMatchboxId?: number
+): T[] => {
+  const relevantMatchboxes = excludeMatchboxId
+    ? matchboxes.filter(mb => mb.id !== excludeMatchboxId)
+    : matchboxes
+  const confirmedNames = getConfirmedPerfectMatchNames(relevantMatchboxes)
+  return participants.filter(p => !confirmedNames.has(p.name))
+}
+
+/**
  * Zahlenmäßig kleineres Geschlecht im Kandidat*innen-Feld der Staffel.
  * Bestimmt, wessen Perfect Match ein Doppelmatch (zweite Partner*in aus dem
  * größeren Geschlecht) haben darf. null bei Gleichstand.

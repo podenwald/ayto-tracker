@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.0] - 2026-09-03
+
+### 🐛 Bugfixes
+- Bearbeiten einer bestehenden Matchbox zeigte in der Kandidat*innen-Auswahl fälschlich wieder alle Teilnehmer*innen an, inkl. bereits an anderer Stelle vergebener Perfect-Match-Partner*innen. Neuer gemeinsamer Helper `getAvailableParticipants()` in `matchStatus.ts`, den Admin- und Übersicht-Matchbox-Formular jetzt beide nutzen; beim Bearbeiten bleibt nur das eigene Paar der Matchbox zusätzlich auswählbar (ODI-286, ODI-271)
+- Der Status-Punkt (aktiv/vergeben) im Übersicht-Kandidat*innen-Raster (`OverviewMUI.tsx`) folgte dem separat gespeicherten `active`-Feld und konnte dadurch vom (korrekt berechneten) Ausgrauen abweichen. Beide Anzeigen nutzen jetzt dieselbe Perfect-Match-Berechnung (ODI-289)
+- `hasConfirmedPerfectMatch`/`getPerfectMatchPartner` in `OverviewMUI.tsx` implementierten die Ausstrahlungszeit-Filterung für Perfect Matches eigenständig erneut, statt den bereits vorhandenen `getValidPerfectMatchesBeforeDateTime()`-Helper zu nutzen (ODI-273)
+
+### ✨ Neue Funktionen
+- Admin-Bereich: Matching Nights können jetzt auch direkt im Admin-Panel neu angelegt werden ("Neue Matching Night"), nicht mehr nur im Live-Tracker (ODI-288)
+
+---
+
 ## [1.7.0] - 2026-09-03
 
 ### 🐛 Bugfixes (kritisch)

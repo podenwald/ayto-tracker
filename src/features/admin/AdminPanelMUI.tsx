@@ -73,7 +73,7 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import { VERSION_INFO } from '@/utils/version'
 import BroadcastManagement from './BroadcastManagement'
 import { DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
-import { getConfirmedPerfectMatchNames, getSmallerGender } from '@/utils/matchStatus'
+import { getConfirmedPerfectMatchNames, getSmallerGender, getAvailableParticipants } from '@/utils/matchStatus'
 import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
 import { MatchboxService } from '@/services/matchboxService'
@@ -828,10 +828,10 @@ const MatchboxManagement: React.FC<{
   const women = participants.filter(p => p.gender === 'F')
   const men = participants.filter(p => p.gender === 'M')
   
-  // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in, für neue Matchboxes)
-  const confirmedPerfectMatchNames = getConfirmedPerfectMatchNames(matchboxes)
-  const availableWomen = editingMatchbox ? women : women.filter(woman => !confirmedPerfectMatchNames.has(woman.name))
-  const availableMen = editingMatchbox ? men : men.filter(man => !confirmedPerfectMatchNames.has(man.name))
+  // Beim Bearbeiten bleibt das eigene Paar der Matchbox auswählbar, andere bereits
+  // vergebene Kandidat*innen (inkl. Doppelmatch-Partner*in) werden ausgeschlossen (ODI-271, ODI-286).
+  const availableWomen = getAvailableParticipants(women, matchboxes, editingMatchbox?.id)
+  const availableMen = getAvailableParticipants(men, matchboxes, editingMatchbox?.id)
 
   // Doppelmatch: nur möglich, wenn die Geschlechterzahl ungleich ist, und nur 1x pro Staffel
   const smallerGender = getSmallerGender(participants)
@@ -1261,6 +1261,7 @@ const MatchingNightManagement: React.FC<{
   const theme = useTheme()
   const isMobileDialog = useMediaQuery(theme.breakpoints.down('sm'))
   const [editingMatchingNight, setEditingMatchingNight] = useState<MatchingNight | undefined>(undefined)
+  const [isCreatingMatchingNight, setIsCreatingMatchingNight] = useState(false)
   const [matchingNightForm, setMatchingNightForm] = useState<{
     name: string;
     totalLights: number;
@@ -1342,6 +1343,12 @@ const MatchingNightManagement: React.FC<{
     setSelectedWoman('')
     setSelectedMan('')
     setEditingMatchingNight(undefined)
+    setIsCreatingMatchingNight(false)
+  }
+
+  const startCreating = () => {
+    resetForm()
+    setIsCreatingMatchingNight(true)
   }
 
   const startEditing = (matchingNight: MatchingNight) => {
@@ -1448,21 +1455,29 @@ const MatchingNightManagement: React.FC<{
         }
       }
 
-      if (!editingMatchingNight) {
-        setSnackbar({ open: true, message: 'Keine Matching Night zum Aktualisieren ausgewählt.', severity: 'error' })
-        return
+      if (editingMatchingNight) {
+        // Verwende den MatchingNightService, damit die Season-Zugehörigkeits-Prüfung greift
+        await MatchingNightService.updateMatchingNight(editingMatchingNight.id!, {
+          name: matchingNightForm.name,
+          totalLights: isSold ? undefined : matchingNightForm.totalLights,
+          pairs: matchingNightForm.pairs,
+          matchType: isSold ? 'sold' : 'normal',
+          ...(isSold ? { price: matchingNightForm.price, buyer: matchingNightForm.buyer } : { price: undefined, buyer: undefined })
+        })
+        setSnackbar({ open: true, message: 'Matching Night wurde erfolgreich aktualisiert!', severity: 'success' })
+      } else {
+        const nameToUse = matchingNightForm.name?.trim() || `Matching Night #${matchingNights.length + 1}`
+        await MatchingNightService.createMatchingNight({
+          name: nameToUse,
+          date: new Date().toISOString().split('T')[0],
+          totalLights: isSold ? undefined : matchingNightForm.totalLights,
+          pairs: completePairs,
+          matchType: isSold ? 'sold' : 'normal',
+          ...(isSold ? { price: matchingNightForm.price, buyer: matchingNightForm.buyer } : {})
+        })
+        setSnackbar({ open: true, message: 'Matching Night wurde erfolgreich erstellt!', severity: 'success' })
       }
 
-      // Verwende den MatchingNightService, damit die Season-Zugehörigkeits-Prüfung greift
-      await MatchingNightService.updateMatchingNight(editingMatchingNight.id!, {
-        name: matchingNightForm.name,
-        totalLights: isSold ? undefined : matchingNightForm.totalLights,
-        pairs: matchingNightForm.pairs,
-        matchType: isSold ? 'sold' : 'normal',
-        ...(isSold ? { price: matchingNightForm.price, buyer: matchingNightForm.buyer } : { price: undefined, buyer: undefined })
-      })
-
-      setSnackbar({ open: true, message: 'Matching Night wurde erfolgreich aktualisiert!', severity: 'success' })
       resetForm()
       onUpdate()
     } catch (error) {
@@ -1488,14 +1503,18 @@ const MatchingNightManagement: React.FC<{
   return (
     <Box>
 
-      {/* Action Buttons - nur Bearbeitung abbrechen beim Bearbeiten */}
-      {editingMatchingNight && (
-        <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      {/* Action Buttons */}
+      <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        {editingMatchingNight || isCreatingMatchingNight ? (
           <Button variant="outlined" onClick={resetForm}>
             Bearbeitung abbrechen
           </Button>
-        </Box>
-      )}
+        ) : (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={startCreating}>
+            Neue Matching Night
+          </Button>
+        )}
+      </Box>
 
       {/* Matching Nights List */}
       <Card>
@@ -1593,10 +1612,10 @@ const MatchingNightManagement: React.FC<{
         </CardContent>
       </Card>
 
-      {/* Bearbeiten-Dialog (nur bestehende Matching Nights) */}
-      <Dialog open={!!editingMatchingNight} onClose={resetForm} maxWidth="lg" fullWidth fullScreen={isMobileDialog}>
+      {/* Erstellen/Bearbeiten-Dialog */}
+      <Dialog open={!!editingMatchingNight || isCreatingMatchingNight} onClose={resetForm} maxWidth="lg" fullWidth fullScreen={isMobileDialog}>
         <DialogTitle>
-          Matching Night bearbeiten
+          {editingMatchingNight ? 'Matching Night bearbeiten' : 'Neue Matching Night'}
         </DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 2 }}>
@@ -1881,7 +1900,7 @@ const MatchingNightManagement: React.FC<{
         <DialogActions sx={{ flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
           <Button onClick={resetForm}>Abbrechen</Button>
           <Button onClick={saveMatchingNight} variant="contained" startIcon={<SaveIcon />}>
-            Aktualisieren
+            {editingMatchingNight ? 'Aktualisieren' : 'Erstellen'}
           </Button>
         </DialogActions>
       </Dialog>

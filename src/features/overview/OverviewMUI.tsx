@@ -55,14 +55,15 @@ import ThemeProvider from '@/theme/ThemeProvider'
 import { type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
 import {
   isPairConfirmedAsPerfectMatch,
-  getMatchboxBroadcastDateTime
+  getMatchboxBroadcastDateTime,
+  getValidPerfectMatchesBeforeDateTime
 } from '@/utils/broadcastUtils'
 import { useProbabilityCalculation } from '@/hooks/useProbabilityCalculation'
 import { MatchboxService } from '@/services/matchboxService'
 import { MatchingNightService } from '@/services/matchingNightService'
 import { ParticipantService } from '@/services/participantService'
 import { PenaltyService } from '@/services/penaltyService'
-import { getConfirmedPerfectMatchNames, getSmallerGender } from '@/utils/matchStatus'
+import { getConfirmedPerfectMatchNames, getSmallerGender, getAvailableParticipants } from '@/utils/matchStatus'
 import ParticipantsView from '@/components/ParticipantsView'
 import UpdateInfoBox from '@/components/UpdateInfoBox'
 import SeasonFinaleDialog from '@/components/SeasonFinaleDialog'
@@ -251,7 +252,9 @@ const ParticipantCard: React.FC<{
   const initials = participant.name?.charAt(0)?.toUpperCase() || '?'
   const genderColor = participant.gender === 'F' ? 'secondary.main' : 'primary.main'
 
-  const isActive = participant.active !== false
+  // Status-Punkt folgt derselben Quelle wie die Ausgrauung (isPlaced), nicht dem
+  // ggf. veralteten participant.active-Feld (ODI-289).
+  const isActive = !isPlaced
 
   // Tooltip content as simple text
   const tooltipLines = [
@@ -745,10 +748,9 @@ const OverviewMUI: React.FC = () => {
     (p.status === 'Aktiv' || p.status === 'aktiv' || p.status === 'Perfekt Match')
   )
   
-  // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in, für neue Matchboxes)
-  const confirmedPerfectMatchNames = getConfirmedPerfectMatchNames(matchboxes)
-  const availableWomen = women.filter(woman => !confirmedPerfectMatchNames.has(woman.name))
-  const availableMen = men.filter(man => !confirmedPerfectMatchNames.has(man.name))
+  // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in) (ODI-271)
+  const availableWomen = getAvailableParticipants(women, matchboxes)
+  const availableMen = getAvailableParticipants(men, matchboxes)
 
   // Doppelmatch: nur möglich, wenn die Geschlechterzahl ungleich ist, und nur 1x pro Staffel
   const smallerGender = getSmallerGender(participants)
@@ -761,52 +763,20 @@ const OverviewMUI: React.FC = () => {
   // Get pair probabilities from calculation result or use empty matrix
   const pairProbabilities: Record<string, Record<string, number>> = probabilityResult?.probabilityMatrix || {}
   
-  // Helper: Check if participant has a perfect match (nur ausgestrahlte Matchboxes)
+  // Helper: Check if participant has a perfect match (nur ausgestrahlte Matchboxes, ODI-273)
   const hasConfirmedPerfectMatch = (participantName: string, gender: 'M' | 'F') => {
-    const now = new Date()
-    return matchboxes.some(mb => {
-      // Nur Perfect Matches berücksichtigen
-      if (mb.matchType !== 'perfect') return false
-      
-      // Nur wenn die richtige Person betroffen ist
-      const isCorrectParticipant = gender === 'F' ? mb.woman === participantName : mb.man === participantName
-      if (!isCorrectParticipant) return false
-      
-      // Nur Matchboxes mit gültigen Ausstrahlungsdaten berücksichtigen
-      if (!mb.ausstrahlungsdatum || !mb.ausstrahlungszeit) return false
-      
-      // Prüfe, ob bereits ausgestrahlt
-      try {
-        const broadcastDate = getMatchboxBroadcastDateTime(mb)
-        return broadcastDate <= now
-      } catch {
-        return false
-      }
-    })
+    const validPerfectMatches = getValidPerfectMatchesBeforeDateTime(matchboxes, new Date())
+    return validPerfectMatches.some(mb =>
+      gender === 'F' ? mb.woman === participantName : mb.man === participantName
+    )
   }
-  
-  // Helper: Get perfect match partner name (nur ausgestrahlte Matchboxes)
+
+  // Helper: Get perfect match partner name (nur ausgestrahlte Matchboxes, ODI-273)
   const getPerfectMatchPartner = (participantName: string, gender: 'M' | 'F'): string | null => {
-    const now = new Date()
-    const match = matchboxes.find(mb => {
-      // Nur Perfect Matches berücksichtigen
-      if (mb.matchType !== 'perfect') return false
-      
-      // Nur wenn die richtige Person betroffen ist
-      const isCorrectParticipant = gender === 'F' ? mb.woman === participantName : mb.man === participantName
-      if (!isCorrectParticipant) return false
-      
-      // Nur Matchboxes mit gültigen Ausstrahlungsdaten berücksichtigen
-      if (!mb.ausstrahlungsdatum || !mb.ausstrahlungszeit) return false
-      
-      // Prüfe, ob bereits ausgestrahlt
-      try {
-        const broadcastDate = getMatchboxBroadcastDateTime(mb)
-        return broadcastDate <= now
-      } catch {
-        return false
-      }
-    })
+    const validPerfectMatches = getValidPerfectMatchesBeforeDateTime(matchboxes, new Date())
+    const match = validPerfectMatches.find(mb =>
+      gender === 'F' ? mb.woman === participantName : mb.man === participantName
+    )
     return match ? (gender === 'F' ? match.man : match.woman) : null
   }
 

@@ -9,10 +9,10 @@ export interface VersionInfo {
 
 // This will be replaced by Vite during build
 export const VERSION_INFO: VersionInfo = {
-  "version": "1.6.0",
-  "gitTag": "v1.6.0",
-  "gitCommit": "0867089f3bafd3449d8098517b42bf26051fd95e",
-  "buildDate": "2026-09-03T10:05:13.178Z",
+  "version": "1.7.0",
+  "gitTag": "v1.7.0",
+  "gitCommit": "7f6e029ae6c56859e3561eb33d35552a5b881267",
+  "buildDate": "2026-09-03T19:34:17.880Z",
   "isProduction": false
 }
 

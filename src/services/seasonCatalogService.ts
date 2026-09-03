@@ -15,16 +15,15 @@ import {
   ensureSeasonRowFromCatalog,
   parseJsonFromText,
   resolveSeasonTitle,
+  catalogBundleMetaKey,
+  hashJsonPayload,
+  fetchCatalogDataText,
   type SeasonCatalogEntry,
   type SeasonCatalogFile
 } from '@/services/seasonCatalogCore'
 
 export type { SeasonCatalogEntry, SeasonCatalogFile }
 export { fetchSeasonCatalog, ensureSeasonRowFromCatalog, parseJsonFromText, resolveSeasonTitle }
-
-function catalogBundleMetaKey(catalogEntryId: string): string {
-  return `catalogBundleSha256:${catalogEntryId}`
-}
 
 async function getSeasonEntityCounts(seasonId: number): Promise<{
   participants: number
@@ -51,28 +50,6 @@ function isSeasonSnapshotComplete(
     current.matchboxes === expected.matchboxes &&
     current.penalties === expected.penalties
   )
-}
-
-async function hashJsonPayload(text: string): Promise<string> {
-  if (globalThis.crypto?.subtle) {
-    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
-    return Array.from(new Uint8Array(digest))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-  }
-  let h = 5381
-  for (let i = 0; i < text.length; i++) {
-    h = (h * 33) ^ text.charCodeAt(i)
-  }
-  return `djb2:${(h >>> 0).toString(16)}`
-}
-
-async function fetchCatalogDataText(dataUrl: string): Promise<string> {
-  const res = await fetch(dataUrl, { cache: 'no-store' })
-  if (!res.ok) {
-    throw new Error(`Daten konnten nicht geladen werden (${dataUrl}): ${res.status}`)
-  }
-  return await res.text()
 }
 
 /**

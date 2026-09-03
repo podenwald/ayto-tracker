@@ -8,10 +8,16 @@
  * - Service Worker Integration
  */
 
-import { DatabaseUtils, db, type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
+import { DatabaseUtils, db, type Participant, type MatchingNight, type Matchbox, type Penalty, type Season } from '@/lib/db'
 import type { DatabaseImport, ParticipantDTO, MatchingNightDTO, MatchboxDTO, PenaltyDTO } from '@/types'
 import { assertSeasonWritable, clearAllDataForSeason, getActiveSeasonId } from '@/services/seasonService'
-import { fetchSeasonCatalog } from '@/services/seasonCatalogCore'
+import {
+  fetchSeasonCatalog,
+  fetchCatalogDataText,
+  hashJsonPayload,
+  catalogBundleMetaKey,
+  type SeasonCatalogEntry
+} from '@/services/seasonCatalogCore'
 
 // Manifest-Interface
 export interface DatabaseManifest {
@@ -75,26 +81,85 @@ export async function fetchDatabaseManifest(): Promise<DatabaseManifest> {
 }
 
 /**
- * Prüft, ob ein Datenbank-Update verfügbar ist
+ * Löst die aktive Staffel + ihren Katalog-Eintrag auf (gemeinsame Grundlage für
+ * Update-Check und Update-Ausführung - beide müssen dieselbe Datenquelle meinen).
+ */
+async function resolveActiveSeasonCatalogEntry(): Promise<{
+  seasonId: number
+  season: Season
+  entry: SeasonCatalogEntry & { dataUrl: string }
+} | null> {
+  const seasonId = await getActiveSeasonId()
+  const season = await db.seasons.get(seasonId)
+  if (!season) return null
+
+  const catalog = await fetchSeasonCatalog()
+  const entry = catalog?.entries.find(item => item.id === season.slug)
+  if (!entry?.dataUrl?.trim()) return null
+
+  return { seasonId, season, entry: entry as SeasonCatalogEntry & { dataUrl: string } }
+}
+
+/**
+ * Prüft, ob für die AKTIVE Staffel ein Datenbank-Update verfügbar ist.
+ *
+ * Basiert bewusst NICHT auf der App-Code-Version (die ändert sich bei jedem Release,
+ * auch ohne Datenbezug) und NICHT auf manifest.json's dataHash (der wird nur aus einer
+ * fest hinterlegten Fallback-Datei berechnet, nicht aus der Datenquelle der aktiven
+ * Staffel) - sondern auf einem Inhalts-Hash der tatsächlichen `dataUrl` der aktiven
+ * Staffel, pro Staffel gespeichert (derselbe Meta-Key wie in seasonCatalogService.ts,
+ * damit beide Mechanismen konsistent bleiben). Siehe ODI-331.
  */
 export async function checkForDatabaseUpdate(): Promise<DatabaseUpdateState> {
   try {
-    const [manifest, currentVersion, currentDataHash] = await Promise.all([
-      fetchDatabaseManifest(),
-      DatabaseUtils.getDbVersion(),
-      DatabaseUtils.getDataHash()
+    const active = await resolveActiveSeasonCatalogEntry()
+    if (!active) {
+      return {
+        isUpdateAvailable: false,
+        currentVersion: 'unknown',
+        latestVersion: 'unknown',
+        currentDataHash: 'unknown',
+        latestDataHash: 'unknown',
+        releasedDate: '',
+        isUpdating: false,
+        updateError: null
+      }
+    }
+
+    const [manifest, text] = await Promise.all([
+      fetchDatabaseManifest().catch(() => null),
+      fetchCatalogDataText(active.entry.dataUrl)
     ])
-    
-    // Update verfügbar wenn Version oder Daten-Hash sich geändert haben
-    const isUpdateAvailable = manifest.version !== currentVersion || manifest.dataHash !== currentDataHash
-    
+
+    const latestDataHash = await hashJsonPayload(text)
+    const metaKey = catalogBundleMetaKey(active.entry.id)
+    const storedHash = await DatabaseUtils.getMetaValue(metaKey)
+    const currentDataHash = typeof storedHash === 'string' ? storedHash : null
+
+    if (currentDataHash === null) {
+      // Noch nie getrackter Altbestand (z. B. Staffel von vor diesem Fix) - Baseline
+      // setzen statt sofort "Update verfügbar" zu melden, sonst würde jede bestehende
+      // Installation beim ersten Check nach dem Deploy fälschlich einen Hinweis sehen.
+      await DatabaseUtils.setMetaValue(metaKey, latestDataHash)
+      return {
+        isUpdateAvailable: false,
+        currentVersion: manifest?.version ?? 'unknown',
+        latestVersion: manifest?.version ?? 'unknown',
+        currentDataHash: latestDataHash,
+        latestDataHash,
+        releasedDate: manifest?.released ?? '',
+        isUpdating: false,
+        updateError: null
+      }
+    }
+
     return {
-      isUpdateAvailable,
-      currentVersion,
-      latestVersion: manifest.version,
+      isUpdateAvailable: currentDataHash !== latestDataHash,
+      currentVersion: manifest?.version ?? 'unknown',
+      latestVersion: manifest?.version ?? 'unknown',
       currentDataHash,
-      latestDataHash: manifest.dataHash,
-      releasedDate: manifest.released,
+      latestDataHash,
+      releasedDate: manifest?.released ?? '',
       isUpdating: false,
       updateError: null
     }
@@ -168,71 +233,59 @@ export async function getJsonDataSourcesNewestFirst(): Promise<string[]> {
 }
 
 /**
- * Lädt die aktuellen Daten vom Server für die AKTIVE Staffel.
+ * Führt ein Update der Datenbank für die AKTIVE Staffel durch.
  *
  * Löst die Datenquelle über den Katalog-Eintrag der aktiven Staffel auf (gleiche
  * Zuordnung wie ensureActiveSeasonCatalogDataLoaded()), NICHT durch Scannen aller
  * Dateien in public/json/ nach "neuestem" Last-Modified-Datum. Letzteres ignorierte
  * komplett, welche Staffel aktiv ist, und konnte dadurch die aktive Staffel mit den
  * Teilnehmern einer völlig anderen Staffel überschreiben (siehe CLAUDE.md/ADRs).
- */
-export async function fetchLatestDatabaseData(): Promise<DatabaseImport> {
-  const activeSeasonId = await getActiveSeasonId()
-  const activeSeason = await db.seasons.get(activeSeasonId)
-  if (!activeSeason) {
-    throw new Error('Keine aktive Staffel gefunden')
-  }
-
-  const catalog = await fetchSeasonCatalog()
-  const entry = catalog?.entries.find(item => item.id === activeSeason.slug)
-  if (!entry?.dataUrl?.trim()) {
-    throw new Error(`Keine Datenquelle für die aktive Staffel "${activeSeason.title}" im Katalog gefunden`)
-  }
-
-  try {
-    const response = await fetch(entry.dataUrl, NO_CACHE_HEADERS)
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-    const raw: unknown = await response.json()
-    // Katalog-Datendateien liegen wahlweise als reines Teilnehmer-Array oder als
-    // Objekt mit participants/matchingNights/... vor (siehe parseRawJsonToImportData
-    // in jsonImport.ts, die denselben Katalog-Dateien beim regulären Staffel-Import
-    // begegnet).
-    const data: DatabaseImport = Array.isArray(raw)
-      ? { participants: raw as ParticipantDTO[], matchingNights: [], matchboxes: [], penalties: [] }
-      : (raw as DatabaseImport)
-    if (!data.participants || !Array.isArray(data.participants)) {
-      throw new Error(`Ungültige Datenstruktur von ${entry.dataUrl}`)
-    }
-    console.log(`✅ Daten erfolgreich von ${entry.dataUrl} geladen (Staffel "${activeSeason.title}")`)
-    return data
-  } catch (error) {
-    console.error('Fehler beim Laden der Datenbank-Daten:', error)
-    throw new Error(`Daten konnten nicht geladen werden (${entry.dataUrl}): ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
-  }
-}
-
-/**
- * Führt ein atomares Update der Datenbank durch
+ *
+ * WICHTIG (ODI-331): Bei einer schreibbaren (aktiv bearbeiteten) Staffel wird NICHT
+ * mehr vorher gelöscht - nur noch ergänzt/aktualisiert (bulkPut = Upsert je ID). Ein
+ * vorheriges clearAllDataForSeason() hat hier bereits lokal erfasste Matching Nights
+ * und Matchbox-Entscheidungen gelöscht, sobald jemand "Jetzt aktualisieren" klickte,
+ * selbst wenn die JSON-Datei diese Informationen gar nicht enthielt. Nur bei
+ * schreibgeschützten (abgeschlossenen) Staffeln wird weiterhin vollständig ersetzt,
+ * da dort niemand mehr aktiv Daten pflegt.
  */
 export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
   try {
     console.log('🔄 Starte Datenbank-Update...')
-    
-    // 1. Manifest und neue Daten laden
-    const [manifest, newData] = await Promise.all([
-      fetchDatabaseManifest(),
-      fetchLatestDatabaseData()
-    ])
-    
-    console.log(`📥 Neue Daten geladen (Version ${manifest.version}, Hash ${manifest.dataHash})`)
-    
-    const seasonId = await getActiveSeasonId()
-    await assertSeasonWritable(seasonId)
-    await clearAllDataForSeason(seasonId)
 
-    // 2. Atomares Update nur für die aktive Staffel
+    const active = await resolveActiveSeasonCatalogEntry()
+    if (!active) {
+      throw new Error('Keine Datenquelle für die aktive Staffel im Katalog gefunden')
+    }
+
+    const [manifest, text] = await Promise.all([
+      fetchDatabaseManifest().catch(() => null),
+      fetchCatalogDataText(active.entry.dataUrl)
+    ])
+
+    const raw: unknown = JSON.parse(text)
+    // Katalog-Datendateien liegen wahlweise als reines Teilnehmer-Array oder als
+    // Objekt mit participants/matchingNights/... vor (siehe parseRawJsonToImportData
+    // in jsonImport.ts, die denselben Katalog-Dateien beim regulären Staffel-Import
+    // begegnet).
+    const newData: DatabaseImport = Array.isArray(raw)
+      ? { participants: raw as ParticipantDTO[], matchingNights: [], matchboxes: [], penalties: [] }
+      : (raw as DatabaseImport)
+    if (!newData.participants || !Array.isArray(newData.participants)) {
+      throw new Error(`Ungültige Datenstruktur von ${active.entry.dataUrl}`)
+    }
+
+    console.log(`📥 Neue Daten geladen (Staffel "${active.season.title}")`)
+
+    const seasonId = active.seasonId
+    await assertSeasonWritable(seasonId)
+
+    const isReadOnlySeason = active.season.readOnly === true
+    if (isReadOnlySeason) {
+      await clearAllDataForSeason(seasonId)
+    }
+
+    // 2. Update nur für die aktive Staffel
     await db.transaction('rw', [db.participants, db.matchingNights, db.matchboxes, db.penalties, db.meta], async () => {
       // DTO -> Domain Mapping mit Typ-Konvertierungen
       const mapParticipant = (p: ParticipantDTO): Participant => ({
@@ -306,21 +359,24 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
         db.penalties.bulkPut(penaltiesMapped)
       ])
       
-      // Meta-Daten aktualisieren
+      // Meta-Daten aktualisieren: Inhalts-Hash pro Staffel (Grundlage für den nächsten
+      // checkForDatabaseUpdate()-Vergleich) sowie die App-weiten Anzeige-Felder.
+      const latestDataHash = await hashJsonPayload(text)
       await Promise.all([
-        DatabaseUtils.setDbVersion(manifest.version),
-        DatabaseUtils.setDataHash(manifest.dataHash),
-        DatabaseUtils.setLastUpdateDate(manifest.released)
+        DatabaseUtils.setMetaValue(catalogBundleMetaKey(active.entry.id), latestDataHash),
+        manifest ? DatabaseUtils.setDbVersion(manifest.version) : Promise.resolve(),
+        manifest ? DatabaseUtils.setDataHash(manifest.dataHash) : Promise.resolve(),
+        DatabaseUtils.setLastUpdateDate(manifest?.released ?? new Date().toISOString())
       ])
     })
-    
-    console.log(`✅ Datenbank erfolgreich auf Version ${manifest.version} (Hash: ${manifest.dataHash}) aktualisiert`)
-    
+
+    console.log(`✅ Staffel "${active.season.title}" erfolgreich aktualisiert${isReadOnlySeason ? ' (ersetzt)' : ' (ergänzt)'}`)
+
     return {
       success: true,
-      newVersion: manifest.version,
-      newDataHash: manifest.dataHash,
-      releasedDate: manifest.released
+      newVersion: manifest?.version ?? 'unknown',
+      newDataHash: manifest?.dataHash ?? 'unknown',
+      releasedDate: manifest?.released ?? ''
     }
   } catch (error) {
     console.error('❌ Fehler beim Datenbank-Update:', error)

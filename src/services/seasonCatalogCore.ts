@@ -42,6 +42,35 @@ async function parseJsonBody<T>(res: Response, label: string): Promise<T> {
   return parseJsonFromText<T>(text, label)
 }
 
+/** Meta-Key, unter dem der zuletzt gesehene Inhalts-Hash eines Katalog-Eintrags gespeichert wird. */
+export function catalogBundleMetaKey(catalogEntryId: string): string {
+  return `catalogBundleSha256:${catalogEntryId}`
+}
+
+/** Stabiler Inhalts-Hash (SHA-256, Fallback djb2 ohne WebCrypto) für Änderungserkennung. */
+export async function hashJsonPayload(text: string): Promise<string> {
+  if (globalThis.crypto?.subtle) {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+    return Array.from(new Uint8Array(digest))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')
+  }
+  let h = 5381
+  for (let i = 0; i < text.length; i++) {
+    h = (h * 33) ^ text.charCodeAt(i)
+  }
+  return `djb2:${(h >>> 0).toString(16)}`
+}
+
+/** Lädt den rohen Text einer Katalog-Datenquelle (`entry.dataUrl`), immer ohne Cache. */
+export async function fetchCatalogDataText(dataUrl: string): Promise<string> {
+  const res = await fetch(dataUrl, { cache: 'no-store' })
+  if (!res.ok) {
+    throw new Error(`Daten konnten nicht geladen werden (${dataUrl}): ${res.status}`)
+  }
+  return await res.text()
+}
+
 export async function fetchSeasonCatalog(): Promise<SeasonCatalogFile | null> {
   let res: Response
   try {

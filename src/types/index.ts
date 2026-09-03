@@ -79,6 +79,10 @@ export interface Matchbox {
   updatedAt: Date
   ausstrahlungsdatum?: string
   ausstrahlungszeit?: string
+  /** Nur bei matchType 'perfect': markiert die Person des zahlenmäßig kleineren Geschlechts als doppelt perfekt gematcht (max. 1 pro Staffel). */
+  isDoppelmatch?: boolean
+  /** Name der zweiten Partner*in (aus dem zahlenmäßig größeren Geschlecht), nur wenn isDoppelmatch true ist. */
+  doppelmatchPartner?: string
 }
 
 export interface Penalty {
@@ -147,6 +151,8 @@ export interface MatchboxDTO {
   updatedAt: string // ISO string für JSON
   ausstrahlungsdatum?: string
   ausstrahlungszeit?: string
+  isDoppelmatch?: boolean
+  doppelmatchPartner?: string
 }
 
 export interface PenaltyDTO {

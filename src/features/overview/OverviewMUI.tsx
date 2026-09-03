@@ -13,6 +13,8 @@ import {
   IconButton,
   Alert,
   Collapse,
+  Checkbox,
+  FormControlLabel,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -60,7 +62,7 @@ import { MatchboxService } from '@/services/matchboxService'
 import { MatchingNightService } from '@/services/matchingNightService'
 import { ParticipantService } from '@/services/participantService'
 import { PenaltyService } from '@/services/penaltyService'
-import { getConfirmedPerfectMatchNames } from '@/utils/matchStatus'
+import { getConfirmedPerfectMatchNames, getSmallerGender } from '@/utils/matchStatus'
 import ParticipantsView from '@/components/ParticipantsView'
 import UpdateInfoBox from '@/components/UpdateInfoBox'
 import SeasonFinaleDialog from '@/components/SeasonFinaleDialog'
@@ -718,7 +720,9 @@ const OverviewMUI: React.FC = () => {
     price: 0,
     buyer: '',
     ausstrahlungsdatum: '',
-    ausstrahlungszeit: ''
+    ausstrahlungszeit: '',
+    isDoppelmatch: false,
+    doppelmatchPartner: undefined as string | undefined
   })
   const [draggedParticipants, setDraggedParticipants] = useState<{woman?: Participant, man?: Participant}>({})
   const [dragOverTarget, setDragOverTarget] = useState<'woman' | 'man' | null>(null)
@@ -741,13 +745,18 @@ const OverviewMUI: React.FC = () => {
     (p.status === 'Aktiv' || p.status === 'aktiv' || p.status === 'Perfekt Match')
   )
   
-  // Get available participants (excluding perfect matches for new matchboxes)
-  const availableWomen = women.filter(woman => 
-    !matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === woman.name)
-  )
-  const availableMen = men.filter(man => 
-    !matchboxes.some(mb => mb.matchType === 'perfect' && mb.man === man.name)
-  )
+  // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in, für neue Matchboxes)
+  const confirmedPerfectMatchNames = getConfirmedPerfectMatchNames(matchboxes)
+  const availableWomen = women.filter(woman => !confirmedPerfectMatchNames.has(woman.name))
+  const availableMen = men.filter(man => !confirmedPerfectMatchNames.has(man.name))
+
+  // Doppelmatch: nur möglich, wenn die Geschlechterzahl ungleich ist, und nur 1x pro Staffel
+  const smallerGender = getSmallerGender(participants)
+  const hasDoppelmatchElsewhere = matchboxes.some(mb => mb.isDoppelmatch)
+  const doppelmatchAvailable = smallerGender !== null && !hasDoppelmatchElsewhere
+  // Zweite Partner*in kommt aus dem zahlenmäßig größeren Geschlecht
+  const doppelmatchCandidates = (smallerGender === 'F' ? availableMen : availableWomen)
+    .filter(p => p.name !== matchboxForm.woman && p.name !== matchboxForm.man)
 
   // Get pair probabilities from calculation result or use empty matrix
   const pairProbabilities: Record<string, Record<string, number>> = probabilityResult?.probabilityMatrix || {}
@@ -1014,7 +1023,7 @@ const OverviewMUI: React.FC = () => {
 
   const saveMatchbox = async () => {
     try {
-      const validationErrors = MatchboxService.validateMatchbox(matchboxForm)
+      const validationErrors = MatchboxService.validateMatchbox(matchboxForm, matchboxes)
       if (validationErrors.length > 0) {
         setSnackbar({ open: true, message: validationErrors[0], severity: 'error' })
         return
@@ -1069,7 +1078,9 @@ const OverviewMUI: React.FC = () => {
       price: 0,
       buyer: '',
       ausstrahlungsdatum: '',
-      ausstrahlungszeit: ''
+      ausstrahlungszeit: '',
+      isDoppelmatch: false,
+      doppelmatchPartner: undefined
     })
     setDraggedParticipants({})
   }
@@ -1699,7 +1710,8 @@ const OverviewMUI: React.FC = () => {
                     const additionalInfo = [
                       matchbox.matchType === 'sold' && matchbox.price ? `${matchbox.price.toLocaleString('de-DE')} €` : null,
                       matchbox.matchType === 'sold' && matchbox.buyer ? `Käufer: ${matchbox.buyer}` : null,
-                      matchbox.ausstrahlungsdatum ? 
+                      matchbox.isDoppelmatch && matchbox.doppelmatchPartner ? `Doppelmatch: auch mit ${matchbox.doppelmatchPartner}` : null,
+                      matchbox.ausstrahlungsdatum ?
                         `Ausstrahlung: ${new Date(matchbox.ausstrahlungsdatum).toLocaleDateString('de-DE')}` :
                         `Erstellt: ${new Date(matchbox.createdAt).toLocaleDateString('de-DE')}`
                     ].filter(Boolean).join(' • ')
@@ -2926,6 +2938,40 @@ const OverviewMUI: React.FC = () => {
                 <MenuItem value="sold">Verkauft</MenuItem>
               </Select>
             </FormControl>
+
+            {matchboxForm.matchType === 'perfect' && doppelmatchAvailable && (
+              <Box>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={matchboxForm.isDoppelmatch === true}
+                      onChange={(e) => setMatchboxForm({
+                        ...matchboxForm,
+                        isDoppelmatch: e.target.checked,
+                        doppelmatchPartner: e.target.checked ? matchboxForm.doppelmatchPartner : undefined
+                      })}
+                    />
+                  }
+                  label="Doppelmatch (zweite Perfect-Match-Partner*in)"
+                />
+                {matchboxForm.isDoppelmatch && (
+                  <FormControl fullWidth sx={{ mt: 1 }}>
+                    <InputLabel>Zweite Partner*in</InputLabel>
+                    <Select
+                      value={matchboxForm.doppelmatchPartner || ''}
+                      label="Zweite Partner*in"
+                      onChange={(e) => setMatchboxForm({...matchboxForm, doppelmatchPartner: e.target.value})}
+                    >
+                      {doppelmatchCandidates.map(person => (
+                        <MenuItem key={person.id} value={person.name || ''}>
+                          {person.name || 'Unbekannt'}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              </Box>
+            )}
 
             {matchboxForm.matchType === 'sold' && (
               <>

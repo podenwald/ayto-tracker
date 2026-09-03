@@ -156,9 +156,11 @@ export class MatchboxService {
   }
 
   /**
-   * Validiert Matchbox-Daten
+   * Validiert Matchbox-Daten.
+   * `existingMatchboxes` (Staffel-Matchboxes) + `excludeId` (beim Bearbeiten) werden
+   * nur für die Doppelmatch-Prüfung ("max. 1 pro Staffel") gebraucht.
    */
-  static validateMatchbox(matchbox: Partial<Matchbox>): string[] {
+  static validateMatchbox(matchbox: Partial<Matchbox>, existingMatchboxes: Matchbox[] = [], excludeId?: number): string[] {
     const errors: string[] = []
 
     if (!matchbox.woman?.trim()) {
@@ -179,6 +181,16 @@ export class MatchboxService {
       }
       if (!matchbox.buyer?.trim()) {
         errors.push('Käufer ist für verkaufte Matchboxes erforderlich')
+      }
+    }
+
+    if (matchbox.isDoppelmatch) {
+      if (!matchbox.doppelmatchPartner?.trim()) {
+        errors.push('Zweite Partner*in ist für ein Doppelmatch erforderlich')
+      }
+      const alreadyHasDoppelmatch = existingMatchboxes.some(mb => mb.id !== excludeId && mb.isDoppelmatch)
+      if (alreadyHasDoppelmatch) {
+        errors.push('Es ist bereits ein Doppelmatch für diese Staffel erfasst')
       }
     }
 

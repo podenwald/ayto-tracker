@@ -13,6 +13,7 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
+  Checkbox,
   Chip,
   Avatar,
   IconButton,
@@ -72,7 +73,7 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import { VERSION_INFO } from '@/utils/version'
 import BroadcastManagement from './BroadcastManagement'
 import { DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
-import { getConfirmedPerfectMatchNames } from '@/utils/matchStatus'
+import { getConfirmedPerfectMatchNames, getSmallerGender } from '@/utils/matchStatus'
 import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
 import { MatchboxService } from '@/services/matchboxService'
@@ -813,7 +814,9 @@ const MatchboxManagement: React.FC<{
     price: undefined,
     buyer: undefined,
     ausstrahlungsdatum: undefined,
-    ausstrahlungszeit: undefined
+    ausstrahlungszeit: undefined,
+    isDoppelmatch: false,
+    doppelmatchPartner: undefined
   })
   const [showDialog, setShowDialog] = useState(false)
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -825,13 +828,18 @@ const MatchboxManagement: React.FC<{
   const women = participants.filter(p => p.gender === 'F')
   const men = participants.filter(p => p.gender === 'M')
   
-  // Get available participants (excluding perfect matches for new matchboxes)
-  const availableWomen = editingMatchbox ? women : women.filter(woman => 
-    !matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === woman.name)
-  )
-  const availableMen = editingMatchbox ? men : men.filter(man => 
-    !matchboxes.some(mb => mb.matchType === 'perfect' && mb.man === man.name)
-  )
+  // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in, für neue Matchboxes)
+  const confirmedPerfectMatchNames = getConfirmedPerfectMatchNames(matchboxes)
+  const availableWomen = editingMatchbox ? women : women.filter(woman => !confirmedPerfectMatchNames.has(woman.name))
+  const availableMen = editingMatchbox ? men : men.filter(man => !confirmedPerfectMatchNames.has(man.name))
+
+  // Doppelmatch: nur möglich, wenn die Geschlechterzahl ungleich ist, und nur 1x pro Staffel
+  const smallerGender = getSmallerGender(participants)
+  const hasDoppelmatchElsewhere = matchboxes.some(mb => mb.isDoppelmatch && mb.id !== editingMatchbox?.id)
+  const doppelmatchAvailable = smallerGender !== null && !hasDoppelmatchElsewhere
+  // Zweite Partner*in kommt aus dem zahlenmäßig größeren Geschlecht
+  const doppelmatchCandidates = (smallerGender === 'F' ? availableMen : availableWomen)
+    .filter(p => p.name !== matchboxForm.woman && p.name !== matchboxForm.man)
 
   const perfectMatches = matchboxes.filter(mb => mb.matchType === 'perfect').length
   const noMatches = matchboxes.filter(mb => mb.matchType === 'no-match').length
@@ -848,7 +856,9 @@ const MatchboxManagement: React.FC<{
       price: undefined,
       buyer: undefined,
       ausstrahlungsdatum: undefined,
-      ausstrahlungszeit: undefined
+      ausstrahlungszeit: undefined,
+      isDoppelmatch: false,
+      doppelmatchPartner: undefined
     })
     setEditingMatchbox(undefined)
     setShowDialog(false)
@@ -863,14 +873,16 @@ const MatchboxManagement: React.FC<{
       price: matchbox.price,
       buyer: matchbox.buyer,
       ausstrahlungsdatum: matchbox.ausstrahlungsdatum,
-      ausstrahlungszeit: matchbox.ausstrahlungszeit
+      ausstrahlungszeit: matchbox.ausstrahlungszeit,
+      isDoppelmatch: matchbox.isDoppelmatch,
+      doppelmatchPartner: matchbox.doppelmatchPartner
     })
     setShowDialog(true)
   }
 
   const saveMatchbox = async () => {
     try {
-      const validationErrors = MatchboxService.validateMatchbox(matchboxForm)
+      const validationErrors = MatchboxService.validateMatchbox(matchboxForm, matchboxes, editingMatchbox?.id)
       if (validationErrors.length > 0) {
         setSnackbar({ open: true, message: validationErrors[0], severity: 'error' })
         return
@@ -1123,6 +1135,40 @@ const MatchboxManagement: React.FC<{
             <Alert severity="info" icon={<ScheduleIcon />}>
               Die Ausstrahlungszeiten werden zentral über den <strong>Ausstrahlungsplan</strong> verwaltet.
             </Alert>
+
+            {matchboxForm.matchType === 'perfect' && doppelmatchAvailable && (
+              <Box>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={matchboxForm.isDoppelmatch === true}
+                      onChange={(e) => setMatchboxForm({
+                        ...matchboxForm,
+                        isDoppelmatch: e.target.checked,
+                        doppelmatchPartner: e.target.checked ? matchboxForm.doppelmatchPartner : undefined
+                      })}
+                    />
+                  }
+                  label="Doppelmatch (zweite Perfect-Match-Partner*in)"
+                />
+                {matchboxForm.isDoppelmatch && (
+                  <FormControl fullWidth sx={{ mt: 1 }}>
+                    <InputLabel>Zweite Partner*in</InputLabel>
+                    <Select
+                      value={matchboxForm.doppelmatchPartner || ''}
+                      label="Zweite Partner*in"
+                      onChange={(e) => setMatchboxForm({...matchboxForm, doppelmatchPartner: e.target.value})}
+                    >
+                      {doppelmatchCandidates.map(person => (
+                        <MenuItem key={person.id} value={person.name || ''}>
+                          {person.name || 'Unbekannt'}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              </Box>
+            )}
 
             {matchboxForm.matchType === 'sold' && (
               <Box sx={{ 

@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.7.0] - 2026-09-03
+- Der aktuelle Stand der Staffel (Kandidat*innen, Matching Nights, Matchboxes) ist jetzt auf neuen Geräten direkt vollständig verfügbar, ohne dass du alles von Hand nachtragen musst
+
+---
+
 ## [1.6.0] - 2026-09-03
 - Neu: Wenn die Anzahl Frauen und Männer nicht gleich ist, kann jetzt eine Person zwei Perfect Matches gleichzeitig haben (Doppelmatch) – bei der Matchbox-Eingabe gibt es dafür jetzt ein Häkchen
 

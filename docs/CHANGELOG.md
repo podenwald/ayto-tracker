@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0] - 2026-09-03
+
+### 📊 Daten
+- `ayto-rsil-2026.json` von einer reinen Teilnehmer*innen-Liste auf das volle Bundle-Format (`participants`, `matchingNights`, `matchboxes`, `penalties`) umgestellt und mit dem aktuellen Live-Stand befüllt (3 Matching Nights, 4 Matchboxes inkl. 1 bestätigtem Perfect Match). Neue Installationen/Geräte laden damit automatisch den vollständigen aktuellen Stand statt nur der Kandidat*innen-Liste
+- Hinweis: Bereits bestehende lokale Installationen mit vorhandenen Daten für diese Staffel übernehmen den neuen Stand nicht automatisch (schreibbare Staffeln werden beim Erstimport nicht überschrieben, um Nutzerdaten zu schützen) — betrifft nur Neuinstallationen/leere Geräte
+
+---
+
 ## [1.6.0] - 2026-09-03
 
 ### ✨ Neue Funktionen

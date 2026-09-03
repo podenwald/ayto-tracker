@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.6.0] - 2026-09-03
+- Neu: Wenn die Anzahl Frauen und Männer nicht gleich ist, kann jetzt eine Person zwei Perfect Matches gleichzeitig haben (Doppelmatch) – bei der Matchbox-Eingabe gibt es dafür jetzt ein Häkchen
+
+---
+
 ## [1.5.3] - 2026-08-17
 - Neue Kandidatin Joena zum Cast hinzugefügt
 - "Staffel wählen" zeigte noch den alten Titel "Upcomming" an – zeigt jetzt überall korrekt "Live"

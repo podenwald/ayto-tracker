@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.6.0] - 2026-09-03
+
+### ✨ Neue Funktionen
+- Doppelmatch bei ungleicher Geschlechterzahl: Bei ungleicher Kandidat*innen-Zahl (aktuell real 11 Frauen / 10 Männer) kann eine Person des zahlenmäßig kleineren Geschlechts zwei Perfect-Match-Partner*innen haben. Neues Häkchen + Auswahl der zweiten Partner*in in beiden Matchbox-Formularen (Admin + Live-Tracker), nur sichtbar bei Perfect Match und ungleicher Geschlechterzahl, max. 1 pro Staffel. Beide Personen gelten danach als nicht mehr Teil der Show, Status wird beim Bearbeiten/Löschen korrekt zurückgesetzt (ODI-330)
+
+### 🐛 Bugfixes
+- Bereits als Doppelmatch-Partner*in vergebene Personen blieben in der Kandidat*innen-Auswahl für weitere Matchboxes fälschlich als "verfügbar" gelistet
+
+---
+
 ## [1.5.3] - 2026-08-17
 
 ### 🐛 Bugfixes

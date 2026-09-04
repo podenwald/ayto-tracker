@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.2] - 2026-09-04
+
+### 🐛 Bugfixes (kritisch)
+- Nach einem Staffelwechsel konnten Teilnehmer*innen einer anderen Staffel komplett verschwinden (nicht nur ein Anzeige-Fehler): `importJsonBundleForSeason()` übernahm die `id` aus der Katalog-JSON-Datei 1:1 als Dexie-Primärschlüssel. Da alle Staffeln sich denselben ID-Raum je Tabelle teilen (nur über `seasonId` unterschieden), überschrieb `bulkPut` beim Import einer Staffel mit kollidierenden IDs die Datensätze einer anderen Staffel in-place. Konkret: `ayto-rsil-2025.json` (Teilnehmer*innen-IDs 87–108) überlappte vollständig mit der Live-Staffel (87–107); `ayto-2026.json` und `ayto-rsil-2025.json` überlappten zusätzlich bei Matchboxes und Matching Nights. Sofortmaßnahme: alle drei Katalog-Dateien auf garantiert disjunkte ID-Bereiche je Entität umnummeriert (Live-Staffel unverändert, da aktiv bearbeitet). Root-Cause-Fix (IDs beim Import grundsätzlich verwerfen statt aus der JSON zu übernehmen) folgt nach der Staffel als separates Ticket, da er die "Jetzt aktualisieren"-Merge-Logik (ODI-331) berührt (ODI-287)
+
+---
+
 ## [1.8.1] - 2026-09-04
 
 ### 🐛 Bugfixes

@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.8.2] - 2026-09-04
+- Wichtiger Fehler behoben: Beim Wechseln zwischen Staffeln konnten in seltenen Fällen Kandidat*innen einer anderen Staffel verschwinden. Das passiert jetzt nicht mehr
+
+---
+
 ## [1.8.1] - 2026-09-04
 - Wichtiger Fehler behoben: Ein Doppelmatch ging beim Exportieren bzw. beim Anwenden eines Datenbank-Updates verloren. Das betraf konkret Marta & Johannes mit Zoe als zweiter Partnerin. Der Doppelmatch-Status ist jetzt wieder korrekt hinterlegt und bleibt zukünftig erhalten
 

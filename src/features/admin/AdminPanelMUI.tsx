@@ -74,6 +74,7 @@ import { VERSION_INFO } from '@/utils/version'
 import BroadcastManagement from './BroadcastManagement'
 import { DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
 import { getConfirmedPerfectMatchNames, getSmallerGender, getAvailableParticipants } from '@/utils/matchStatus'
+import { calculateBudget } from '@/utils/budget'
 import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
 import { MatchboxService } from '@/services/matchboxService'
@@ -1385,74 +1386,13 @@ const MatchingNightManagement: React.FC<{
   const saveMatchingNight = async () => {
     try {
       const isSold = matchingNightForm.matchType === 'sold'
-
-      if (isSold) {
-        if (matchingNightForm.price === undefined || matchingNightForm.price === null || (typeof matchingNightForm.price === 'number' && isNaN(matchingNightForm.price))) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matching Nights muss ein Betrag angegeben werden (Plus = Einnahme, Minus = Ausgabe)!', severity: 'error' })
-          return
-        }
-        if (!matchingNightForm.buyer?.trim()) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matching Nights muss ein Käufer angegeben werden!', severity: 'error' })
-          return
-        }
-      } else {
-        if (matchingNightForm.totalLights > 10) {
-          setSnackbar({ open: true, message: 'Maximum 10 Lichter erlaubt!', severity: 'error' })
-          return
-        }
-      }
-
-      // Validierung: Alle 10 Paare müssen vollständig sein
       const completePairs = matchingNightForm.pairs.filter(pair => pair && pair.woman && pair.man)
-      
-      if (completePairs.length !== 10) {
-        setSnackbar({ 
-          open: true, 
-          message: `Alle 10 Pärchen müssen vollständig sein! Aktuell: ${completePairs.length}/10 vollständig`, 
-          severity: 'error' 
-        })
+
+      // Gemeinsame Validierung mit der Übersicht (ODI-274)
+      const validationError = MatchingNightService.validateMatchingNightForm(matchingNightForm, participants, matchboxes)
+      if (validationError) {
+        setSnackbar({ open: true, message: validationError, severity: 'error' })
         return
-      }
-
-      // Validierung: Geschlechts-Konflikte prüfen
-      const genderConflicts = completePairs.filter(pair => {
-        const womanParticipant = participants.find(p => p.name === pair.woman)
-        const manParticipant = participants.find(p => p.name === pair.man)
-        return womanParticipant && manParticipant && womanParticipant.gender === manParticipant.gender
-      })
-
-      if (genderConflicts.length > 0) {
-        setSnackbar({ 
-          open: true, 
-          message: `Geschlechts-Konflikt gefunden! Jedes Paar muss aus einem Mann und einer Frau bestehen.`, 
-          severity: 'error' 
-        })
-        return
-      }
-
-      if (!isSold) {
-        // Validierung: Gesamtlichter dürfen nicht weniger als Perfect Match Lichter sein
-        const tempMatchingNight: MatchingNight = {
-          id: 0,
-          seasonId: 0,
-          name: 'temp',
-          date: new Date().toISOString().split('T')[0],
-          pairs: [],
-          createdAt: new Date()
-        }
-        const validPerfectMatches = getValidPerfectMatchesForMatchingNight(matchboxes, tempMatchingNight)
-        const perfectMatchLights = completePairs.filter(pair => 
-          validPerfectMatches.some(pm => pm.woman === pair.woman && pm.man === pair.man)
-        ).length
-
-        if (matchingNightForm.totalLights < perfectMatchLights) {
-          setSnackbar({ 
-            open: true, 
-            message: `Gesamtlichter (${matchingNightForm.totalLights}) dürfen nicht weniger als sichere Lichter (${perfectMatchLights}) sein!`, 
-            severity: 'error' 
-          })
-          return
-        }
       }
 
       if (editingMatchingNight) {
@@ -2759,19 +2699,15 @@ Alle Daten gehen unwiderruflich verloren!`)
     }
   }
 
-  // ** Budget Calculations **
-  // Verkäufe: Plus = zum Budget hinzu, Minus = vom Budget ab (Matchbox + Matching Night)
+  // ** Budget Calculations ** (ODI-272)
   const soldMatchboxes = matchboxes.filter(mb => mb.matchType === 'sold' && typeof mb.price === 'number')
   const soldMatchingNights = matchingNights.filter(mn => mn.matchType === 'sold' && typeof mn.price === 'number')
-  const totalVerkauf = soldMatchboxes.reduce((sum, mb) => sum + (mb.price || 0), 0) + soldMatchingNights.reduce((sum, mn) => sum + (mn.price ?? 0), 0)
-  // Separate penalties (negative amounts) and credits (positive amounts)
-  const totalPenalties = penalties.reduce((sum, penalty) => {
-    return penalty.amount < 0 ? sum + Math.abs(penalty.amount) : sum
-  }, 0)
-  const totalCredits = penalties.reduce((sum, penalty) => {
-    return penalty.amount > 0 ? sum + penalty.amount : sum
-  }, 0)
-  const currentBalance = budgetSettings.startingBudget + totalVerkauf - totalPenalties + totalCredits
+  const { totalVerkauf, totalPenalties, totalCredits, currentBalance } = calculateBudget(
+    matchboxes,
+    matchingNights,
+    penalties,
+    budgetSettings.startingBudget
+  )
 
 
   const exportItems = [

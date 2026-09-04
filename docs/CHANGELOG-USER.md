@@ -8,6 +8,7 @@ Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert ha
 - Neu: Matching Nights können jetzt auch direkt im Admin-Bereich angelegt werden, nicht mehr nur im Live-Tracker
 - Die Prüfung auf gültige Frau/Mann-Zuordnung beim Speichern einer Matching Night griff bisher nur im Live-Tracker, jetzt auch im Admin-Bereich
 - Code-Qualität im Hintergrund verbessert (Budget-Berechnung vereinheitlicht) – für dich als Nutzer*in ändert sich dabei nichts sichtbar
+- Wichtiger Fehler behoben: Der "Kompletter Browser-Reset" im Admin-Bereich löschte bisher auch deine selbst eingetragene Lösung ("Deine Lösung"). Das passiert jetzt nicht mehr
 
 ---
 

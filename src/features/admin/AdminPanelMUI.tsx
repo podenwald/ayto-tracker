@@ -2424,8 +2424,8 @@ const SettingsManagement: React.FC<{
             )
           }
           
-          // Local Storage löschen (außer Datenbank)
-          const keysToKeep = ['dexie-database-version', 'dexie-database-schema']
+          // Local Storage löschen (außer Datenbank und der selbst erarbeiteten Lösung)
+          const keysToKeep = ['dexie-database-version', 'dexie-database-schema', 'userSolution']
           const allKeys = Object.keys(localStorage)
           allKeys.forEach(key => {
             if (!keysToKeep.some(keepKey => key.includes(keepKey))) {

@@ -8,6 +8,7 @@
 - `hasConfirmedPerfectMatch`/`getPerfectMatchPartner` in `OverviewMUI.tsx` implementierten die Ausstrahlungszeit-Filterung für Perfect Matches eigenständig erneut, statt den bereits vorhandenen `getValidPerfectMatchesBeforeDateTime()`-Helper zu nutzen (ODI-273)
 - Die Matching-Night-Validierung in Admin und Übersicht war unabhängig implementiert: Die "KRITISCH" markierte Geschlechts-Platzierungsprüfung existierte nur in der Übersicht, nicht in Admin, das dadurch ungültige Paare akzeptieren konnte. Neuer gemeinsamer `MatchingNightService.validateMatchingNightForm()`, den beide Formulare jetzt nutzen (ODI-274)
 - Die Budget-/Saldo-Berechnung (Startbudget + Verkäufe − Strafen + Gutschriften) war in Admin und Übersicht unabhängig dupliziert, mit Divergenz-Risiko bei künftigen Änderungen. Neuer gemeinsamer Helper `calculateBudget()` in `utils/budget.ts`, den beide Oberflächen jetzt nutzen; der ungenutzte `PenaltyService.getTotalPenalties()` wurde entfernt (ODI-272)
+- Der "Kompletter Browser-Reset" in Admin (`clearCache()`) löschte auch die selbst erarbeitete Lösung ("Deine Lösung", `localStorage`-Key `userSolution`), obwohl die Datenbank laut Hinweistext unverändert bleiben sollte. `userSolution` ist jetzt Teil der beim Reset erhaltenen Keys
 
 ### ✨ Neue Funktionen
 - Admin-Bereich: Matching Nights können jetzt auch direkt im Admin-Panel neu angelegt werden ("Neue Matching Night"), nicht mehr nur im Live-Tracker (ODI-288)

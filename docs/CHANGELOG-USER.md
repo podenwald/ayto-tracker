@@ -9,6 +9,7 @@ Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert ha
 - Die Prüfung auf gültige Frau/Mann-Zuordnung beim Speichern einer Matching Night griff bisher nur im Live-Tracker, jetzt auch im Admin-Bereich
 - Code-Qualität im Hintergrund verbessert (Budget-Berechnung vereinheitlicht) – für dich als Nutzer*in ändert sich dabei nichts sichtbar
 - Wichtiger Fehler behoben: Der "Kompletter Browser-Reset" im Admin-Bereich löschte bisher auch deine selbst eingetragene Lösung ("Deine Lösung"). Das passiert jetzt nicht mehr
+- Aktueller Stand der Staffel aktualisiert (Zoe ist raus)
 
 ---
 

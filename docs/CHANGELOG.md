@@ -13,6 +13,9 @@
 ### ✨ Neue Funktionen
 - Admin-Bereich: Matching Nights können jetzt auch direkt im Admin-Panel neu angelegt werden ("Neue Matching Night"), nicht mehr nur im Live-Tracker (ODI-288)
 
+### 📊 Daten
+- Aktueller Stand der Staffel aus der Produktion übernommen: Zoe als nicht mehr aktiv markiert; Zeitstempel der Perfect-Match-Matchbox (Marta & Johannes) aktualisiert
+
 ---
 
 ## [1.7.0] - 2026-09-03

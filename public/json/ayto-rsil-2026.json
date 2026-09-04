@@ -133,7 +133,7 @@
       "knownFrom": "Forsthaus Rampensau, Match in Paradise",
       "age": 21,
       "status": "Aktiv",
-      "active": true,
+      "active": false,
       "photoUrl": "",
       "bio": "Reality-Format Teilnehmerin aus Österreich",
       "gender": "F",
@@ -402,7 +402,7 @@
       "ausstrahlungsdatum": "2026-09-02",
       "ausstrahlungszeit": "20:15",
       "createdAt": "2026-09-02T20:44:26.748Z",
-      "updatedAt": "2026-09-02T20:44:26.748Z"
+      "updatedAt": "2026-09-04T11:11:59.406Z"
     }
   ],
   "penalties": []

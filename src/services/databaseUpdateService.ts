@@ -332,7 +332,9 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
         createdAt: new Date(m.createdAt),
         updatedAt: new Date(m.updatedAt),
         ausstrahlungsdatum: m.ausstrahlungsdatum,
-        ausstrahlungszeit: m.ausstrahlungszeit
+        ausstrahlungszeit: m.ausstrahlungszeit,
+        isDoppelmatch: m.isDoppelmatch,
+        doppelmatchPartner: m.doppelmatchPartner
       })
 
       const mapPenalty = (p: PenaltyDTO): Penalty => ({

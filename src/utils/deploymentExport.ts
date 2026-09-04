@@ -51,6 +51,8 @@ export interface DeploymentMatchboxExport {
   ausstrahlungszeit?: string
   createdAt: Date
   updatedAt: Date
+  isDoppelmatch?: boolean
+  doppelmatchPartner?: string
 }
 
 export interface DeploymentExportData {
@@ -110,7 +112,9 @@ export function buildDeploymentExport(input: DeploymentExportInput): DeploymentE
     ausstrahlungsdatum: m.ausstrahlungsdatum,
     ausstrahlungszeit: m.ausstrahlungszeit,
     createdAt: m.createdAt,
-    updatedAt: m.updatedAt
+    updatedAt: m.updatedAt,
+    isDoppelmatch: m.isDoppelmatch,
+    doppelmatchPartner: m.doppelmatchPartner
   }))
 
   const invalidMatchingNights = matchingNightsData.filter(

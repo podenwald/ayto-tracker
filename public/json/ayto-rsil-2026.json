@@ -402,7 +402,9 @@
       "ausstrahlungsdatum": "2026-09-02",
       "ausstrahlungszeit": "20:15",
       "createdAt": "2026-09-02T20:44:26.748Z",
-      "updatedAt": "2026-09-04T11:11:59.406Z"
+      "updatedAt": "2026-09-04T11:11:59.406Z",
+      "isDoppelmatch": true,
+      "doppelmatchPartner": "Zoe"
     }
   ],
   "penalties": []

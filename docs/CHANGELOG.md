@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1] - 2026-09-04
+
+### 🐛 Bugfixes
+- Doppelmatch-Informationen (`isDoppelmatch`/`doppelmatchPartner`) gingen beim "Komplettexport" (`utils/deploymentExport.ts`) und beim Anwenden eines Datenbank-Updates (`mapMatchbox()` in `databaseUpdateService.ts`) verloren, weil beide Stellen Matchbox-Objekte per explizitem Feld-Mapping statt per Object-Spread aufgebaut haben. Betroffen war konkret die Doppelmatch-Partnerschaft Marta & Johannes + Zoe, die nach Cache-Löschen/Neuladen verschwand. Beide Mapping-Stellen ergänzt; veröffentlichte Staffel-Daten korrigiert (ODI-335)
+
+---
+
 ## [1.8.0] - 2026-09-04
 
 ### 🐛 Bugfixes

@@ -55,14 +55,15 @@ import ThemeProvider from '@/theme/ThemeProvider'
 import { type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
 import {
   isPairConfirmedAsPerfectMatch,
-  getMatchboxBroadcastDateTime
+  getValidPerfectMatchesBeforeDateTime
 } from '@/utils/broadcastUtils'
 import { useProbabilityCalculation } from '@/hooks/useProbabilityCalculation'
 import { MatchboxService } from '@/services/matchboxService'
 import { MatchingNightService } from '@/services/matchingNightService'
 import { ParticipantService } from '@/services/participantService'
 import { PenaltyService } from '@/services/penaltyService'
-import { getConfirmedPerfectMatchNames, getSmallerGender } from '@/utils/matchStatus'
+import { getConfirmedPerfectMatchNames, getSmallerGender, getAvailableParticipants } from '@/utils/matchStatus'
+import { calculateBudget } from '@/utils/budget'
 import ParticipantsView from '@/components/ParticipantsView'
 import UpdateInfoBox from '@/components/UpdateInfoBox'
 import SeasonFinaleDialog from '@/components/SeasonFinaleDialog'
@@ -251,7 +252,9 @@ const ParticipantCard: React.FC<{
   const initials = participant.name?.charAt(0)?.toUpperCase() || '?'
   const genderColor = participant.gender === 'F' ? 'secondary.main' : 'primary.main'
 
-  const isActive = participant.active !== false
+  // Status-Punkt folgt derselben Quelle wie die Ausgrauung (isPlaced), nicht dem
+  // ggf. veralteten participant.active-Feld (ODI-289).
+  const isActive = !isPlaced
 
   // Tooltip content as simple text
   const tooltipLines = [
@@ -460,25 +463,10 @@ const MatchingNightCard: React.FC<{
 const calculateStatistics = (matchboxes: Matchbox[], matchingNights: MatchingNight[], penalties: Penalty[]) => {
   const perfectMatches = matchboxes.filter(mb => mb.matchType === 'perfect')
   
-  // Calculate penalties and credits
-  const totalPenalties = penalties
-    .filter(penalty => penalty.amount < 0)
-    .reduce((sum, penalty) => sum + Math.abs(penalty.amount), 0)
-  const totalCredits = penalties
-    .filter(penalty => penalty.amount > 0)
-    .reduce((sum, penalty) => sum + penalty.amount, 0)
-  
-  // Get starting budget
-  const getStartingBudget = () => {
-    const savedBudget = localStorage.getItem('ayto-starting-budget')
-    return savedBudget ? parseInt(savedBudget, 10) : 200000
-  }
-  const startingBudget = getStartingBudget()
-  // Verkäufe: Pluswert = zum Budget hinzu, Minuswert = vom Budget ab
-  const soldMatchboxes = matchboxes.filter(mb => mb.matchType === 'sold' && typeof mb.price === 'number')
-  const soldMatchingNights = matchingNights.filter(mn => mn.matchType === 'sold' && typeof mn.price === 'number')
-  const totalVerkauf = soldMatchboxes.reduce((sum, mb) => sum + (mb.price ?? 0), 0) + soldMatchingNights.reduce((sum, mn) => sum + (mn.price ?? 0), 0)
-  const currentBalance = startingBudget + totalVerkauf - totalPenalties + totalCredits
+  // Gemeinsame Budget-/Saldo-Berechnung mit dem Admin-Bereich (ODI-272)
+  const savedBudget = localStorage.getItem('ayto-starting-budget')
+  const startingBudget = savedBudget ? parseInt(savedBudget, 10) : 200000
+  const { currentBalance } = calculateBudget(matchboxes, matchingNights, penalties, startingBudget)
 
   // Get latest matching night lights (nur Nights mit Lichter-Info, keine verkauften)
   const matchingNightsWithLights = matchingNights.filter(mn => mn.matchType !== 'sold' && mn.totalLights !== undefined)
@@ -745,10 +733,9 @@ const OverviewMUI: React.FC = () => {
     (p.status === 'Aktiv' || p.status === 'aktiv' || p.status === 'Perfekt Match')
   )
   
-  // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in, für neue Matchboxes)
-  const confirmedPerfectMatchNames = getConfirmedPerfectMatchNames(matchboxes)
-  const availableWomen = women.filter(woman => !confirmedPerfectMatchNames.has(woman.name))
-  const availableMen = men.filter(man => !confirmedPerfectMatchNames.has(man.name))
+  // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in) (ODI-271)
+  const availableWomen = getAvailableParticipants(women, matchboxes)
+  const availableMen = getAvailableParticipants(men, matchboxes)
 
   // Doppelmatch: nur möglich, wenn die Geschlechterzahl ungleich ist, und nur 1x pro Staffel
   const smallerGender = getSmallerGender(participants)
@@ -761,52 +748,20 @@ const OverviewMUI: React.FC = () => {
   // Get pair probabilities from calculation result or use empty matrix
   const pairProbabilities: Record<string, Record<string, number>> = probabilityResult?.probabilityMatrix || {}
   
-  // Helper: Check if participant has a perfect match (nur ausgestrahlte Matchboxes)
+  // Helper: Check if participant has a perfect match (nur ausgestrahlte Matchboxes, ODI-273)
   const hasConfirmedPerfectMatch = (participantName: string, gender: 'M' | 'F') => {
-    const now = new Date()
-    return matchboxes.some(mb => {
-      // Nur Perfect Matches berücksichtigen
-      if (mb.matchType !== 'perfect') return false
-      
-      // Nur wenn die richtige Person betroffen ist
-      const isCorrectParticipant = gender === 'F' ? mb.woman === participantName : mb.man === participantName
-      if (!isCorrectParticipant) return false
-      
-      // Nur Matchboxes mit gültigen Ausstrahlungsdaten berücksichtigen
-      if (!mb.ausstrahlungsdatum || !mb.ausstrahlungszeit) return false
-      
-      // Prüfe, ob bereits ausgestrahlt
-      try {
-        const broadcastDate = getMatchboxBroadcastDateTime(mb)
-        return broadcastDate <= now
-      } catch {
-        return false
-      }
-    })
+    const validPerfectMatches = getValidPerfectMatchesBeforeDateTime(matchboxes, new Date())
+    return validPerfectMatches.some(mb =>
+      gender === 'F' ? mb.woman === participantName : mb.man === participantName
+    )
   }
-  
-  // Helper: Get perfect match partner name (nur ausgestrahlte Matchboxes)
+
+  // Helper: Get perfect match partner name (nur ausgestrahlte Matchboxes, ODI-273)
   const getPerfectMatchPartner = (participantName: string, gender: 'M' | 'F'): string | null => {
-    const now = new Date()
-    const match = matchboxes.find(mb => {
-      // Nur Perfect Matches berücksichtigen
-      if (mb.matchType !== 'perfect') return false
-      
-      // Nur wenn die richtige Person betroffen ist
-      const isCorrectParticipant = gender === 'F' ? mb.woman === participantName : mb.man === participantName
-      if (!isCorrectParticipant) return false
-      
-      // Nur Matchboxes mit gültigen Ausstrahlungsdaten berücksichtigen
-      if (!mb.ausstrahlungsdatum || !mb.ausstrahlungszeit) return false
-      
-      // Prüfe, ob bereits ausgestrahlt
-      try {
-        const broadcastDate = getMatchboxBroadcastDateTime(mb)
-        return broadcastDate <= now
-      } catch {
-        return false
-      }
-    })
+    const validPerfectMatches = getValidPerfectMatchesBeforeDateTime(matchboxes, new Date())
+    const match = validPerfectMatches.find(mb =>
+      gender === 'F' ? mb.woman === participantName : mb.man === participantName
+    )
     return match ? (gender === 'F' ? match.man : match.woman) : null
   }
 
@@ -892,98 +847,12 @@ const OverviewMUI: React.FC = () => {
   const saveMatchingNight = async () => {
     try {
       const isSold = matchingNightForm.matchType === 'sold'
-
-      if (isSold) {
-        if (matchingNightForm.price === undefined || matchingNightForm.price === null || (typeof matchingNightForm.price === 'number' && isNaN(matchingNightForm.price))) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matching Nights muss ein Betrag angegeben werden (Plus = Einnahme, Minus = Ausgabe)!', severity: 'error' })
-          return
-        }
-        if (!matchingNightForm.buyer?.trim()) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matching Nights muss ein Käufer angegeben werden!', severity: 'error' })
-          return
-        }
-      } else {
-        if (matchingNightForm.totalLights > 10) {
-          setSnackbar({ open: true, message: 'Maximum 10 Lichter erlaubt!', severity: 'error' })
-          return
-        }
-      }
-
-      // Check if all 10 pairs are complete
       const completePairs = matchingNightForm.pairs.filter(pair => pair && pair.woman && pair.man)
-      
-      // KRITISCH: Validiere, dass im 'woman' Feld nur Frauen und im 'man' Feld nur Männer sind
-      const invalidGenderPlacements = completePairs.filter(pair => {
-        const womanParticipant = participants.find(p => p.name === pair.woman)
-        const manParticipant = participants.find(p => p.name === pair.man)
-        
-        // Prüfe, ob im 'woman' Feld wirklich eine Frau ist
-        if (womanParticipant && womanParticipant.gender !== 'F') {
-          return true
-        }
-        // Prüfe, ob im 'man' Feld wirklich ein Mann ist
-        if (manParticipant && manParticipant.gender !== 'M') {
-          return true
-        }
-        return false
-      })
 
-      if (invalidGenderPlacements.length > 0) {
-        setSnackbar({ 
-          open: true, 
-          message: `Ungültige Platzierung gefunden! Im ersten Feld (Frau) dürfen nur Frauen und im zweiten Feld (Mann) nur Männer platziert werden.`, 
-          severity: 'error' 
-        })
-        return
-      }
-      
-      // Check for gender conflicts in complete pairs (beide haben gleiches Geschlecht)
-      const genderConflicts = completePairs.filter(pair => {
-        const womanParticipant = participants.find(p => p.name === pair.woman)
-        const manParticipant = participants.find(p => p.name === pair.man)
-        return womanParticipant && manParticipant && womanParticipant.gender === manParticipant.gender
-      })
-
-      if (genderConflicts.length > 0) {
-        setSnackbar({ 
-          open: true, 
-          message: `Geschlechts-Konflikt gefunden! Jedes Paar muss aus einem Mann und einer Frau bestehen.`, 
-          severity: 'error' 
-        })
-        return
-      }
-
-      if (!isSold) {
-        // Check if total lights is at least as many as Perfect Match lights
-        // Only count Perfect Matches that were aired BEFORE this matching night
-        const currentMatchingNightDate = new Date()
-        const perfectMatchLights = completePairs.filter(pair => 
-          matchboxes.some(mb => {
-            if (mb.matchType !== 'perfect' || mb.woman !== pair.woman || mb.man !== pair.man) {
-              return false
-            }
-            
-            // Use centralized broadcast utility
-            return getMatchboxBroadcastDateTime(mb).getTime() < currentMatchingNightDate.getTime()
-          })
-        ).length
-
-        if (matchingNightForm.totalLights < perfectMatchLights) {
-          setSnackbar({ 
-            open: true, 
-            message: `Gesamtlichter (${matchingNightForm.totalLights}) dürfen nicht weniger als sichere Lichter (${perfectMatchLights}) sein!`, 
-            severity: 'error' 
-          })
-          return
-        }
-      }
-      
-      if (completePairs.length !== 10) {
-        setSnackbar({ 
-          open: true, 
-          message: `Alle 10 Pärchen müssen vollständig sein! Aktuell: ${completePairs.length}/10 vollständig`, 
-          severity: 'error' 
-        })
+      // Gemeinsame Validierung mit dem Admin-Bereich (ODI-274)
+      const validationError = MatchingNightService.validateMatchingNightForm(matchingNightForm, participants, matchboxes)
+      if (validationError) {
+        setSnackbar({ open: true, message: validationError, severity: 'error' })
         return
       }
 

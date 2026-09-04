@@ -2,6 +2,17 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.8.0] - 2026-09-04
+- Beim Bearbeiten einer Matchbox werden jetzt korrekt nur noch tatsächlich verfügbare Kandidat*innen zur Auswahl angezeigt
+- Der Status "aktiv" bzw. "Perfect Match gefunden" wird in der Übersicht jetzt überall einheitlich angezeigt
+- Neu: Matching Nights können jetzt auch direkt im Admin-Bereich angelegt werden, nicht mehr nur im Live-Tracker
+- Die Prüfung auf gültige Frau/Mann-Zuordnung beim Speichern einer Matching Night griff bisher nur im Live-Tracker, jetzt auch im Admin-Bereich
+- Code-Qualität im Hintergrund verbessert (Budget-Berechnung vereinheitlicht) – für dich als Nutzer*in ändert sich dabei nichts sichtbar
+- Wichtiger Fehler behoben: Der "Kompletter Browser-Reset" im Admin-Bereich löschte bisher auch deine selbst eingetragene Lösung ("Deine Lösung"). Das passiert jetzt nicht mehr
+- Aktueller Stand der Staffel aktualisiert (Zoe ist raus)
+
+---
+
 ## [1.7.0] - 2026-09-03
 - Wichtiger Fehler behoben: Das Bestätigen von "Jetzt aktualisieren" konnte bisher deine bereits eingetragenen Matching Nights und Matchbox-Entscheidungen löschen. Das passiert jetzt nicht mehr — ein Update ergänzt nur noch, statt zu löschen
 - Der aktuelle Stand der Staffel (Kandidat*innen, Matching Nights, Matchboxes) ist jetzt vollständig verfügbar, ohne dass du alles von Hand nachtragen musst

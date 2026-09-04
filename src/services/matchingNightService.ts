@@ -6,9 +6,23 @@
  */
 
 import { db } from '@/lib/db'
-import type { MatchingNight, MatchingNightDTO, Pair } from '@/types'
-import { createBroadcastDateTime, sortBroadcastsChronologically, ensureMatchingNightBroadcastData } from '@/utils/broadcastUtils'
+import type { Matchbox, MatchingNight, MatchingNightDTO, Pair, Participant } from '@/types'
+import {
+  createBroadcastDateTime,
+  sortBroadcastsChronologically,
+  ensureMatchingNightBroadcastData,
+  getValidPerfectMatchesForMatchingNight
+} from '@/utils/broadcastUtils'
 import { assertSeasonWritable, getActiveSeasonId } from '@/services/seasonService'
+
+/** Formulardaten des Matching-Night-Dialogs (Admin + Übersicht, ODI-274). */
+export interface MatchingNightFormInput {
+  matchType: 'normal' | 'sold'
+  totalLights: number
+  price?: number
+  buyer?: string
+  pairs: Pair[]
+}
 
 export class MatchingNightService {
   private static async sid(): Promise<number> {
@@ -133,6 +147,79 @@ export class MatchingNightService {
     }
 
     return errors
+  }
+
+  /**
+   * Validiert das Matching-Night-Formular (Admin + Übersicht, ODI-274): Betrag/Käufer
+   * bei Verkauf, vollständige Paare, korrekte Geschlechts-Platzierung, keine
+   * Geschlechts-Konflikte und Gesamtlichter >= sichere (Perfect-Match-)Lichter.
+   * Gibt bei einem Fehler dessen Meldung zurück, sonst null.
+   */
+  static validateMatchingNightForm(
+    form: MatchingNightFormInput,
+    participants: Participant[],
+    matchboxes: Matchbox[]
+  ): string | null {
+    const isSold = form.matchType === 'sold'
+
+    if (isSold) {
+      if (form.price === undefined || form.price === null || (typeof form.price === 'number' && isNaN(form.price))) {
+        return 'Bei verkauften Matching Nights muss ein Betrag angegeben werden (Plus = Einnahme, Minus = Ausgabe)!'
+      }
+      if (!form.buyer?.trim()) {
+        return 'Bei verkauften Matching Nights muss ein Käufer angegeben werden!'
+      }
+    } else if (form.totalLights > 10) {
+      return 'Maximum 10 Lichter erlaubt!'
+    }
+
+    const completePairs = form.pairs.filter(pair => pair && pair.woman && pair.man)
+
+    if (completePairs.length !== 10) {
+      return `Alle 10 Pärchen müssen vollständig sein! Aktuell: ${completePairs.length}/10 vollständig`
+    }
+
+    // KRITISCH: Nur Frauen im 'woman'-Feld und nur Männer im 'man'-Feld
+    const invalidGenderPlacements = completePairs.filter(pair => {
+      const womanParticipant = participants.find(p => p.name === pair.woman)
+      const manParticipant = participants.find(p => p.name === pair.man)
+      if (womanParticipant && womanParticipant.gender !== 'F') return true
+      if (manParticipant && manParticipant.gender !== 'M') return true
+      return false
+    })
+    if (invalidGenderPlacements.length > 0) {
+      return 'Ungültige Platzierung gefunden! Im ersten Feld (Frau) dürfen nur Frauen und im zweiten Feld (Mann) nur Männer platziert werden.'
+    }
+
+    const genderConflicts = completePairs.filter(pair => {
+      const womanParticipant = participants.find(p => p.name === pair.woman)
+      const manParticipant = participants.find(p => p.name === pair.man)
+      return womanParticipant && manParticipant && womanParticipant.gender === manParticipant.gender
+    })
+    if (genderConflicts.length > 0) {
+      return 'Geschlechts-Konflikt gefunden! Jedes Paar muss aus einem Mann und einer Frau bestehen.'
+    }
+
+    if (!isSold) {
+      const tempMatchingNight: MatchingNight = {
+        id: 0,
+        seasonId: 0,
+        name: 'temp',
+        date: new Date().toISOString().split('T')[0],
+        pairs: [],
+        createdAt: new Date()
+      }
+      const validPerfectMatches = getValidPerfectMatchesForMatchingNight(matchboxes, tempMatchingNight)
+      const perfectMatchLights = completePairs.filter(pair =>
+        validPerfectMatches.some(pm => pm.woman === pair.woman && pm.man === pair.man)
+      ).length
+
+      if (form.totalLights < perfectMatchLights) {
+        return `Gesamtlichter (${form.totalLights}) dürfen nicht weniger als sichere Lichter (${perfectMatchLights}) sein!`
+      }
+    }
+
+    return null
   }
 
   /**

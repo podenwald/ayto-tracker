@@ -138,14 +138,6 @@ export class PenaltyService {
   }
 
   /**
-   * Berechnet die Gesamtsumme aller Penalties
-   */
-  static async getTotalPenalties(): Promise<number> {
-    const penalties = await this.getAllPenalties()
-    return penalties.reduce((total, penalty) => total + penalty.amount, 0)
-  }
-
-  /**
    * Lädt Penalties nach Zeitraum
    */
   static async getPenaltiesByDateRange(startDate: string, endDate: string): Promise<Penalty[]> {

@@ -73,7 +73,8 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import { VERSION_INFO } from '@/utils/version'
 import BroadcastManagement from './BroadcastManagement'
 import { DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
-import { getConfirmedPerfectMatchNames, getSmallerGender } from '@/utils/matchStatus'
+import { getConfirmedPerfectMatchNames, getSmallerGender, getAvailableParticipants } from '@/utils/matchStatus'
+import { calculateBudget } from '@/utils/budget'
 import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
 import { MatchboxService } from '@/services/matchboxService'
@@ -828,10 +829,10 @@ const MatchboxManagement: React.FC<{
   const women = participants.filter(p => p.gender === 'F')
   const men = participants.filter(p => p.gender === 'M')
   
-  // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in, für neue Matchboxes)
-  const confirmedPerfectMatchNames = getConfirmedPerfectMatchNames(matchboxes)
-  const availableWomen = editingMatchbox ? women : women.filter(woman => !confirmedPerfectMatchNames.has(woman.name))
-  const availableMen = editingMatchbox ? men : men.filter(man => !confirmedPerfectMatchNames.has(man.name))
+  // Beim Bearbeiten bleibt das eigene Paar der Matchbox auswählbar, andere bereits
+  // vergebene Kandidat*innen (inkl. Doppelmatch-Partner*in) werden ausgeschlossen (ODI-271, ODI-286).
+  const availableWomen = getAvailableParticipants(women, matchboxes, editingMatchbox?.id)
+  const availableMen = getAvailableParticipants(men, matchboxes, editingMatchbox?.id)
 
   // Doppelmatch: nur möglich, wenn die Geschlechterzahl ungleich ist, und nur 1x pro Staffel
   const smallerGender = getSmallerGender(participants)
@@ -1261,6 +1262,7 @@ const MatchingNightManagement: React.FC<{
   const theme = useTheme()
   const isMobileDialog = useMediaQuery(theme.breakpoints.down('sm'))
   const [editingMatchingNight, setEditingMatchingNight] = useState<MatchingNight | undefined>(undefined)
+  const [isCreatingMatchingNight, setIsCreatingMatchingNight] = useState(false)
   const [matchingNightForm, setMatchingNightForm] = useState<{
     name: string;
     totalLights: number;
@@ -1342,6 +1344,12 @@ const MatchingNightManagement: React.FC<{
     setSelectedWoman('')
     setSelectedMan('')
     setEditingMatchingNight(undefined)
+    setIsCreatingMatchingNight(false)
+  }
+
+  const startCreating = () => {
+    resetForm()
+    setIsCreatingMatchingNight(true)
   }
 
   const startEditing = (matchingNight: MatchingNight) => {
@@ -1378,91 +1386,38 @@ const MatchingNightManagement: React.FC<{
   const saveMatchingNight = async () => {
     try {
       const isSold = matchingNightForm.matchType === 'sold'
-
-      if (isSold) {
-        if (matchingNightForm.price === undefined || matchingNightForm.price === null || (typeof matchingNightForm.price === 'number' && isNaN(matchingNightForm.price))) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matching Nights muss ein Betrag angegeben werden (Plus = Einnahme, Minus = Ausgabe)!', severity: 'error' })
-          return
-        }
-        if (!matchingNightForm.buyer?.trim()) {
-          setSnackbar({ open: true, message: 'Bei verkauften Matching Nights muss ein Käufer angegeben werden!', severity: 'error' })
-          return
-        }
-      } else {
-        if (matchingNightForm.totalLights > 10) {
-          setSnackbar({ open: true, message: 'Maximum 10 Lichter erlaubt!', severity: 'error' })
-          return
-        }
-      }
-
-      // Validierung: Alle 10 Paare müssen vollständig sein
       const completePairs = matchingNightForm.pairs.filter(pair => pair && pair.woman && pair.man)
-      
-      if (completePairs.length !== 10) {
-        setSnackbar({ 
-          open: true, 
-          message: `Alle 10 Pärchen müssen vollständig sein! Aktuell: ${completePairs.length}/10 vollständig`, 
-          severity: 'error' 
-        })
+
+      // Gemeinsame Validierung mit der Übersicht (ODI-274)
+      const validationError = MatchingNightService.validateMatchingNightForm(matchingNightForm, participants, matchboxes)
+      if (validationError) {
+        setSnackbar({ open: true, message: validationError, severity: 'error' })
         return
       }
 
-      // Validierung: Geschlechts-Konflikte prüfen
-      const genderConflicts = completePairs.filter(pair => {
-        const womanParticipant = participants.find(p => p.name === pair.woman)
-        const manParticipant = participants.find(p => p.name === pair.man)
-        return womanParticipant && manParticipant && womanParticipant.gender === manParticipant.gender
-      })
-
-      if (genderConflicts.length > 0) {
-        setSnackbar({ 
-          open: true, 
-          message: `Geschlechts-Konflikt gefunden! Jedes Paar muss aus einem Mann und einer Frau bestehen.`, 
-          severity: 'error' 
+      if (editingMatchingNight) {
+        // Verwende den MatchingNightService, damit die Season-Zugehörigkeits-Prüfung greift
+        await MatchingNightService.updateMatchingNight(editingMatchingNight.id!, {
+          name: matchingNightForm.name,
+          totalLights: isSold ? undefined : matchingNightForm.totalLights,
+          pairs: matchingNightForm.pairs,
+          matchType: isSold ? 'sold' : 'normal',
+          ...(isSold ? { price: matchingNightForm.price, buyer: matchingNightForm.buyer } : { price: undefined, buyer: undefined })
         })
-        return
-      }
-
-      if (!isSold) {
-        // Validierung: Gesamtlichter dürfen nicht weniger als Perfect Match Lichter sein
-        const tempMatchingNight: MatchingNight = {
-          id: 0,
-          seasonId: 0,
-          name: 'temp',
+        setSnackbar({ open: true, message: 'Matching Night wurde erfolgreich aktualisiert!', severity: 'success' })
+      } else {
+        const nameToUse = matchingNightForm.name?.trim() || `Matching Night #${matchingNights.length + 1}`
+        await MatchingNightService.createMatchingNight({
+          name: nameToUse,
           date: new Date().toISOString().split('T')[0],
-          pairs: [],
-          createdAt: new Date()
-        }
-        const validPerfectMatches = getValidPerfectMatchesForMatchingNight(matchboxes, tempMatchingNight)
-        const perfectMatchLights = completePairs.filter(pair => 
-          validPerfectMatches.some(pm => pm.woman === pair.woman && pm.man === pair.man)
-        ).length
-
-        if (matchingNightForm.totalLights < perfectMatchLights) {
-          setSnackbar({ 
-            open: true, 
-            message: `Gesamtlichter (${matchingNightForm.totalLights}) dürfen nicht weniger als sichere Lichter (${perfectMatchLights}) sein!`, 
-            severity: 'error' 
-          })
-          return
-        }
+          totalLights: isSold ? undefined : matchingNightForm.totalLights,
+          pairs: completePairs,
+          matchType: isSold ? 'sold' : 'normal',
+          ...(isSold ? { price: matchingNightForm.price, buyer: matchingNightForm.buyer } : {})
+        })
+        setSnackbar({ open: true, message: 'Matching Night wurde erfolgreich erstellt!', severity: 'success' })
       }
 
-      if (!editingMatchingNight) {
-        setSnackbar({ open: true, message: 'Keine Matching Night zum Aktualisieren ausgewählt.', severity: 'error' })
-        return
-      }
-
-      // Verwende den MatchingNightService, damit die Season-Zugehörigkeits-Prüfung greift
-      await MatchingNightService.updateMatchingNight(editingMatchingNight.id!, {
-        name: matchingNightForm.name,
-        totalLights: isSold ? undefined : matchingNightForm.totalLights,
-        pairs: matchingNightForm.pairs,
-        matchType: isSold ? 'sold' : 'normal',
-        ...(isSold ? { price: matchingNightForm.price, buyer: matchingNightForm.buyer } : { price: undefined, buyer: undefined })
-      })
-
-      setSnackbar({ open: true, message: 'Matching Night wurde erfolgreich aktualisiert!', severity: 'success' })
       resetForm()
       onUpdate()
     } catch (error) {
@@ -1488,14 +1443,18 @@ const MatchingNightManagement: React.FC<{
   return (
     <Box>
 
-      {/* Action Buttons - nur Bearbeitung abbrechen beim Bearbeiten */}
-      {editingMatchingNight && (
-        <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      {/* Action Buttons */}
+      <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        {editingMatchingNight || isCreatingMatchingNight ? (
           <Button variant="outlined" onClick={resetForm}>
             Bearbeitung abbrechen
           </Button>
-        </Box>
-      )}
+        ) : (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={startCreating}>
+            Neue Matching Night
+          </Button>
+        )}
+      </Box>
 
       {/* Matching Nights List */}
       <Card>
@@ -1593,10 +1552,10 @@ const MatchingNightManagement: React.FC<{
         </CardContent>
       </Card>
 
-      {/* Bearbeiten-Dialog (nur bestehende Matching Nights) */}
-      <Dialog open={!!editingMatchingNight} onClose={resetForm} maxWidth="lg" fullWidth fullScreen={isMobileDialog}>
+      {/* Erstellen/Bearbeiten-Dialog */}
+      <Dialog open={!!editingMatchingNight || isCreatingMatchingNight} onClose={resetForm} maxWidth="lg" fullWidth fullScreen={isMobileDialog}>
         <DialogTitle>
-          Matching Night bearbeiten
+          {editingMatchingNight ? 'Matching Night bearbeiten' : 'Neue Matching Night'}
         </DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 2 }}>
@@ -1881,7 +1840,7 @@ const MatchingNightManagement: React.FC<{
         <DialogActions sx={{ flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1, p: { xs: 2, sm: 1.5 } }}>
           <Button onClick={resetForm}>Abbrechen</Button>
           <Button onClick={saveMatchingNight} variant="contained" startIcon={<SaveIcon />}>
-            Aktualisieren
+            {editingMatchingNight ? 'Aktualisieren' : 'Erstellen'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -2465,8 +2424,8 @@ const SettingsManagement: React.FC<{
             )
           }
           
-          // Local Storage löschen (außer Datenbank)
-          const keysToKeep = ['dexie-database-version', 'dexie-database-schema']
+          // Local Storage löschen (außer Datenbank und der selbst erarbeiteten Lösung)
+          const keysToKeep = ['dexie-database-version', 'dexie-database-schema', 'userSolution']
           const allKeys = Object.keys(localStorage)
           allKeys.forEach(key => {
             if (!keysToKeep.some(keepKey => key.includes(keepKey))) {
@@ -2740,19 +2699,15 @@ Alle Daten gehen unwiderruflich verloren!`)
     }
   }
 
-  // ** Budget Calculations **
-  // Verkäufe: Plus = zum Budget hinzu, Minus = vom Budget ab (Matchbox + Matching Night)
+  // ** Budget Calculations ** (ODI-272)
   const soldMatchboxes = matchboxes.filter(mb => mb.matchType === 'sold' && typeof mb.price === 'number')
   const soldMatchingNights = matchingNights.filter(mn => mn.matchType === 'sold' && typeof mn.price === 'number')
-  const totalVerkauf = soldMatchboxes.reduce((sum, mb) => sum + (mb.price || 0), 0) + soldMatchingNights.reduce((sum, mn) => sum + (mn.price ?? 0), 0)
-  // Separate penalties (negative amounts) and credits (positive amounts)
-  const totalPenalties = penalties.reduce((sum, penalty) => {
-    return penalty.amount < 0 ? sum + Math.abs(penalty.amount) : sum
-  }, 0)
-  const totalCredits = penalties.reduce((sum, penalty) => {
-    return penalty.amount > 0 ? sum + penalty.amount : sum
-  }, 0)
-  const currentBalance = budgetSettings.startingBudget + totalVerkauf - totalPenalties + totalCredits
+  const { totalVerkauf, totalPenalties, totalCredits, currentBalance } = calculateBudget(
+    matchboxes,
+    matchingNights,
+    penalties,
+    budgetSettings.startingBudget
+  )
 
 
   const exportItems = [

@@ -75,6 +75,7 @@ import BroadcastManagement from './BroadcastManagement'
 import { DatabaseUtils, type Participant, type Matchbox, type MatchingNight, type Penalty } from '@/lib/db'
 import { getConfirmedPerfectMatchNames, getSmallerGender, getAvailableParticipants } from '@/utils/matchStatus'
 import { calculateBudget } from '@/utils/budget'
+import { findSwappedMatchingNights } from '@/utils/swappedNightsHeuristic'
 import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
 import { MatchboxService } from '@/services/matchboxService'
@@ -2290,47 +2291,15 @@ const SettingsManagement: React.FC<{
             ParticipantService.getAllParticipants(),
             MatchingNightService.getAllMatchingNights()
           ])
-          
-          // Extrahiere Männer- und Frauen-Listen
-          const menNames = allParticipants.filter(p => p.gender === 'M').map(p => p.name)
-          const womenNames = allParticipants.filter(p => p.gender === 'F').map(p => p.name)
-          
-          console.log('👥 Kandidat*innen:', { männer: menNames.length, frauen: womenNames.length })
-          
-          let correctedCount = 0
-          
-          // Prüfe jede Matching Night
-          for (const night of allMatchingNights) {
-            const menInNight = new Set(night.pairs.map(p => p.man))
-            
-            // Prüfe ob die Mehrheit der "Männer" tatsächlich Frauen sind
-            const menNamesInMenField = Array.from(menInNight).filter(name => menNames.includes(name))
-            const womenNamesInMenField = Array.from(menInNight).filter(name => womenNames.includes(name))
-            
-            const isSwapped = womenNamesInMenField.length > menNamesInMenField.length
-            
-            if (isSwapped) {
-              console.warn(`⚠️ Matching Night "${night.name}" (ID: ${night.id}): Paare sind vertauscht!`)
-              
-              // Korrigiere die Paare
-              const correctedPairs = night.pairs.map(pair => ({
-                woman: pair.man, // Vertausche
-                man: pair.woman  // Vertausche
-              }))
-              
-              // Speichere in der Datenbank
-              await MatchingNightService.updateMatchingNight(night.id!, { pairs: correctedPairs })
-              
-              console.log(`✅ Matching Night "${night.name}" korrigiert!`)
-              correctedCount++
-            }
+
+          const swapped = findSwappedMatchingNights(allMatchingNights, allParticipants)
+
+          for (const { night, correctedPairs } of swapped) {
+            await MatchingNightService.updateMatchingNight(night.id!, { pairs: correctedPairs })
           }
-          
-          console.log(`✅ Korrektur abgeschlossen: ${correctedCount} Matching Night(s) korrigiert`)
-          
-          // Zeige Erfolgsmeldung
-          if (correctedCount > 0) {
-            alert(`✅ ${correctedCount} Matching Night(s) erfolgreich korrigiert!\n\nDie Seite wird neu geladen.`)
+
+          if (swapped.length > 0) {
+            alert(`✅ ${swapped.length} Matching Night(s) erfolgreich korrigiert!\n\nDie Seite wird neu geladen.`)
             // Seite neu laden, um alle Daten zu aktualisieren
             window.location.reload()
           } else {

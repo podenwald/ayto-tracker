@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.9.0] - 2026-09-05
+- Code-Qualität und Stabilität im Hintergrund deutlich verbessert: automatisierte Tests für die wichtigsten Berechnungen eingeführt, die vor jedem Update jetzt automatisch geprüft werden – für dich als Nutzer*in ändert sich dabei nichts sichtbar
+
+---
+
 ## [1.8.3] - 2026-09-05
 - Code-Qualität im Hintergrund verbessert (Staffelende-Erkennung, Lichter-Anzeige, vertauschte Paare korrigieren) – für dich als Nutzer*in ändert sich dabei nichts sichtbar
 

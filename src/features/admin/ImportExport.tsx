@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { db } from '@/lib/db'
 import { getActiveSeasonId, assertSeasonWritable } from '@/services/seasonService'
 import { isFileNewerThanLast, saveLastImportedJsonFile } from '@/utils/jsonVersion'
+import { normalizeLegacyParticipant, type LegacyParticipantJSON } from '@/utils/jsonImport'
 
 export function ImportExport(){
   async function doExport(){
@@ -32,31 +33,11 @@ export function ImportExport(){
       await assertSeasonWritable(seasonId)
       
       // Daten normalisieren und Gender-Mapping durchführen
-      const normalizedParticipants = arr.map((participant: any) => {
-        // Gender-Mapping: w/m -> F/M
-        let gender = participant.gender;
-        if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
-          gender = 'F';
-        } else if (gender === 'm' || gender === 'männlich' || gender === 'male') {
-          gender = 'M';
-        }
-        
-        // Sicherstellen, dass alle erforderlichen Felder vorhanden sind
-        return {
-          seasonId,
-          name: participant.name || 'Unbekannt',
-          knownFrom: participant.knownFrom || '',
-          age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
-          status: participant.status || 'Aktiv',
-          active: participant.active !== false, // Default: aktiv
-          photoUrl: participant.photoUrl || '',
-          bio: participant.bio || '',
-          gender: gender || 'F', // Default: weiblich falls unbekannt
-          socialMediaAccount: participant.socialMediaAccount || '',
-          // ID wird von der Datenbank automatisch vergeben
-          ...(participant.id && { id: participant.id })
-        };
-      });
+      const normalizedParticipants = (arr as LegacyParticipantJSON[]).map((participant) => ({
+        ...normalizeLegacyParticipant(participant, seasonId),
+        // ID beibehalten, falls vorhanden
+        ...(participant.id && { id: participant.id })
+      }));
       
       console.log('Normalisierte Kandidat*innen:', normalizedParticipants);
       

@@ -88,8 +88,8 @@ export class PenaltyService {
       errors.push('Grund ist erforderlich')
     }
 
-    if (!penalty.amount || penalty.amount <= 0) {
-      errors.push('Betrag muss größer als 0 sein')
+    if (penalty.amount === undefined || penalty.amount === null || isNaN(penalty.amount) || penalty.amount === 0) {
+      errors.push('Betrag muss ungleich 0 sein (Plus = Gutschrift, Minus = Strafe)')
     }
 
     if (!penalty.date?.trim()) {

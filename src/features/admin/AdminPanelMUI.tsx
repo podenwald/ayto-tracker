@@ -76,6 +76,7 @@ import { DatabaseUtils, type Participant, type Matchbox, type MatchingNight, typ
 import { getConfirmedPerfectMatchNames, getSmallerGender, getAvailableParticipants } from '@/utils/matchStatus'
 import { calculateBudget } from '@/utils/budget'
 import { findSwappedMatchingNights } from '@/utils/swappedNightsHeuristic'
+import { normalizeLegacyParticipant, type LegacyParticipantJSON } from '@/utils/jsonImport'
 import { getActiveSeasonId, clearAllDataForSeason, assertSeasonWritable } from '@/services/seasonService'
 import { getValidPerfectMatchesForMatchingNight } from '@/utils/broadcastUtils'
 import { MatchboxService } from '@/services/matchboxService'
@@ -95,18 +96,9 @@ import {
 // ** Legacy JSON Import Typen **
 // Lockere Typen für JSON-Import/Backup-Dateien unbekannter Herkunft (Feldnamen/-werte
 // variieren je nach Export-Version), die vor dem Speichern normalisiert werden.
-interface LegacyParticipantJSON {
-  name?: string
-  knownFrom?: string
-  age?: number | string
-  status?: string
-  active?: boolean
-  photoUrl?: string
-  source?: string
-  bio?: string
-  gender?: string
-  socialMediaAccount?: string
-}
+// LegacyParticipantJSON + Normalisierung kommen aus jsonImport.ts (ODI-279: zuvor
+// drei fast identische Kopien dieser Logik über jsonImport.ts, AdminPanelMUI.tsx
+// und ImportExport.tsx verteilt).
 
 interface LegacyMatchingNightJSON {
   id?: number
@@ -1995,8 +1987,14 @@ const SettingsManagement: React.FC<{
   const savePenalty = async () => {
     try {
       const amount = parseFloat(penaltyForm.amount)
-      if (!penaltyForm.participantName || !penaltyForm.reason || isNaN(amount) || amount === 0) {
-        setSnackbar({ open: true, message: '❌ Bitte füllen Sie alle Pflichtfelder aus und geben Sie einen Betrag ≠ 0 ein!', severity: 'error' })
+      const validationErrors = PenaltyService.validatePenalty({
+        participantName: penaltyForm.participantName,
+        reason: penaltyForm.reason,
+        amount,
+        date: new Date().toISOString().split('T')[0]
+      })
+      if (validationErrors.length > 0) {
+        setSnackbar({ open: true, message: `❌ ${validationErrors[0]}`, severity: 'error' })
         return
       }
 
@@ -2540,28 +2538,7 @@ Alle Daten gehen unwiderruflich verloren!`)
       const seasonId = await getActiveSeasonId()
 
       // Daten normalisieren und Gender-Mapping durchführen
-      const normalizedParticipants = arr.map((participant) => {
-        // Gender-Mapping: w/m -> F/M
-        let gender = participant.gender
-        if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
-          gender = 'F'
-        } else if (gender === 'm' || gender === 'männlich' || gender === 'male') {
-          gender = 'M'
-        }
-        
-        // Sicherstellen, dass alle erforderlichen Felder vorhanden sind
-        return {
-          seasonId,
-          name: participant.name || 'Unbekannt',
-          knownFrom: participant.knownFrom || '',
-          age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
-          status: (participant.status || 'Aktiv') as Participant['status'],
-          active: participant.active !== false, // Default: aktiv
-          photoUrl: participant.photoUrl || '',
-          bio: participant.bio || '',
-          gender: (gender || 'F') as Participant['gender'], // Default: weiblich falls unbekannt
-        }
-      })
+      const normalizedParticipants = arr.map((participant) => normalizeLegacyParticipant(participant, seasonId))
       
       setConfirmDialog({
         open: true,
@@ -3635,35 +3612,7 @@ const AdminPanelMUI: React.FC = () => {
       const seasonId = await getActiveSeasonId()
       await assertSeasonWritable(seasonId)
 
-      const normalizedParticipants = participantsArray.map((participant) => {
-        let gender = participant.gender
-        if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
-          gender = 'F'
-        } else if (gender === 'm' || gender === 'männlich' || gender === 'male') {
-          gender = 'M'
-        }
-
-        let status = participant.status
-        if (status === 'aktiv' || status === 'Aktiv') {
-          status = 'Aktiv'
-        } else if (status === 'perfekt match' || status === 'Perfekt Match') {
-          status = 'Perfekt Match'
-        }
-
-        return {
-          seasonId,
-          name: participant.name || 'Unbekannt',
-          knownFrom: participant.knownFrom || '',
-          age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
-          status: (status || 'Aktiv') as Participant['status'],
-          active: participant.active !== false,
-          photoUrl: participant.photoUrl || '',
-          source: participant.source || '',
-          bio: participant.bio || '',
-          gender: (gender || 'F') as Participant['gender'],
-          socialMediaAccount: participant.socialMediaAccount || '',
-        }
-      })
+      const normalizedParticipants = participantsArray.map((participant) => normalizeLegacyParticipant(participant, seasonId))
       
       const confirmed = confirm(
         `${normalizedParticipants.length} Kandidat*innen aus JSON importieren?\n\nDies ersetzt alle bestehenden Kandidat*innen!`

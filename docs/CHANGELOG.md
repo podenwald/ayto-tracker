@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.1] - 2026-09-05
+
+### 🐛 Bugfixes (kritisch)
+- Wahrscheinlichkeitsberechnung (`probabilityService.ts`) konnte bei der aktuellen Staffel-Größe (11 Frauen/10 Männer = 39.916.800 mögliche Zuordnungen) durch das `MAX_VALID_MATCHINGS`-Limit (10 Mio.) vorzeitig und **systematisch verzerrt** abgeschnitten werden — die Generierung brach durch feste Tiefensuche-Reihenfolge nicht zufällig, sondern einseitig ab, bevor überhaupt Matchbox-/Matching-Night-Constraints angewendet wurden. Gefunden bei Investigation ODI-336, siehe ODI-339.
+- Generierung, Filterung und Zählung laufen jetzt in einem Durchgang über indexbasierte, typisierte Arrays statt in getrennten Schritten über materialisierte JS-Objekt-Arrays; Matchbox-Entscheidungen werden zusätzlich strukturell in die Suche eingebaut (Pruning). Für die reale Staffel-Größe wird der komplette Lösungsraum jetzt exakt und ohne Limit durchsucht (getestet: 39.916.800 Zuordnungen in < 2s). Verifiziert per Unit-Tests inkl. exaktem Abgleich mit einem extern veröffentlichten Referenzbeispiel ([daturkel/ayto](https://github.com/daturkel/ayto)) (ODI-339)
+
+---
+
 ## [1.9.0] - 2026-09-05
 
 ### 🔧 Code-Qualität / Infrastruktur

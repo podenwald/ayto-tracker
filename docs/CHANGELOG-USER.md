@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.9.1] - 2026-09-05
+- Wichtiger Fehler behoben: Die Wahrscheinlichkeits-Berechnung konnte bei der aktuellen Kandidat*innen-Zahl leicht ungenaue Prozentzahlen anzeigen, weil intern zu früh abgeschnitten wurde. Die Berechnung durchsucht jetzt immer den kompletten Lösungsraum
+
+---
+
 ## [1.9.0] - 2026-09-05
 - Code-Qualität und Stabilität im Hintergrund deutlich verbessert: automatisierte Tests für die wichtigsten Berechnungen eingeführt, die vor jedem Update jetzt automatisch geprüft werden – für dich als Nutzer*in ändert sich dabei nichts sichtbar
 

@@ -3,6 +3,20 @@ import { db } from '@/lib/db'
 import { getActiveSeasonId, assertSeasonWritable } from '@/services/seasonService'
 import { isFileNewerThanLast, saveLastImportedJsonFile } from '@/utils/jsonVersion'
 
+/** Lockerer Typ für den Legacy-JSON-Import unbekannter Herkunft (Feldnamen/-werte variieren). */
+interface LegacyParticipantImport {
+  id?: number
+  name?: string
+  knownFrom?: string
+  age?: number | string
+  status?: string
+  active?: boolean
+  photoUrl?: string
+  bio?: string
+  gender?: string
+  socialMediaAccount?: string
+}
+
 export function ImportExport(){
   async function doExport(){
     const sid = await getActiveSeasonId()
@@ -32,7 +46,7 @@ export function ImportExport(){
       await assertSeasonWritable(seasonId)
       
       // Daten normalisieren und Gender-Mapping durchführen
-      const normalizedParticipants = arr.map((participant: any) => {
+      const normalizedParticipants = arr.map((participant: LegacyParticipantImport) => {
         // Gender-Mapping: w/m -> F/M
         let gender = participant.gender;
         if (gender === 'w' || gender === 'weiblich' || gender === 'female') {

@@ -25,6 +25,16 @@ export interface JsonDataUpdateResult {
   data?: JsonDataState
 }
 
+/** Lockerer Typ für das vom Server geladene JSON-Bündel (Feldnamen variieren je nach Export-Version). */
+interface RawJsonDataBundle {
+  participants?: Participant[]
+  matchingNights?: MatchingNight[]
+  matchboxes?: Array<Partial<Matchbox> & { womanId?: string; manId?: string }>
+  penalties?: Penalty[]
+  exportedAt?: string
+  version?: string
+}
+
 /**
  * Lädt die aktuellen JSON-Daten vom Server
  */
@@ -48,21 +58,21 @@ export async function loadJsonData(): Promise<JsonDataState> {
         })
         
         if (response.ok) {
-          const data: any = await response.json()
-          
+          const data: RawJsonDataBundle = await response.json()
+
           // Validierung der Datenstruktur
           if (data.participants && Array.isArray(data.participants)) {
             console.log(`✅ JSON-Daten erfolgreich geladen von: ${source}`)
-            
+
             // Transformiere Matchbox-Daten falls nötig (womanId/manId -> woman/man)
             // Fallback für alte Dateien, die noch womanId/manId verwenden
-            const transformedMatchboxes = data.matchboxes?.map((mb: any) => ({
+            const transformedMatchboxes = (data.matchboxes?.map((mb) => ({
               ...mb,
               woman: mb.womanId || mb.woman,
               man: mb.manId || mb.man,
               womanId: undefined,
               manId: undefined
-            })) || []
+            })) || []) as Matchbox[]
             
             return {
               participants: data.participants || [],
@@ -215,6 +225,12 @@ export async function debugJsonData() {
 }
 
 // Globale Funktion für Browser Console
+declare global {
+  interface Window {
+    debugJsonData?: typeof debugJsonData
+  }
+}
+
 if (typeof window !== 'undefined') {
-  (window as any).debugJsonData = debugJsonData
+  window.debugJsonData = debugJsonData
 }

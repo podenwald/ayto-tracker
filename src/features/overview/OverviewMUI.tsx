@@ -506,6 +506,9 @@ const calculateStatistics = (matchboxes: Matchbox[], matchingNights: MatchingNig
 }
 
 
+// Floating Matchbox Creator vorerst deaktiviert (spätere Neufassung geplant)
+const FLOATING_MATCHBOX_CREATOR_ENABLED = false
+
 // ** Main Overview Component
 const OverviewMUI: React.FC = () => {
   const theme = useTheme()
@@ -1149,8 +1152,7 @@ const OverviewMUI: React.FC = () => {
           <TabPanel value={activeTab} index={0}>
             <UpdateInfoBox />
 
-            {/* Floating Matchbox Creator vorerst deaktiviert (spätere Neufassung geplant) */}
-            {false && !isMobile && (
+            {FLOATING_MATCHBOX_CREATOR_ENABLED && !isMobile && (
             <Box
               data-floating-box
               sx={{
@@ -1721,7 +1723,7 @@ const OverviewMUI: React.FC = () => {
                             <strong>Schritt 4:</strong> Aus den verbleibenden Matchings wird die Wahrscheinlichkeit pro Paar berechnet: <em>Anzahl der Matchings, in denen das Paar vorkommt</em> ÷ <em>Anzahl aller verbleibenden Matchings</em>.
                           </Typography>
                           <Typography component="li" variant="body2" sx={{ mb: 1 }}>
-                            <strong>Ergebnis:</strong> Es gibt aktuell <strong>{probabilityResult.totalValidMatchings.toLocaleString()}</strong> gültige Gesamtlösungen. Ein Paar erhält 100 % (💚), wenn es in <strong>allen</strong> diesen Lösungen vorkommt – dann ist es eindeutig bestimmt.
+                            <strong>Ergebnis:</strong> Es gibt aktuell <strong>{probabilityResult.totalValidMatchings.toLocaleString()}</strong> gültige Gesamtlösungen. Ein Paar erhält 100 % (💚), wenn es in <strong>allen</strong> diesen Lösungen vorkommt – dann ist es eindeutig bestimmt.
                             {probabilityResult.fixedPairs.length > 0 && (
                               <>
                                 {' '}Das sind die fixierten Paare: {probabilityResult.fixedPairs.map(p => `${p.woman} & ${p.man}`).join(', ')}.

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.0] - 2026-09-05
+
+### 🔧 Code-Qualität / Infrastruktur
+- Automatisierte Test-Suite eingeführt (Vitest): 56 Tests für die kritische, reine Business-Logik (`matchStatus.ts`, `budget.ts`, `swappedNightsHeuristic.ts`, `broadcastUtils.ts`, `seasonFinale.ts`, `MatchboxService.validateMatchbox`, `MatchingNightService.validateMatchingNightForm`). `fake-indexeddb` als Test-Polyfill ergänzt, damit Dexie-basierte Services ohne echten Browser testbar sind (ODI-268)
+- CI-Workflow um Lint- und Test-Schritte erweitert; der Deploy schlägt jetzt fehl, wenn Lint oder Tests nicht bestehen (ODI-269)
+- Alle 18 vorbestehenden ESLint-Fehler behoben, die dem neuen CI-Lint-Gate im Weg standen: `any`-Typen in `jsonImport.ts`, `jsonDataService.ts`, `theme/index.ts` und `ImportExport.tsx` durch konkrete (teils lockere Legacy-)Typen ersetzt; `Badge`/`Button`-Varianten-Konstanten in eigene Dateien ausgelagert (React-Fast-Refresh-Regel); zwei bewusst deaktivierte UI-Blöcke (`OverviewMUI.tsx`, `AdminLayout.tsx`) von `{false && ...}` auf benannte Feature-Flag-Konstanten umgestellt; eine irreguläre Unicode-Leerstelle entfernt
+
+---
+
 ## [1.8.3] - 2026-09-05
 
 ### 🔧 Code-Qualität

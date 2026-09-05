@@ -44,8 +44,11 @@ interface AdminLayoutProps {
   onDataUpdate?: () => void // Callback für Daten-Updates
 }
 
-const AdminLayout: React.FC<AdminLayoutProps> = ({ 
-  children, 
+// User Info - deaktiviert, wird später benötigt
+const USER_INFO_ENABLED = false
+
+const AdminLayout: React.FC<AdminLayoutProps> = ({
+  children,
   activeTab = 'participants',
   onTabChange,
   onDataUpdate
@@ -297,8 +300,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         </List>
       </Box>
 
-      {/* User Info - deaktiviert, wird später benötigt */}
-      {false && (
+      {USER_INFO_ENABLED && (
       <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
         <Card sx={{ p: 2, bgcolor: 'grey.50' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

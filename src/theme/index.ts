@@ -183,8 +183,8 @@ export function createAppTheme(colors: AppColorPreferences = DEFAULT_COLOR_PREFE
     },
     divider: '#DBDADE'
   },
-  typography: typography as any,
-  shadows: shadows as any,
+  typography: typography as ThemeOptions['typography'],
+  shadows: shadows as ThemeOptions['shadows'],
   shape: {
     borderRadius: 6
   },

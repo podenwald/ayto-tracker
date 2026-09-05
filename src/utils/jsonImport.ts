@@ -5,7 +5,7 @@ import { assertSeasonWritable, clearAllDataForSeason, getActiveSeasonId } from '
 // ** Legacy JSON Import Typen **
 // Lockere Typen für JSON-Import/Backup-Dateien unbekannter Herkunft (Feldnamen/-werte
 // variieren je nach Export-Version), die vor dem Speichern normalisiert werden.
-interface LegacyParticipantJSON {
+export interface LegacyParticipantJSON {
   id?: number
   name?: string
   knownFrom?: string
@@ -79,6 +79,51 @@ export interface JsonImportData {
 }
 
 /**
+ * Normalisiert einen einzelnen Teilnehmer*innen-Datensatz unbekannter Herkunft: Gender-Mapping
+ * (w/m -> F/M), Status-Normalisierung (aktiv/active -> Aktiv, etc.) und Default-Werte für fehlende
+ * Felder. Gemeinsam genutzt von jedem der drei Import-Wege (Komplett-Import, Admin-JSON-Import,
+ * ImportExport-Komponente), die zuvor je eine eigene, fast wortgleiche Kopie dieser Logik hatten (ODI-279).
+ */
+export function normalizeLegacyParticipant(
+  participant: LegacyParticipantJSON,
+  seasonId: number
+): Omit<Participant, 'id'> {
+  let gender = participant.gender
+  if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
+    gender = 'F'
+  } else if (gender === 'm' || gender === 'männlich' || gender === 'male') {
+    gender = 'M'
+  }
+
+  let status: Participant['status'] = (participant.status as Participant['status']) || 'Aktiv'
+  if (typeof status === 'string') {
+    const statusLower = status.toLowerCase()
+    if (statusLower === 'aktiv' || statusLower === 'active') {
+      status = 'Aktiv'
+    } else if (statusLower === 'inaktiv' || statusLower === 'inactive') {
+      status = 'Inaktiv'
+    } else if (statusLower === 'perfekt match' || statusLower === 'perfect match') {
+      status = 'Perfekt Match'
+    }
+  }
+
+  return {
+    seasonId,
+    name: participant.name || 'Unbekannt',
+    knownFrom: participant.knownFrom || '',
+    age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
+    status,
+    active: participant.active !== false, // Default: aktiv
+    photoUrl: participant.photoUrl || '',
+    source: participant.source || '',
+    bio: participant.bio || '',
+    gender: (gender || 'F') as Gender, // Default: weiblich falls unbekannt
+    socialMediaAccount: participant.socialMediaAccount || '',
+    freeProfilePhotoUrl: participant.freeProfilePhotoUrl || ''
+  }
+}
+
+/**
  * Parst rohes JSON (Array oder Objekt mit participants) zu JsonImportData
  */
 export function parseRawJsonToImportData(rawData: unknown): JsonImportData {
@@ -122,47 +167,12 @@ export async function importJsonBundleForSeason(
 
   await db.transaction('rw', [db.participants, db.matchboxes, db.matchingNights, db.penalties, db.broadcastNotes], async () => {
     if (jsonData.participants && jsonData.participants.length > 0) {
-      const normalizedParticipants = jsonData.participants.map((participant: Participant | LegacyParticipantJSON) => {
-          // Gender-Mapping: w/m -> F/M
-          let gender = participant.gender
-          if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
-            gender = 'F'
-          } else if (gender === 'm' || gender === 'männlich' || gender === 'male') {
-            gender = 'M'
-          }
-          
-          // Status normalisieren (aktiv -> Aktiv, etc.)
-          let status: Participant['status'] = (participant.status as Participant['status']) || 'Aktiv'
-          if (typeof status === 'string') {
-            const statusLower = status.toLowerCase()
-            if (statusLower === 'aktiv' || statusLower === 'active') {
-              status = 'Aktiv'
-            } else if (statusLower === 'inaktiv' || statusLower === 'inactive') {
-              status = 'Inaktiv'
-            } else if (statusLower === 'perfekt match' || statusLower === 'perfect match') {
-              status = 'Perfekt Match'
-            }
-          }
-          
-          // Stelle sicher, dass alle erforderlichen Felder vorhanden sind
-          return {
-            seasonId,
-            name: participant.name || 'Unbekannt',
-            knownFrom: participant.knownFrom || '',
-            age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
-            status: status,
-            active: participant.active !== false, // Default: aktiv
-            photoUrl: participant.photoUrl || '',
-            source: participant.source || '',
-            bio: participant.bio || '',
-            gender: (gender || 'F') as Gender, // Default: weiblich falls unbekannt
-            socialMediaAccount: participant.socialMediaAccount || '',
-            freeProfilePhotoUrl: participant.freeProfilePhotoUrl || '',
-            // ID beibehalten, falls vorhanden
-            ...(participant.id && { id: participant.id })
-          }
-        })
-        
+      const normalizedParticipants = jsonData.participants.map((participant: Participant | LegacyParticipantJSON) => ({
+          ...normalizeLegacyParticipant(participant, seasonId),
+          // ID beibehalten, falls vorhanden
+          ...(participant.id && { id: participant.id })
+        }))
+
         console.log(`✅ ${normalizedParticipants.length} Teilnehmer normalisiert und bereit zum Import`)
         await db.participants.bulkPut(normalizedParticipants)
       }

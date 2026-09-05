@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.8.3] - 2026-09-05
+- Code-Qualität im Hintergrund verbessert (Staffelende-Erkennung, Lichter-Anzeige, vertauschte Paare korrigieren) – für dich als Nutzer*in ändert sich dabei nichts sichtbar
+
+---
+
 ## [1.8.2] - 2026-09-04
 - Wichtiger Fehler behoben: Beim Wechseln zwischen Staffeln konnten in seltenen Fällen Kandidat*innen einer anderen Staffel verschwinden. Das passiert jetzt nicht mehr
 

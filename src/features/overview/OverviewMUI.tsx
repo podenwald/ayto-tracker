@@ -843,6 +843,24 @@ const OverviewMUI: React.FC = () => {
     return { nightNumbers, allLights }
   }
 
+  // Prüft ab der 10. Matching Night (nach Ausstrahlungsreihenfolge/id sortiert) auf Staffelende
+  // und öffnet ggf. das Staffelende-Overlay. Einziger Trigger-Ort statt dupliziert (ODI-284).
+  const triggerSeasonFinaleIfComplete = (
+    boxes: Matchbox[],
+    nights: MatchingNight[],
+    participantsArr: Participant[],
+    subtitle: string
+  ): boolean => {
+    if (nights.length < 10) return false
+    const sortedById = [...nights].sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
+    const tenthNight = sortedById[9]
+    if (!tenthNight) return false
+    setSeasonFinaleSubtitle(subtitle)
+    setSeasonFinaleResult(computeSeasonFinale(boxes, nights, participantsArr, tenthNight))
+    setSeasonFinaleOpen(true)
+    return true
+  }
+
   // Admin functions
   const saveMatchingNight = async () => {
     try {
@@ -858,7 +876,7 @@ const OverviewMUI: React.FC = () => {
 
       const nameToUse = matchingNightForm.name?.trim() || `Matching Night #${matchingNights.length + 1}`
       
-      const newMatchingNightId = await MatchingNightService.createMatchingNight({
+      await MatchingNightService.createMatchingNight({
         name: nameToUse,
         date: new Date().toISOString().split('T')[0],
         totalLights: isSold ? undefined : matchingNightForm.totalLights,
@@ -871,14 +889,7 @@ const OverviewMUI: React.FC = () => {
         MatchboxService.getAllMatchboxes(),
         ParticipantService.getAllParticipants()
       ])
-      if (nightsAfter.length === 10) {
-        const tenthNight = nightsAfter.find(n => n.id === newMatchingNightId)
-        if (tenthNight) {
-          setSeasonFinaleSubtitle('10. Matching Night gespeichert')
-          setSeasonFinaleResult(computeSeasonFinale(boxesAfter, nightsAfter, participantsAfter, tenthNight))
-          setSeasonFinaleOpen(true)
-        }
-      }
+      triggerSeasonFinaleIfComplete(boxesAfter, nightsAfter, participantsAfter, '10. Matching Night gespeichert')
 
       setSnackbar({ open: true, message: isSold ? `Matching Night "${nameToUse}" wurde als verkauft gespeichert.` : `Matching Night "${nameToUse}" mit allen 10 Paaren wurde erfolgreich erstellt!`, severity: 'success' })
       setMatchingNightDialog(false)
@@ -1084,20 +1095,14 @@ const OverviewMUI: React.FC = () => {
         MatchboxService.getAllMatchboxes(),
         ParticipantService.getAllParticipants()
       ])
-      if (nightsArr.length < 10) {
+      const opened = triggerSeasonFinaleIfComplete(boxesArr, nightsArr, participantsArr, 'Auswertung zum Ende der Staffel')
+      if (!opened) {
         setSnackbar({
           open: true,
           message: 'Das Staffelende-Overlay ist erst ab 10. gespeicherten Matching Nights verfügbar.',
           severity: 'info'
         })
-        return
       }
-      const sortedById = [...nightsArr].sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
-      const tenthNight = sortedById[9]
-      if (!tenthNight) return
-      setSeasonFinaleSubtitle('Auswertung zum Ende der Staffel')
-      setSeasonFinaleResult(computeSeasonFinale(boxesArr, nightsArr, participantsArr, tenthNight))
-      setSeasonFinaleOpen(true)
     } catch (e) {
       console.error(e)
       setSnackbar({
@@ -2340,7 +2345,10 @@ const OverviewMUI: React.FC = () => {
                 </>
               )}
 
-              {matchingNightForm.matchType === 'normal' && (
+              {matchingNightForm.matchType === 'normal' && (() => {
+                // Einmal berechnet statt mehrfach dupliziert in den JSX-Props/Ternaries unten (ODI-283)
+                const perfectMatchLights = matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length
+                return (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-start' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Lichter:</Typography>
@@ -2353,18 +2361,18 @@ const OverviewMUI: React.FC = () => {
                       '& .MuiOutlinedInput-root': { width: '100px !important', minWidth: '100px !important', maxWidth: '100px !important' }
                     }}
                     inputProps={{
-                      min: matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length,
+                      min: perfectMatchLights,
                       max: 10
                     }}
                     value={matchingNightForm.totalLights}
                     onChange={(e) => setMatchingNightForm({ ...matchingNightForm, totalLights: parseInt(e.target.value) || 0 })}
                     placeholder="0"
-                    error={matchingNightForm.totalLights > 10 || matchingNightForm.totalLights < matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length}
+                    error={matchingNightForm.totalLights > 10 || matchingNightForm.totalLights < perfectMatchLights}
                     helperText={
                       matchingNightForm.totalLights > 10
                         ? 'Maximum 10 Lichter erlaubt!'
-                        : matchingNightForm.totalLights < matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length
-                          ? `Minimum ${matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length} Lichter erforderlich (Perfect Matches)`
+                        : matchingNightForm.totalLights < perfectMatchLights
+                          ? `Minimum ${perfectMatchLights} Lichter erforderlich (Perfect Matches)`
                           : ''
                     }
                   />
@@ -2373,7 +2381,6 @@ const OverviewMUI: React.FC = () => {
                   <Typography variant="caption" color="text.secondary">Lichter:</Typography>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
                     {Array.from({ length: 10 }, (_, index) => {
-                      const perfectMatchLights = matchingNightForm.pairs.filter(pair => pair?.woman && pair?.man && matchboxes.some(mb => mb.matchType === 'perfect' && mb.woman === pair.woman && mb.man === pair.man)).length
                       const isActive = index < matchingNightForm.totalLights
                       const isSecureLight = index < perfectMatchLights
                       return (
@@ -2398,7 +2405,8 @@ const OverviewMUI: React.FC = () => {
                   </Box>
                 </Box>
               </Box>
-              )}
+                )
+              })()}
             </Box>
 
             {/* Paar hinzufügen (wie im Admin: Select Frau, Select Mann, Hinzufügen) */}

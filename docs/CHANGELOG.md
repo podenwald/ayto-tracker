@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.8.3] - 2026-09-05
+
+### 🔧 Code-Qualität
+- `perfectMatchLights`-Berechnung im Matching-Night-Formular (`OverviewMUI.tsx`) war 5x innerhalb weniger JSX-Zeilen dupliziert (Lichter-Minimum, Fehler-Zustand, Hilfetext, Lichter-Punkte). Jetzt einmal berechnet und überall referenziert (ODI-283)
+- Die Staffelende-Trigger-Sequenz (10. Matching Night finden, sortieren, Auswertung berechnen, Overlay öffnen) existierte unabhängig sowohl beim Speichern der 10. Matching Night als auch beim manuellen Öffnen der Staffelend-Auswertung. Jetzt ein gemeinsamer Helper `triggerSeasonFinaleIfComplete()`, den beide Aufrufstellen nutzen (ODI-284)
+- Die Vertauschte-Paare-Erkennung/Reparatur in Admin war direkt im Button-Handler mit `alert()`/`window.location.reload()` vermischt. Erkennung + Reparatur sind jetzt als reine Funktion `findSwappedMatchingNights()` (`utils/swappedNightsHeuristic.ts`) ausgelagert, ohne UI-Seiteneffekte; der Handler ruft nur noch diese Funktion auf (ODI-281)
+- ODI-280 (Umbenennungs-Kaskade extrahieren) bei Prüfung bereits erledigt vorgefunden: `ParticipantForm`s Submit-Handler ruft bereits ausschließlich `MatchboxService.renameParticipant()`/`MatchingNightService.renameParticipantInPairs()` auf, keine Änderung nötig
+
+---
+
 ## [1.8.2] - 2026-09-04
 
 ### 🐛 Bugfixes (kritisch)

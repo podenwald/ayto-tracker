@@ -7,6 +7,7 @@ Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert ha
 - Neuer Kandidat im Cast: Laurenz ist dazugekommen
 - Der Lade-Bildschirm beim Start und die Fehlermeldung, falls die Daten nicht geladen werden können, sehen jetzt einheitlich aus wie der Rest der App
 - "Deine Lösung": Die Namen links neben den Avataren waren teilweise abgeschnitten – das ist jetzt behoben. Außerdem konnte in seltenen Fällen ein Kandidat/eine Kandidatin in dieser Tabelle fehlen – auch das ist jetzt behoben
+- Beide Wahrscheinlichkeits-Tabellen passen jetzt auch bei mehr Kandidat*innen auf typischen Bildschirmen ohne seitliches Scrollen
 
 ---
 

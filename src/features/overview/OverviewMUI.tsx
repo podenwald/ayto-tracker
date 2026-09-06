@@ -513,7 +513,7 @@ const FLOATING_MATCHBOX_CREATOR_ENABLED = false
 const OverviewMUI: React.FC = () => {
   const theme = useTheme()
   const isMobileDialog = useMediaQuery(theme.breakpoints.down('sm'))
-  const isCompactMatrix = useMediaQuery(theme.breakpoints.down('md'))
+  const isNarrowScreen = useMediaQuery(theme.breakpoints.down('md'))
   const [participants, setParticipants] = useState<Participant[]>([])
   const [matchingNights, setMatchingNights] = useState<MatchingNight[]>([])
   const [matchboxes, setMatchboxes] = useState<Matchbox[]>([])
@@ -741,6 +741,11 @@ const OverviewMUI: React.FC = () => {
   // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in) (ODI-271)
   const availableWomen = getAvailableParticipants(women, matchboxes)
   const availableMen = getAvailableParticipants(men, matchboxes)
+
+  // Kompakter Matrix-Modus: nicht nur bei schmalem Viewport, sondern auch sobald die
+  // Spaltenzahl (Männer) so groß ist, dass sie in normaler Breite selbst auf gängigen
+  // Laptop-Bildschirmen (~1440px) nicht mehr ohne Scrollen nebeneinanderpassen (ODI-341).
+  const isCompactMatrix = isNarrowScreen || men.length > 10
 
   // Doppelmatch: nur möglich, wenn die Geschlechterzahl ungleich ist, und nur 1x pro Staffel
   const smallerGender = getSmallerGender(participants)
@@ -1142,7 +1147,7 @@ const OverviewMUI: React.FC = () => {
     >
 
         {/* Main Content */}
-        <Box sx={{ maxWidth: isMobile ? '100%' : '1200px', mx: isMobile ? 0 : 'auto', p: isMobile ? 2 : 3 }}>
+        <Box sx={{ maxWidth: isMobile ? '100%' : '1600px', mx: isMobile ? 0 : 'auto', p: isMobile ? 2 : 3 }}>
           {activeSeasonReadOnly && (
             <Alert severity="info" sx={{ mb: 2 }}>
               Diese Staffel ist <strong>abgeschlossen</strong> – Anzeige nur zur Ansicht. Zum Mitspielen eine andere
@@ -2104,17 +2109,17 @@ const OverviewMUI: React.FC = () => {
                     <Table
                       size="small"
                       sx={{
-                        minWidth: Math.max(760, men.length * (isCompactMatrix ? 86 : 100) + (isCompactMatrix ? 200 : 240))
+                        minWidth: Math.max(760, men.length * (isCompactMatrix ? 74 : 100) + (isCompactMatrix ? 180 : 240))
                       }}
                     >
                       <TableHead>
                         <TableRow>
                         <TableCell sx={{ fontWeight: 'bold' }}></TableCell>
                           {men.map(man => (
-                            <TableCell key={man.id} sx={{ 
-                              fontWeight: 'bold', 
+                            <TableCell key={man.id} sx={{
+                              fontWeight: 'bold',
                               fontSize: isCompactMatrix ? '0.85rem' : '1rem',
-                            minWidth: isCompactMatrix ? '70px' : '80px',
+                            minWidth: isCompactMatrix ? '58px' : '80px',
                               textAlign: 'center',
                               height: isCompactMatrix ? '64px' : '80px',
                             verticalAlign: 'bottom',

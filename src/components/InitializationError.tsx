@@ -1,12 +1,27 @@
 /**
  * Initialisierungsfehler-Komponente
- * 
+ *
  * Zeigt eine benutzerfreundliche Fehlermeldung an, wenn die App-Initialisierung fehlschlägt.
  */
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, RefreshCw, Download, Database } from 'lucide-react'
+import { useState } from 'react'
+import {
+  Box,
+  Card,
+  CardHeader,
+  CardContent,
+  Avatar,
+  Typography,
+  Alert,
+  AlertTitle,
+  Button,
+  Collapse
+} from '@mui/material'
+import StorageIcon from '@mui/icons-material/Storage'
+import RefreshIcon from '@mui/icons-material/Refresh'
+import DownloadIcon from '@mui/icons-material/Download'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import { getJsonDataSourcesNewestFirst } from '@/services/databaseUpdateService'
 
 interface InitializationErrorProps {
@@ -17,13 +32,15 @@ interface InitializationErrorProps {
 
 /**
  * Initialisierungsfehler-Komponente
- * 
+ *
  * Verantwortlichkeiten:
  * - Anzeige von Initialisierungsfehlern
  * - Benutzerfreundliche Fehlermeldungen
  * - Handlungsoptionen für den Benutzer
  */
 export function InitializationError({ error, onRetry, onReload }: InitializationErrorProps) {
+  const [detailsExpanded, setDetailsExpanded] = useState(false)
+
   const handleDownloadData = async () => {
     try {
       const sources = await getJsonDataSourcesNewestFirst()
@@ -63,92 +80,84 @@ export function InitializationError({ error, onRetry, onReload }: Initialization
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 p-4">
-      <Card className="w-full max-w-2xl border-orange-200 bg-white/90 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
-            <Database className="h-8 w-8 text-orange-600" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-orange-800">
-            Initialisierungsfehler
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          <div className="text-center text-gray-600">
-            <p className="mb-4">
-              Die Anwendung konnte nicht initialisiert werden. Die Seed-Daten konnten nicht geladen werden.
-            </p>
-            
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-left">
-              <h4 className="font-medium text-orange-800 mb-2">Mögliche Ursachen:</h4>
-              <ul className="text-sm text-orange-700 space-y-1">
-                <li>• Netzwerkverbindung unterbrochen</li>
-                <li>• JSON-Dateien nicht verfügbar</li>
-                <li>• Browser-Cache-Probleme</li>
-                <li>• Service Worker-Konflikte</li>
-              </ul>
-            </div>
-            
-            <details className="mt-4 text-left">
-              <summary className="cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-                Technische Details anzeigen
-              </summary>
-              <div className="mt-2 rounded bg-gray-100 p-3 text-sm">
-                <p className="font-medium text-red-600">Fehler:</p>
-                <p className="font-mono text-xs break-all">{error}</p>
-              </div>
-            </details>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button 
-                onClick={onRetry}
-                variant="outline"
-                className="flex items-center gap-2"
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+        p: 2
+      }}
+    >
+      <Card sx={{ width: '100%', maxWidth: 600 }}>
+        <CardHeader
+          title={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar sx={{ bgcolor: 'warning.main' }}>
+                <StorageIcon />
+              </Avatar>
+              <Typography variant="h6" component="span">
+                Initialisierungsfehler
+              </Typography>
+            </Box>
+          }
+        />
+        <CardContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Die Anwendung konnte nicht initialisiert werden. Die Seed-Daten konnten nicht geladen werden.
+          </Typography>
+
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <AlertTitle>Mögliche Ursachen</AlertTitle>
+            <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+              <li>Netzwerkverbindung unterbrochen</li>
+              <li>JSON-Dateien nicht verfügbar</li>
+              <li>Browser-Cache-Probleme</li>
+              <li>Service Worker-Konflikte</li>
+            </Box>
+          </Alert>
+
+          <Button
+            size="small"
+            startIcon={detailsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            onClick={() => setDetailsExpanded(!detailsExpanded)}
+            sx={{ textTransform: 'none', color: 'text.secondary', mb: 1 }}
+          >
+            Technische Details anzeigen
+          </Button>
+          <Collapse in={detailsExpanded}>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              <Typography
+                variant="caption"
+                component="pre"
+                sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'monospace', m: 0 }}
               >
-                <RefreshCw className="h-4 w-4" />
-                Erneut versuchen
-              </Button>
-              
-              <Button 
-                onClick={onReload}
-                className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Seite neu laden
-              </Button>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button 
-                onClick={handleDownloadData}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Daten herunterladen
-              </Button>
-              
-              <Button 
-                onClick={handleClearStorage}
-                variant="outline"
-                className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-50"
-              >
-                <AlertTriangle className="h-4 w-4" />
-                Speicher leeren
-              </Button>
-            </div>
-          </div>
-          
-          <div className="text-center text-sm text-gray-500">
-            <p>
-              Falls das Problem weiterhin besteht, versuchen Sie es später erneut oder wenden Sie sich an den Support.
-            </p>
-          </div>
+                {error}
+              </Typography>
+            </Alert>
+          </Collapse>
+
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center', mt: 2 }}>
+            <Button variant="outlined" startIcon={<RefreshIcon />} onClick={onRetry}>
+              Erneut versuchen
+            </Button>
+            <Button variant="contained" color="warning" startIcon={<RefreshIcon />} onClick={onReload}>
+              Seite neu laden
+            </Button>
+            <Button variant="outlined" startIcon={<DownloadIcon />} onClick={handleDownloadData}>
+              Daten herunterladen
+            </Button>
+            <Button variant="outlined" color="error" onClick={handleClearStorage}>
+              Speicher leeren
+            </Button>
+          </Box>
+
+          <Typography variant="caption" color="text.secondary" align="center" sx={{ display: 'block', mt: 3 }}>
+            Falls das Problem weiterhin besteht, versuchen Sie es später erneut oder wenden Sie sich an den Support.
+          </Typography>
         </CardContent>
       </Card>
-    </div>
+    </Box>
   )
 }

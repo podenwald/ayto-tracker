@@ -2,6 +2,15 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.9.2] - 2026-09-06
+- Wahrscheinlichkeits-Tab: Wenn noch keine Matching Night eingetragen ist, siehst du jetzt einen ruhigen Hinweis statt einer roten Fehlermeldung – inklusive klarem Hinweis, dass du die Berechnung danach über den Button "Berechnen" manuell starten musst
+- Neuer Kandidat im Cast: Laurenz ist dazugekommen
+- Der Lade-Bildschirm beim Start und die Fehlermeldung, falls die Daten nicht geladen werden können, sehen jetzt einheitlich aus wie der Rest der App
+- "Deine Lösung": Die Namen links neben den Avataren waren teilweise abgeschnitten – das ist jetzt behoben. Außerdem konnte in seltenen Fällen ein Kandidat/eine Kandidatin in dieser Tabelle fehlen – auch das ist jetzt behoben
+- Beide Wahrscheinlichkeits-Tabellen passen jetzt auch bei mehr Kandidat*innen auf typischen Bildschirmen ohne seitliches Scrollen
+
+---
+
 ## [1.9.1] - 2026-09-05
 - Wichtiger Fehler behoben: Die Wahrscheinlichkeits-Berechnung konnte bei der aktuellen Kandidat*innen-Zahl leicht ungenaue Prozentzahlen anzeigen, weil intern zu früh abgeschnitten wurde. Die Berechnung durchsucht jetzt immer den kompletten Lösungsraum
 

@@ -513,7 +513,7 @@ const FLOATING_MATCHBOX_CREATOR_ENABLED = false
 const OverviewMUI: React.FC = () => {
   const theme = useTheme()
   const isMobileDialog = useMediaQuery(theme.breakpoints.down('sm'))
-  const isCompactMatrix = useMediaQuery(theme.breakpoints.down('md'))
+  const isNarrowScreen = useMediaQuery(theme.breakpoints.down('md'))
   const [participants, setParticipants] = useState<Participant[]>([])
   const [matchingNights, setMatchingNights] = useState<MatchingNight[]>([])
   const [matchboxes, setMatchboxes] = useState<Matchbox[]>([])
@@ -726,19 +726,26 @@ const OverviewMUI: React.FC = () => {
   const [isDraggingBox, setIsDraggingBox] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
-  // Helper functions - Zeige alle aktiven Kandidat*innen (inkl. Perfect Matches)
-  const women = participants.filter(p => 
-    p.gender === 'F' && 
-    (p.status === 'Aktiv' || p.status === 'aktiv' || p.status === 'Perfekt Match')
+  // Helper functions - Zeige alle aktiven Kandidat*innen (inkl. Perfect Matches).
+  // Bewusst als "nicht explizit Inaktiv" statt als Allowlist fixer Strings geprüft (ODI-341):
+  // eine feste Liste ('Aktiv'/'aktiv'/'Perfekt Match') hat schon einen einzigen unerwarteten
+  // oder fehlenden status-Wert (z.B. undefined nach einem Datenbank-Update) genügt, um
+  // Kandidat*innen hier stillschweigend verschwinden zu lassen.
+  const women = participants.filter(p =>
+    p.gender === 'F' && p.status !== 'Inaktiv'
   )
-  const men = participants.filter(p => 
-    p.gender === 'M' && 
-    (p.status === 'Aktiv' || p.status === 'aktiv' || p.status === 'Perfekt Match')
+  const men = participants.filter(p =>
+    p.gender === 'M' && p.status !== 'Inaktiv'
   )
   
   // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in) (ODI-271)
   const availableWomen = getAvailableParticipants(women, matchboxes)
   const availableMen = getAvailableParticipants(men, matchboxes)
+
+  // Kompakter Matrix-Modus: nicht nur bei schmalem Viewport, sondern auch sobald die
+  // Spaltenzahl (Männer) so groß ist, dass sie in normaler Breite selbst auf gängigen
+  // Laptop-Bildschirmen (~1440px) nicht mehr ohne Scrollen nebeneinanderpassen (ODI-341).
+  const isCompactMatrix = isNarrowScreen || men.length > 10
 
   // Doppelmatch: nur möglich, wenn die Geschlechterzahl ungleich ist, und nur 1x pro Staffel
   const smallerGender = getSmallerGender(participants)
@@ -1140,7 +1147,7 @@ const OverviewMUI: React.FC = () => {
     >
 
         {/* Main Content */}
-        <Box sx={{ maxWidth: isMobile ? '100%' : '1200px', mx: isMobile ? 0 : 'auto', p: isMobile ? 2 : 3 }}>
+        <Box sx={{ maxWidth: isMobile ? '100%' : '1600px', mx: isMobile ? 0 : 'auto', p: isMobile ? 2 : 3 }}>
           {activeSeasonReadOnly && (
             <Alert severity="info" sx={{ mb: 2 }}>
               Diese Staffel ist <strong>abgeschlossen</strong> – Anzeige nur zur Ansicht. Zum Mitspielen eine andere
@@ -1612,8 +1619,10 @@ const OverviewMUI: React.FC = () => {
           <TabPanel value={activeTab} index={4}>
             {/* Error Message */}
             {probabilityStatus.error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
+              <Alert severity={probabilityStatus.errorType === 'missing-data' ? 'info' : 'error'} sx={{ mb: 3 }}>
                 {probabilityStatus.error}
+                {probabilityStatus.errorType === 'missing-data' &&
+                  ' Sobald die Daten ergänzt sind, bitte oben über den Button „Berechnen“ manuell neu starten.'}
               </Alert>
             )}
 
@@ -1752,8 +1761,21 @@ const OverviewMUI: React.FC = () => {
                     </Box>
                   )}
                   
-                  {/* Fehler oder keine Kandidat*innen */}
-                  {probabilityStatus.error && (
+                  {/* Voraussetzungen fehlen noch (kein echter Fehler) */}
+                  {probabilityStatus.error && probabilityStatus.errorType === 'missing-data' && (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                      <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                        {probabilityStatus.error}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Sobald mindestens eine Matching Night (und optional Matchbox-Entscheidungen) im Admin-Panel eingetragen ist,
+                        bitte die Berechnung oben über den Button „Berechnen“ manuell starten.
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Echter, unerwarteter Fehler */}
+                  {probabilityStatus.error && probabilityStatus.errorType === 'unexpected' && (
                     <Box sx={{ p: 3, textAlign: 'center' }}>
                       <Typography variant="body1" color="error" sx={{ mb: 2 }}>
                         {probabilityStatus.error}
@@ -2087,17 +2109,17 @@ const OverviewMUI: React.FC = () => {
                     <Table
                       size="small"
                       sx={{
-                        minWidth: Math.max(760, men.length * (isCompactMatrix ? 86 : 100) + (isCompactMatrix ? 200 : 240))
+                        minWidth: Math.max(760, men.length * (isCompactMatrix ? 74 : 100) + (isCompactMatrix ? 180 : 240))
                       }}
                     >
                       <TableHead>
                         <TableRow>
                         <TableCell sx={{ fontWeight: 'bold' }}></TableCell>
                           {men.map(man => (
-                            <TableCell key={man.id} sx={{ 
-                              fontWeight: 'bold', 
+                            <TableCell key={man.id} sx={{
+                              fontWeight: 'bold',
                               fontSize: isCompactMatrix ? '0.85rem' : '1rem',
-                            minWidth: isCompactMatrix ? '70px' : '80px',
+                            minWidth: isCompactMatrix ? '58px' : '80px',
                               textAlign: 'center',
                               height: isCompactMatrix ? '64px' : '80px',
                             verticalAlign: 'bottom',
@@ -2134,18 +2156,19 @@ const OverviewMUI: React.FC = () => {
                       <TableBody>
                         {women.map(woman => (
                           <TableRow key={woman.id}>
-                            <TableCell sx={{ 
-                              fontWeight: 'bold', 
+                            <TableCell sx={{
+                              fontWeight: 'bold',
                               fontSize: isCompactMatrix ? '0.85rem' : '1rem',
-                            minWidth: isCompactMatrix ? '82px' : '100px',
+                            minWidth: isCompactMatrix ? '130px' : '160px',
                               p: 1,
                               bgcolor: 'white'
                           }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                              <Typography variant="caption" sx={{ 
-                                    fontSize: '1rem',
+                              <Typography variant="caption" sx={{
+                                    fontSize: isCompactMatrix ? '0.75rem' : '1rem',
                                 lineHeight: 1,
+                                whiteSpace: 'nowrap',
                                 wordBreak: 'break-word',
                                     color: 'black',
                                     fontWeight: 'bold'

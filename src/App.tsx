@@ -18,19 +18,15 @@ import ThemeProvider from "@/theme/ThemeProvider"
 export default function App() {
   const { route } = useAppRouting()
 
-    return (
-    <ErrorBoundary>
-      <AppInitialization>
-        <AppLayout>
-          {route === 'admin' ? (
-      <ThemeProvider>
-          <AdminPanelMUI />
-      </ThemeProvider>
-          ) : (
-      <OverviewMUI />
-          )}
-        </AppLayout>
-      </AppInitialization>
-    </ErrorBoundary>
+  return (
+    <ThemeProvider>
+      <ErrorBoundary>
+        <AppInitialization>
+          <AppLayout>
+            {route === 'admin' ? <AdminPanelMUI /> : <OverviewMUI />}
+          </AppLayout>
+        </AppInitialization>
+      </ErrorBoundary>
+    </ThemeProvider>
   )
 }

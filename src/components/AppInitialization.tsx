@@ -1,10 +1,11 @@
 /**
  * Komponente für App-Initialisierung
- * 
+ *
  * Zeigt Loading- und Error-States während der App-Initialisierung.
  * Folgt dem Single Responsibility Principle.
  */
 
+import { Box, CircularProgress, Typography } from '@mui/material'
 import { useAppInitialization } from '@/hooks/useAppInitialization'
 import { InitializationError } from '@/components/InitializationError'
 
@@ -14,7 +15,7 @@ interface AppInitializationProps {
 
 /**
  * Wrapper-Komponente für App-Initialisierung
- * 
+ *
  * Verantwortlichkeiten:
  * - Anzeige des Loading-States
  * - Anzeige von Initialisierungsfehlern
@@ -33,13 +34,25 @@ export function AppInitialization({ children }: AppInitializationProps) {
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-lg font-medium text-gray-700">Initialisiere Daten ...</p>
-          <p className="text-sm text-gray-500">Lade Seed-Daten und bereite die Anwendung vor</p>
-        </div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default'
+        }}
+      >
+        <Box sx={{ textAlign: 'center' }}>
+          <CircularProgress size={48} sx={{ mb: 3 }} />
+          <Typography variant="body1" sx={{ fontWeight: 500, mb: 0.5 }}>
+            Initialisiere Daten ...
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Lade Seed-Daten und bereite die Anwendung vor
+          </Typography>
+        </Box>
+      </Box>
     )
   }
 
@@ -55,4 +68,3 @@ export function AppInitialization({ children }: AppInitializationProps) {
 
   return <>{children}</>
 }
-

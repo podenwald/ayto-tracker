@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.9.2] - 2026-09-06
+
+### 🐛 Bugfixes
+- Wahrscheinlichkeits-Tab: Wenn die Voraussetzungen (Kandidat*innen/Matching Nights) noch fehlen, erschien bisher eine generische rote Fehlerbox — obwohl das gar kein Fehler ist, sondern nur fehlende Eingabedaten. Zusätzlich verhindert der bewusste "nur ein automatischer Versuch pro Tab-Aktivierung"-Schutz (`calculationAttemptedRef`), dass nach dem Nachtragen von Daten automatisch neu gerechnet wird. `ProbabilityCalculationStatus` bekommt dafür ein neues `errorType`-Feld (`'missing-data'` vs. `'unexpected'`); bei fehlenden Voraussetzungen wird jetzt eine ruhige Info-Box mit klarem Hinweis angezeigt, dass die Berechnung danach manuell über den Button "Berechnen" gestartet werden muss. Echte, unerwartete Fehler zeigen weiterhin die rote Fehlerbox (ODI-342)
+
+### 📋 Daten
+- Neuer Kandidat Laurenz (25, bekannt aus Temptation Island VIP und Ex on the Beach) zum Standard-Datensatz der aktuellen Season hinzugefügt (`public/json/ayto-rsil-2026.json`, id 108) (ODI-343)
+
+### 🎨 Design
+- App-Initialisierung: Der Lade-Screen ("Initialisiere Daten ...") und der Initialisierungsfehler-Screen (`AppInitialization.tsx`, `InitializationError.tsx`) nutzten noch reines Tailwind/shadcn-Styling statt des restlichen MUI-Designs. Beide Komponenten sind jetzt auf MUI umgestellt (`CircularProgress`, `Card`/`CardHeader`/`CardContent`, `Alert`, `@mui/icons-material`). Da `ThemeProvider` bisher erst innerhalb der Routen (nur um `AdminPanelMUI`) eingebunden war, wurde er in `App.tsx` an die Wurzel der App verschoben, damit auch diese frühen Initialisierungs-Screens korrekt im App-Theme (Inter-Schrift, Farben, Radius) gerendert werden (ODI-340)
+- Wahrscheinlichkeitstabelle ("Deine Lösung"): Die Zeilen-Kopfzelle (Frauen-Namen) hatte eine feste `minWidth` von nur 82/100px und eine nicht auf den Kompakt-Modus reagierende Schriftgröße (fest `1rem`) - anders als die Spalten-Kopfzelle (Männer), die korrekt zwischen 0.75rem/1rem skaliert. Dadurch wurde der Name neben dem Avatar abgeschnitten/nicht sichtbar. `minWidth` auf 130/160px erhöht und Schriftgröße responsiv wie bei den Spalten-Köpfen gemacht (ODI-341)
+- Zusatzfund zu ODI-341: Der `men`/`women`-Filter für dieselbe Tabelle prüfte den `status` eines Kandidaten gegen eine feste Liste exakter Strings (`'Aktiv'`/`'aktiv'`/`'Perfekt Match'`) - jeder andere oder fehlende Wert (z.B. `undefined`) ließ die betroffene Person stillschweigend aus der Tabelle verschwinden. Auf eine robuste Denylist-Prüfung (`status !== 'Inaktiv'`) umgestellt, konsistent mit der Standardannahme "aktiv, solange nicht explizit deaktiviert" (ODI-341)
+- Beide Wahrscheinlichkeits-Tabellen (Heatmap und "Deine Lösung") passten bei 11 Kandidat*innen selbst auf gängigen Laptop-Breiten (~1440px) nicht mehr ohne horizontales Scrollen nebeneinander, obwohl links/rechts noch ungenutzter Platz vorhanden war. Zwei Anpassungen: (1) die maximale Content-Breite der Übersichtsseite wurde von 1200px auf 1600px erhöht; (2) der kompakte Matrix-Modus (kleinere Avatare/Schrift/Spaltenbreite) wird jetzt nicht mehr nur bei schmalem Viewport aktiviert, sondern zusätzlich automatisch, sobald mehr als 10 männliche Kandidaten vorhanden sind - skaliert dadurch automatisch mit wachsendem Cast, ohne dass bei jeder weiteren Ergänzung erneut von Hand nachjustiert werden muss (ODI-341)
+
+---
+
 ## [1.9.1] - 2026-09-05
 
 ### 🐛 Bugfixes (kritisch)

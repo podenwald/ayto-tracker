@@ -293,6 +293,20 @@
       "gender": "F",
       "socialMediaAccount": "https://www.instagram.com/joena.st",
       "freeProfilePhotoUrl": ""
+    },
+    {
+      "id": 108,
+      "seasonId": 2,
+      "name": "Laurenz",
+      "knownFrom": "Temptation Island VIP, Ex on the Beach",
+      "age": 25,
+      "status": "Aktiv",
+      "active": true,
+      "photoUrl": "",
+      "bio": "Bekannt aus Temptation Island VIP und Ex on the Beach",
+      "gender": "M",
+      "socialMediaAccount": "https://www.tiktok.com/@laurenz.pesch",
+      "freeProfilePhotoUrl": ""
     }
   ],
   "matchingNights": [

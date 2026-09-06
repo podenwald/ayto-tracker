@@ -4,6 +4,7 @@ Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert ha
 
 ## [1.9.2] - 2026-09-06
 - Wahrscheinlichkeits-Tab: Wenn noch keine Matching Night eingetragen ist, siehst du jetzt einen ruhigen Hinweis statt einer roten Fehlermeldung – inklusive klarem Hinweis, dass du die Berechnung danach über den Button "Berechnen" manuell starten musst
+- Neuer Kandidat im Cast: Laurenz ist dazugekommen
 
 ---
 

@@ -1612,8 +1612,10 @@ const OverviewMUI: React.FC = () => {
           <TabPanel value={activeTab} index={4}>
             {/* Error Message */}
             {probabilityStatus.error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
+              <Alert severity={probabilityStatus.errorType === 'missing-data' ? 'info' : 'error'} sx={{ mb: 3 }}>
                 {probabilityStatus.error}
+                {probabilityStatus.errorType === 'missing-data' &&
+                  ' Sobald die Daten ergänzt sind, bitte oben über den Button „Berechnen“ manuell neu starten.'}
               </Alert>
             )}
 
@@ -1752,8 +1754,21 @@ const OverviewMUI: React.FC = () => {
                     </Box>
                   )}
                   
-                  {/* Fehler oder keine Kandidat*innen */}
-                  {probabilityStatus.error && (
+                  {/* Voraussetzungen fehlen noch (kein echter Fehler) */}
+                  {probabilityStatus.error && probabilityStatus.errorType === 'missing-data' && (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                      <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                        {probabilityStatus.error}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Sobald mindestens eine Matching Night (und optional Matchbox-Entscheidungen) im Admin-Panel eingetragen ist,
+                        bitte die Berechnung oben über den Button „Berechnen“ manuell starten.
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Echter, unerwarteter Fehler */}
+                  {probabilityStatus.error && probabilityStatus.errorType === 'unexpected' && (
                     <Box sx={{ p: 3, textAlign: 'center' }}>
                       <Typography variant="body1" color="error" sx={{ mb: 2 }}>
                         {probabilityStatus.error}

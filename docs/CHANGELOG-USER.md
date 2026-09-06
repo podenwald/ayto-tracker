@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.9.2] - 2026-09-06
+- Wahrscheinlichkeits-Tab: Wenn noch keine Matching Night eingetragen ist, siehst du jetzt einen ruhigen Hinweis statt einer roten Fehlermeldung – inklusive klarem Hinweis, dass du die Berechnung danach über den Button "Berechnen" manuell starten musst
+
+---
+
 ## [1.9.1] - 2026-09-05
 - Wichtiger Fehler behoben: Die Wahrscheinlichkeits-Berechnung konnte bei der aktuellen Kandidat*innen-Zahl leicht ungenaue Prozentzahlen anzeigen, weil intern zu früh abgeschnitten wurde. Die Berechnung durchsucht jetzt immer den kompletten Lösungsraum
 

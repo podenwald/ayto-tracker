@@ -281,11 +281,12 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
           isCalculating: false,
           progress: 0,
           currentStep: 'Keine Daten vorhanden',
-          error: participants.length === 0 
+          error: participants.length === 0
             ? 'Keine Kandidat*innen vorhanden. Bitte zuerst Kandidat*innen im Admin-Panel hinzufügen.'
             : matchingNights.length === 0
             ? 'Keine Matching Nights vorhanden. Bitte zuerst Matching Nights hinzufügen.'
-            : 'Nicht genügend Kandidat*innen für Berechnung vorhanden.'
+            : 'Nicht genügend Kandidat*innen für Berechnung vorhanden.',
+          errorType: 'missing-data'
         })
         return
       }
@@ -297,7 +298,8 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
           isCalculating: false,
           progress: 0,
           currentStep: 'Keine Matching Nights vorhanden',
-          error: 'Keine Matching Nights vorhanden. Bitte zuerst Matching Nights hinzufügen.'
+          error: 'Keine Matching Nights vorhanden. Bitte zuerst Matching Nights hinzufügen.',
+          errorType: 'missing-data'
         })
         return
       }
@@ -372,7 +374,8 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
         isCalculating: false,
         progress: 0,
         currentStep: 'Fehler',
-        error: error instanceof Error ? error.message : 'Unbekannter Fehler bei der Berechnung'
+        error: error instanceof Error ? error.message : 'Unbekannter Fehler bei der Berechnung',
+        errorType: 'unexpected'
       })
     }
   }, [])

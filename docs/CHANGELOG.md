@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.2] - 2026-09-06
+
+### 🐛 Bugfixes
+- Wahrscheinlichkeits-Tab: Wenn die Voraussetzungen (Kandidat*innen/Matching Nights) noch fehlen, erschien bisher eine generische rote Fehlerbox — obwohl das gar kein Fehler ist, sondern nur fehlende Eingabedaten. Zusätzlich verhindert der bewusste "nur ein automatischer Versuch pro Tab-Aktivierung"-Schutz (`calculationAttemptedRef`), dass nach dem Nachtragen von Daten automatisch neu gerechnet wird. `ProbabilityCalculationStatus` bekommt dafür ein neues `errorType`-Feld (`'missing-data'` vs. `'unexpected'`); bei fehlenden Voraussetzungen wird jetzt eine ruhige Info-Box mit klarem Hinweis angezeigt, dass die Berechnung danach manuell über den Button "Berechnen" gestartet werden muss. Echte, unerwartete Fehler zeigen weiterhin die rote Fehlerbox (ODI-342)
+
+---
+
 ## [1.9.1] - 2026-09-05
 
 ### 🐛 Bugfixes (kritisch)

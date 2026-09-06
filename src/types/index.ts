@@ -327,5 +327,7 @@ export interface ProbabilityCalculationStatus {
   progress: number // 0-100
   currentStep: string
   error?: string
+  /** 'missing-data': Voraussetzungen (Kandidat*innen/Matching Nights) fehlen noch, kein echter Fehler. 'unexpected': tatsächlicher Berechnungsfehler. */
+  errorType?: 'missing-data' | 'unexpected'
 }
 

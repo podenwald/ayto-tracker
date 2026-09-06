@@ -8,6 +8,11 @@
 ### 📋 Daten
 - Neuer Kandidat Laurenz (25, bekannt aus Temptation Island VIP und Ex on the Beach) zum Standard-Datensatz der aktuellen Season hinzugefügt (`public/json/ayto-rsil-2026.json`, id 108) (ODI-343)
 
+### 🎨 Design
+- App-Initialisierung: Der Lade-Screen ("Initialisiere Daten ...") und der Initialisierungsfehler-Screen (`AppInitialization.tsx`, `InitializationError.tsx`) nutzten noch reines Tailwind/shadcn-Styling statt des restlichen MUI-Designs. Beide Komponenten sind jetzt auf MUI umgestellt (`CircularProgress`, `Card`/`CardHeader`/`CardContent`, `Alert`, `@mui/icons-material`). Da `ThemeProvider` bisher erst innerhalb der Routen (nur um `AdminPanelMUI`) eingebunden war, wurde er in `App.tsx` an die Wurzel der App verschoben, damit auch diese frühen Initialisierungs-Screens korrekt im App-Theme (Inter-Schrift, Farben, Radius) gerendert werden (ODI-340)
+- Wahrscheinlichkeitstabelle ("Deine Lösung"): Die Zeilen-Kopfzelle (Frauen-Namen) hatte eine feste `minWidth` von nur 82/100px und eine nicht auf den Kompakt-Modus reagierende Schriftgröße (fest `1rem`) - anders als die Spalten-Kopfzelle (Männer), die korrekt zwischen 0.75rem/1rem skaliert. Dadurch wurde der Name neben dem Avatar abgeschnitten/nicht sichtbar. `minWidth` auf 130/160px erhöht und Schriftgröße responsiv wie bei den Spalten-Köpfen gemacht (ODI-341)
+- Zusatzfund zu ODI-341: Der `men`/`women`-Filter für dieselbe Tabelle prüfte den `status` eines Kandidaten gegen eine feste Liste exakter Strings (`'Aktiv'`/`'aktiv'`/`'Perfekt Match'`) - jeder andere oder fehlende Wert (z.B. `undefined`) ließ die betroffene Person stillschweigend aus der Tabelle verschwinden. Auf eine robuste Denylist-Prüfung (`status !== 'Inaktiv'`) umgestellt, konsistent mit der Standardannahme "aktiv, solange nicht explizit deaktiviert" (ODI-341)
+
 ---
 
 ## [1.9.1] - 2026-09-05

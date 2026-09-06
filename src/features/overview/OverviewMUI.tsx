@@ -726,14 +726,16 @@ const OverviewMUI: React.FC = () => {
   const [isDraggingBox, setIsDraggingBox] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
-  // Helper functions - Zeige alle aktiven Kandidat*innen (inkl. Perfect Matches)
-  const women = participants.filter(p => 
-    p.gender === 'F' && 
-    (p.status === 'Aktiv' || p.status === 'aktiv' || p.status === 'Perfekt Match')
+  // Helper functions - Zeige alle aktiven Kandidat*innen (inkl. Perfect Matches).
+  // Bewusst als "nicht explizit Inaktiv" statt als Allowlist fixer Strings geprüft (ODI-341):
+  // eine feste Liste ('Aktiv'/'aktiv'/'Perfekt Match') hat schon einen einzigen unerwarteten
+  // oder fehlenden status-Wert (z.B. undefined nach einem Datenbank-Update) genügt, um
+  // Kandidat*innen hier stillschweigend verschwinden zu lassen.
+  const women = participants.filter(p =>
+    p.gender === 'F' && p.status !== 'Inaktiv'
   )
-  const men = participants.filter(p => 
-    p.gender === 'M' && 
-    (p.status === 'Aktiv' || p.status === 'aktiv' || p.status === 'Perfekt Match')
+  const men = participants.filter(p =>
+    p.gender === 'M' && p.status !== 'Inaktiv'
   )
   
   // Get available participants (excluding perfect matches, inkl. Doppelmatch-Partner*in) (ODI-271)
@@ -2149,18 +2151,19 @@ const OverviewMUI: React.FC = () => {
                       <TableBody>
                         {women.map(woman => (
                           <TableRow key={woman.id}>
-                            <TableCell sx={{ 
-                              fontWeight: 'bold', 
+                            <TableCell sx={{
+                              fontWeight: 'bold',
                               fontSize: isCompactMatrix ? '0.85rem' : '1rem',
-                            minWidth: isCompactMatrix ? '82px' : '100px',
+                            minWidth: isCompactMatrix ? '130px' : '160px',
                               p: 1,
                               bgcolor: 'white'
                           }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                              <Typography variant="caption" sx={{ 
-                                    fontSize: '1rem',
+                              <Typography variant="caption" sx={{
+                                    fontSize: isCompactMatrix ? '0.75rem' : '1rem',
                                 lineHeight: 1,
+                                whiteSpace: 'nowrap',
                                 wordBreak: 'break-word',
                                     color: 'black',
                                     fontWeight: 'bold'

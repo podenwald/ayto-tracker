@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.3] - 2026-09-07
+
+### 🎨 Design
+- Avatare in "Deine Lösung" und der Wahrscheinlichkeits-Matrix hatten (ohne hinterlegtes Foto) noch nie eine farbige Füllung, nur einen Rahmen — anders als die Kandidat*innen-Karten in der Übersicht, die bewusst geschlechtsbezogen eingefärbt sind. Beide Tabellen nutzen jetzt dieselbe Farblogik (`secondary.main` für Frauen, `primary.main` für Männer); der grüne Rahmen bei bestätigtem Perfect Match in der Wahrscheinlichkeits-Matrix bleibt erhalten
+- "Deine Lösung": Zeilen-Kopfzelle (Frauen) von fester Mindestbreite auf inhaltsbasierte Breite umgestellt — die Spalte ist jetzt nur noch so breit wie der längste Name plus Avatar, nicht mehr künstlich breiter (ODI-344)
+
+---
+
 ## [1.9.2] - 2026-09-06
 
 ### 🐛 Bugfixes

@@ -1825,15 +1825,15 @@ const OverviewMUI: React.FC = () => {
                               borderColor: 'divider'
                           }}>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                              <Avatar 
+                              <Avatar
                                 src={man.photoUrl}
-                                sx={{ 
+                                sx={{
                                   width: isCompactMatrix ? 24 : 32,
                                   height: isCompactMatrix ? 24 : 32,
                                   fontSize: isCompactMatrix ? '0.75rem' : '0.9rem',
-                                  bgcolor: 'white',
-                                  border: hasPerfectMatch ? '2px solid' : '1px solid',
-                                  borderColor: hasPerfectMatch ? 'success.dark' : 'grey.300'
+                                  bgcolor: man.photoUrl ? undefined : 'primary.main',
+                                  border: hasPerfectMatch ? '2px solid' : '2px solid white',
+                                  borderColor: hasPerfectMatch ? 'success.dark' : undefined
                                 }}
                               >
                                 {man.name?.charAt(0)}
@@ -1901,15 +1901,15 @@ const OverviewMUI: React.FC = () => {
                   </Typography>
                                 )}
       </Box>
-                              <Avatar 
+                              <Avatar
                                 src={woman.photoUrl}
-                                sx={{ 
+                                sx={{
                                   width: isCompactMatrix ? 24 : 32,
                                   height: isCompactMatrix ? 24 : 32,
                                   fontSize: isCompactMatrix ? '0.75rem' : '0.9rem',
-                                  bgcolor: 'white',
-                                  border: womanHasPerfectMatch ? '2px solid' : '1px solid',
-                                  borderColor: womanHasPerfectMatch ? 'success.dark' : 'grey.300'
+                                  bgcolor: woman.photoUrl ? undefined : 'secondary.main',
+                                  border: womanHasPerfectMatch ? '2px solid' : '2px solid white',
+                                  borderColor: womanHasPerfectMatch ? 'success.dark' : undefined
                                 }}
                               >
                                 {woman.name?.charAt(0)}
@@ -2127,19 +2127,19 @@ const OverviewMUI: React.FC = () => {
                               bgcolor: 'white'
                           }}>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                              <Avatar 
+                              <Avatar
                                 src={man.photoUrl}
-                                sx={{ 
+                                sx={{
                                     width: isCompactMatrix ? 24 : 32,
                                     height: isCompactMatrix ? 24 : 32,
                                     fontSize: isCompactMatrix ? '0.75rem' : '1rem',
-                                    border: '2px solid',
-                                    borderColor: 'primary.main'
+                                    bgcolor: man.photoUrl ? undefined : 'primary.main',
+                                    border: '2px solid white'
                                 }}
                               >
                                 {man.name?.charAt(0)}
                               </Avatar>
-                              <Typography variant="caption" sx={{ 
+                              <Typography variant="caption" sx={{
                                   fontSize: isCompactMatrix ? '0.75rem' : '1rem',
                                 lineHeight: 1,
                                 wordBreak: 'break-word',
@@ -2159,7 +2159,8 @@ const OverviewMUI: React.FC = () => {
                             <TableCell sx={{
                               fontWeight: 'bold',
                               fontSize: isCompactMatrix ? '0.85rem' : '1rem',
-                            minWidth: isCompactMatrix ? '130px' : '160px',
+                            width: '1%',
+                            whiteSpace: 'nowrap',
                               p: 1,
                               bgcolor: 'white'
                           }}>
@@ -2176,14 +2177,14 @@ const OverviewMUI: React.FC = () => {
                               {woman.name?.substring(0, 10)}
                               </Typography>
                                 </Box>
-                              <Avatar 
+                              <Avatar
                                 src={woman.photoUrl}
-                                sx={{ 
+                                sx={{
                                     width: isCompactMatrix ? 24 : 32,
                                     height: isCompactMatrix ? 24 : 32,
                                     fontSize: isCompactMatrix ? '0.75rem' : '1rem',
-                                    border: '2px solid',
-                                    borderColor: 'primary.main'
+                                    bgcolor: woman.photoUrl ? undefined : 'secondary.main',
+                                    border: '2px solid white'
                                 }}
                               >
                                 {woman.name?.charAt(0)}

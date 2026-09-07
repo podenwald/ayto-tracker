@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.9.4] - 2026-09-07
+- "Deine Lösung": Beim Klicken durch eine Zelle kommt jetzt zuerst "Kein Match" (X), dann "Perfect Match" (Häkchen), dann "Unsicher" – spart dir einen Klick, wenn du meistens X einträgst
+
+---
+
 ## [1.9.3] - 2026-09-07
 - Die Avatare in "Deine Lösung" und der Wahrscheinlichkeits-Matrix sind jetzt farbig gefüllt (wie in der Übersicht), statt nur einen Rahmen zu haben
 - "Deine Lösung": Die Namensspalte links ist jetzt schmaler und passt sich der Namenslänge an

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.4] - 2026-09-07
+
+### 🎨 UX
+- "Deine Lösung": Klick-Reihenfolge einer Zelle von `['', '✓', '✗', '?']` auf `['', '✗', '✓', '?']` geändert. Da beim Ausfüllen der eigenen Lösung deutlich mehr Felder am Ende "Kein Match" sind als "Perfect Match" oder "Unsicher", brauchte der Regelfall bisher zwei statt einem Klick. Legende darunter entsprechend umsortiert (ODI-345)
+
+---
+
 ## [1.9.3] - 2026-09-07
 
 ### 🎨 Design

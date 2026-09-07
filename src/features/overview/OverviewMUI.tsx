@@ -2212,7 +2212,7 @@ const OverviewMUI: React.FC = () => {
                                 onClick={() => {
                                   // Toggle zwischen verschiedenen Zuständen
                                   const currentValue = userSolution[woman.name!]?.[man.name!] || ''
-                                  const states = ['', '✓', '✗', '?']
+                                  const states = ['', '✗', '✓', '?']
                                   const currentIndex = states.indexOf(currentValue)
                                   const nextIndex = (currentIndex + 1) % states.length
                                   const nextValue = states[nextIndex]
@@ -2243,27 +2243,10 @@ const OverviewMUI: React.FC = () => {
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ 
-                          width: 20, 
-                          height: 20, 
-                          border: '1px solid', 
-                          borderColor: 'divider',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '1rem',
-                          fontWeight: 'bold',
-                          color: 'success.main'
-                        }}>
-                          ✓
-                        </Box>
-                        <Typography variant="caption">Perfect Match</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ 
-                          width: 20, 
-                          height: 20, 
-                          border: '1px solid', 
+                        <Box sx={{
+                          width: 20,
+                          height: 20,
+                          border: '1px solid',
                           borderColor: 'divider',
                           display: 'flex',
                           alignItems: 'center',
@@ -2275,6 +2258,23 @@ const OverviewMUI: React.FC = () => {
                           ✗
                         </Box>
                         <Typography variant="caption">Kein Match</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{
+                          width: 20,
+                          height: 20,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1rem',
+                          fontWeight: 'bold',
+                          color: 'success.main'
+                        }}>
+                          ✓
+                        </Box>
+                        <Typography variant="caption">Perfect Match</Typography>
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Box sx={{ 

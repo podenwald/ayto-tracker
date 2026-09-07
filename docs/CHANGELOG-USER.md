@@ -2,6 +2,12 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.9.3] - 2026-09-07
+- Die Avatare in "Deine Lösung" und der Wahrscheinlichkeits-Matrix sind jetzt farbig gefüllt (wie in der Übersicht), statt nur einen Rahmen zu haben
+- "Deine Lösung": Die Namensspalte links ist jetzt schmaler und passt sich der Namenslänge an
+
+---
+
 ## [1.9.2] - 2026-09-06
 - Wahrscheinlichkeits-Tab: Wenn noch keine Matching Night eingetragen ist, siehst du jetzt einen ruhigen Hinweis statt einer roten Fehlermeldung – inklusive klarem Hinweis, dass du die Berechnung danach über den Button "Berechnen" manuell starten musst
 - Neuer Kandidat im Cast: Laurenz ist dazugekommen

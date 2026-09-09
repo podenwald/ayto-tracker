@@ -827,12 +827,24 @@ const MatchboxManagement: React.FC<{
   const availableWomen = getAvailableParticipants(women, matchboxes, editingMatchbox?.id)
   const availableMen = getAvailableParticipants(men, matchboxes, editingMatchbox?.id)
 
-  // Doppelmatch: nur möglich, wenn die Geschlechterzahl ungleich ist, und nur 1x pro Staffel
+  // Doppelmatch: nur möglich, wenn die Geschlechterzahl ungleich ist, und nur 1x pro Staffel.
+  // Ausnahme: Eine bereits bestehende Doppelmatch-Box bleibt beim Bearbeiten immer sichtbar/
+  // editierbar, auch wenn sich die Geschlechterzahl der Staffel seither (z.B. durch einen neu
+  // hinzugekommenen Kandidaten) wieder angeglichen hat - sonst verschwindet die Doppelmatch-
+  // Auswahl kommentarlos aus dem Bearbeiten-Dialog (gefunden über einen Nutzer-Bugreport).
   const smallerGender = getSmallerGender(participants)
   const hasDoppelmatchElsewhere = matchboxes.some(mb => mb.isDoppelmatch && mb.id !== editingMatchbox?.id)
-  const doppelmatchAvailable = smallerGender !== null && !hasDoppelmatchElsewhere
-  // Zweite Partner*in kommt aus dem zahlenmäßig größeren Geschlecht
-  const doppelmatchCandidates = (smallerGender === 'F' ? availableMen : availableWomen)
+  const doppelmatchAvailable = (smallerGender !== null && !hasDoppelmatchElsewhere) || matchboxForm.isDoppelmatch
+  // Zweite Partner*in kommt aus dem zahlenmäßig größeren Geschlecht. Ist bereits eine Partner*in
+  // gesetzt (Bearbeiten-Fall), richtet sich der Auswahl-Pool nach deren tatsächlichem Geschlecht,
+  // statt sich auf die aktuelle (ggf. inzwischen ausgeglichene) Geschlechterzahl zu verlassen.
+  const existingDoppelmatchPartnerGender = matchboxForm.doppelmatchPartner
+    ? participants.find(p => p.name === matchboxForm.doppelmatchPartner)?.gender
+    : undefined
+  const doppelmatchCandidatePool = existingDoppelmatchPartnerGender
+    ? (existingDoppelmatchPartnerGender === 'F' ? availableWomen : availableMen)
+    : (smallerGender === 'F' ? availableMen : availableWomen)
+  const doppelmatchCandidates = doppelmatchCandidatePool
     .filter(p => p.name !== matchboxForm.woman && p.name !== matchboxForm.man)
 
   const perfectMatches = matchboxes.filter(mb => mb.matchType === 'perfect').length

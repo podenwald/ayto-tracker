@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.9.5] - 2026-09-09
+- Wichtiger Fehler behoben: Im Admin-Bereich ließ sich ein bereits eingetragener Doppelmatch nicht mehr bearbeiten, wenn die Staffel eine gerade Anzahl Frauen/Männer hatte. Das funktioniert jetzt wieder
+
+---
+
 ## [1.9.4] - 2026-09-07
 - "Deine Lösung": Beim Klicken durch eine Zelle kommt jetzt zuerst "Kein Match" (X), dann "Perfect Match" (Häkchen), dann "Unsicher" – spart dir einen Klick, wenn du meistens X einträgst
 

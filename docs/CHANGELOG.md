@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.5] - 2026-09-09
+
+### 🐛 Bugfixes (kritisch)
+- Admin: Der Doppelmatch-Bereich (Checkbox + "Zweite Partner*in") verschwand komplett aus dem "Matchbox bearbeiten"-Dialog, sobald die Staffel eine ausgeglichene Geschlechterzahl hatte — auch für eine Matchbox, die selbst bereits einen bestätigten Doppelmatch hatte (Marta + Johannes, Zoe als zweite Partnerin). Ursache: `doppelmatchAvailable` prüfte nur die aktuelle, live berechnete Geschlechterzahl der gesamten Staffel; durch die Aufnahme von Laurenz (ODI-343) wurde die Staffel von 10M/11F auf 11/11 ausgeglichen, wodurch `getSmallerGender()` `null` lieferte. Eine bestehende Doppelmatch-Box bleibt jetzt immer editierbar, unabhängig von der aktuellen Geschlechterzahl; der Auswahl-Pool der zweiten Partner*in richtet sich zudem nach deren tatsächlichem Geschlecht statt nach der live berechneten Geschlechterzahl (ODI-353)
+
+---
+
 ## [1.9.4] - 2026-09-07
 
 ### 🎨 UX

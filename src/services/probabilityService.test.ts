@@ -172,6 +172,27 @@ describe('calculateProbabilities — basic properties', () => {
     expect(result.totalValidMatchings).toBe(39_916_800)
     expect(result.limitReached).toBe(false)
   }, 30_000)
+
+  it('absorbs a Doppelmatch-caused surplus man via placeholderSlots instead of doubling a real woman (ODI-355)', async () => {
+    // 3 Männer, aber nur 2 "reale" Frauen (die dritte wurde als Doppelmatch-Partnerin
+    // ausgeschlossen) + 1 placeholderSlot, der die entfernte Frau kompensiert. Ohne den
+    // Fix (maxPerWoman = ceil(3/2) = 2 auf X/Y) könnte X oder Y künstlich zwei Männer
+    // gleichzeitig bekommen; mit placeholderSlots=1 ist es stattdessen eine reguläre
+    // 3-gegen-3-Bijektion (2 reale Frauen + 1 Platzhalter), bei der jede reale Frau
+    // IMMER genau einen Mann bekommt.
+    const result = await calculateProbabilities(
+      input({ men: ['A', 'B', 'C'], women: ['X', 'Y'], placeholderSlots: 1 })
+    )
+    // 3! = 6 Bijektionen zwischen 3 Männern und den 3 Plätzen (X, Y, Platzhalter).
+    expect(result.totalValidMatchings).toBe(6)
+    for (const woman of ['X', 'Y']) {
+      const rowSum = Object.values(result.probabilityMatrix[woman]).reduce((a, b) => a + b, 0)
+      expect(rowSum).toBeCloseTo(1, 10)
+      for (const man of ['A', 'B', 'C']) {
+        expect(result.probabilityMatrix[woman][man]).toBeCloseTo(1 / 3, 10)
+      }
+    }
+  })
 })
 
 describe('calculateProbabilities — differential tests vs. a naive reference', () => {

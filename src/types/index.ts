@@ -299,6 +299,14 @@ export interface ProbabilityInput {
   women: string[] // Namen der Frauen
   ceremonies: CeremonyConstraint[]
   boxDecisions: BoxDecision[]
+  /**
+   * Anzahl der Frauen, die wegen eines Doppelmatches komplett aus `women` entfernt wurden
+   * (z.B. Janice, die keine eigene Matchbox-Zeile hat, aber durch die Doppelmatch-
+   * Markierung bereits an einen Mann vergeben ist). Jede entfernte Person hinterlässt
+   * eine "freie Stelle": irgendein anderer Mann bleibt dadurch ohne Partnerin übrig,
+   * statt dass zufällig eine beliebige reale Frau doppelt gezählt wird (ODI-355).
+   */
+  placeholderSlots?: number
 }
 
 /**

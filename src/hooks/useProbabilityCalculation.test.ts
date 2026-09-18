@@ -134,8 +134,20 @@ describe('calculateProbabilities — real-world regression (ODI-354)', () => {
     expect(input.women).not.toContain('Janice')
     expect(input.men).toHaveLength(11)
     expect(input.men).toContain('Fabi')
+    // Genau eine Frau (Janice) wurde wegen Doppelmatch entfernt -> genau ein Platzhalter (ODI-355).
+    expect(input.placeholderSlots).toBe(1)
 
     const result = await calculateProbabilities(input)
     expect(result.totalValidMatchings).toBeGreaterThan(0)
+
+    // ODI-355 Regressionsschutz: Ohne den placeholderSlots-Fix konnte JEDE Frau in
+    // manchen Lösungen zwei Männer gleichzeitig bekommen (der Männer-Überschuss durch
+    // das Ausschließen von Janice wurde fälschlich beliebig verteilt statt über einen
+    // internen Platzhalter absorbiert) - die Zeile einer Frau summierte sich dann auf
+    // über 100% statt auf exakt 100%.
+    for (const woman of input.women) {
+      const rowSum = Object.values(result.probabilityMatrix[woman]).reduce((a, b) => a + b, 0)
+      expect(rowSum).toBeCloseTo(1, 5)
+    }
   }, 30_000)
 })

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1] - 2026-09-18
+
+### 🐛 Bugfixes (kritisch)
+- ODI-354 (Doppelmatch-Partner*innen ohne eigene Matchbox-Zeile ausschließen) erzeugte einen Folgefehler: Das Entfernen von Janice aus `women` verschob das Geschlechterverhältnis künstlich (11 Männer/10 Frauen), wodurch die generische `maxPerWoman`-Regel in `probabilityService.ts` JEDER Frau erlaubte, gleichzeitig zwei Männer zu bekommen — nicht nur der eigentlich betroffenen Person. Dadurch konnten Paare fälschlich als "100%/fixiert" erscheinen (z.B. Emma+Bennett), obwohl rechnerisch noch hunderte andere Lösungen existierten. `ProbabilityInput` bekommt ein neues Feld `placeholderSlots`; der durch den Doppelmatch-Ausschluss entstandene Männer-Überschuss wird jetzt über interne, in keiner Zeremonie zählende Platzhalter-Plätze absorbiert statt eine beliebige reale Frau zu verdoppeln. Mit den echten Produktionsdaten verifiziert: Ergebnis sank von (fehlerhaften) 1462 auf die korrekten 23 gültigen Kombinationen, jede Frauen-Zeile summiert sich jetzt exakt auf 100% (ODI-355)
+
+---
+
 ## [1.10.0] - 2026-09-18
 
 ### 🐛 Bugfixes (kritisch)

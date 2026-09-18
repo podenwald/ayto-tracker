@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.10.1] - 2026-09-18
+- Wichtiger Fehler behoben: Die Wahrscheinlichkeits-Berechnung konnte durch den Doppelmatch (Johannes/Marta/Janice) ein Paar fälschlich als "100% sicher" anzeigen, obwohl es das nicht war. Die Berechnung ist jetzt wieder korrekt
+
+---
+
 ## [1.10.0] - 2026-09-18
 - Wichtiger Fehler behoben: Die Wahrscheinlichkeits-Berechnung zeigte "0 gültige Kombinationen", wenn jemand ohne Perfect Match mal eine Matching Night ausgesetzt hat. Das ist jetzt korrigiert
 - Aktueller Stand der Staffel aktualisiert (Matching Nights #4 und #5, neue Matchboxes)

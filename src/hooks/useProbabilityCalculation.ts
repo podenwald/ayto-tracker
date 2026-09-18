@@ -94,6 +94,11 @@ export function convertToProbabilityInput(
   const women = allParticipants
     .filter(p => p.gender === 'F' && !doppelmatchPartnerNames.has(p.name))
     .map(p => p.name)
+
+  // Wie viele Frauen wurden oben aus `women` entfernt? Diese Zahl reicht
+  // probabilityService.ts durch (placeholderSlots), damit der dadurch entstehende
+  // Männer-Überschuss nicht eine beliebige andere Frau verdoppelt (ODI-355).
+  const placeholderSlots = allParticipants.filter(p => p.gender === 'F' && doppelmatchPartnerNames.has(p.name)).length
   
   console.log('👥 Alle Kandidat*innen für Berechnung:', {
     männer: men.length,
@@ -164,7 +169,8 @@ export function convertToProbabilityInput(
     men,
     women,
     ceremonies,
-    boxDecisions
+    boxDecisions,
+    placeholderSlots
   }
 }
 

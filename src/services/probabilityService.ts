@@ -60,7 +60,7 @@ export async function calculateProbabilities(
   const startTime = performance.now()
 
   try {
-    const { men, women, ceremonies, boxDecisions } = input
+    const { men, women, ceremonies, boxDecisions, placeholderSlots = 0 } = input
     const nMen = men.length
     const nWomen = women.length
 
@@ -70,10 +70,21 @@ export async function calculateProbabilities(
     const womenIdx = new Map(women.map((w, i) => [w, i]))
 
     // Jede Frau darf maximal so oft vorkommen, wie es die Geschlechterzahlen erlauben
-    // (identisch zur bisherigen Logik: bei mehr Männern als Frauen kann eine Frau
-    // mehrfach vorkommen; bei mehr Frauen als Männern bleiben überzählige Frauen ohne
-    // Zuordnung). ceil(n/n) = 1, die Formel deckt daher auch den Gleichstand-Fall ab.
-    const maxPerWoman = Math.ceil(nMen / nWomen)
+    // (bei mehr Männern als Frauen kann eine Frau mehrfach vorkommen; bei mehr Frauen
+    // als Männern bleiben überzählige Frauen ohne Zuordnung). ceil(n/n) = 1, die Formel
+    // deckt daher auch den Gleichstand-Fall ab.
+    //
+    // `placeholderSlots` zählt Frauen, die wegen eines Doppelmatches komplett aus
+    // `women` entfernt wurden (ODI-355) - ohne Korrektur würde das künstlich so
+    // aussehen, als gäbe es zu wenige Frauen, und `maxPerWoman` würde JEDER realen
+    // Frau erlauben, zwei Männer zu bekommen (statt nur der eigentlich betroffenen
+    // Person, die gar nicht mehr im Suchraum steckt). Für die Berechnung von
+    // `maxPerWoman` wird deshalb die ursprüngliche, ungekürzte Frauenzahl verwendet;
+    // der dadurch entstehende Überschuss an Männern wird über zusätzliche, rein
+    // interne "Platzhalter"-Plätze absorbiert (= "keine berechenbare Partnerin"),
+    // statt eine beliebige reale Frau zu verdoppeln.
+    const maxPerWoman = Math.ceil(nMen / (nWomen + placeholderSlots))
+    const totalSlots = nWomen + placeholderSlots
 
     // ** Box-Entscheidungen strukturell in die Suche einbauen (Pruning) **
     const requiredCandidates: number[][] = Array.from({ length: nMen }, () => [])
@@ -133,10 +144,10 @@ export async function calculateProbabilities(
       onProgress?.(10, 'Durchsuche mögliche Zuordnungen...')
 
       const assignment = new Int16Array(nMen).fill(-1)
-      const womanUseCount = new Int16Array(nWomen).fill(0)
+      const womanUseCount = new Int16Array(totalSlots).fill(0)
 
       // Grobe Schätzung des Gesamtraums (ohne Pruning) für die Fortschrittsanzeige
-      const estimatedTotal = estimateSearchSpaceSize(nMen, nWomen)
+      const estimatedTotal = estimateSearchSpaceSize(nMen, totalSlots)
       let lastReportedPercent = 10
 
       const isLeafValid = (): boolean => {
@@ -164,7 +175,11 @@ export async function calculateProbabilities(
           if (isLeafValid()) {
             totalValid++
             for (let mi = 0; mi < nMen; mi++) {
-              pairCounts[assignment[mi]][mi]++
+              const wi = assignment[mi]
+              // Platzhalter-Plätze (wi >= nWomen) sind keine reale Person und fließen
+              // nicht in die Matrix ein - der Mann bleibt in diesem Blatt ohne
+              // berechenbare Partnerin.
+              if (wi < nWomen) pairCounts[wi][mi]++
             }
           }
           if (totalLeaves % 500_000 === 0) {
@@ -190,8 +205,10 @@ export async function calculateProbabilities(
         }
 
         const forbidden = forbiddenWomen[manIndex]
-        for (let wi = 0; wi < nWomen; wi++) {
-          if (forbidden.has(wi)) continue
+        for (let wi = 0; wi < totalSlots; wi++) {
+          // Platzhalter-Plätze (wi >= nWomen) sind keine reale Person - No-Match-
+          // Entscheidungen (forbidden) können sich nie auf sie beziehen.
+          if (wi < nWomen && forbidden.has(wi)) continue
           if (womanUseCount[wi] >= maxPerWoman) continue
           assignment[manIndex] = wi
           womanUseCount[wi]++
@@ -290,7 +307,7 @@ export function generateDataHash(input: ProbabilityInput): string {
     .sort()
     .join(';')
 
-  const fullString = `men:${menStr}|women:${womenStr}|ceremonies:${ceremoniesStr}|decisions:${decisionsStr}`
+  const fullString = `men:${menStr}|women:${womenStr}|placeholders:${input.placeholderSlots ?? 0}|ceremonies:${ceremoniesStr}|decisions:${decisionsStr}`
 
   // Simple hash function (FNV-1a)
   let hash = 2166136261

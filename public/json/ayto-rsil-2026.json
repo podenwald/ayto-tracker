@@ -63,7 +63,7 @@
       "knownFrom": "Germany Shore",
       "age": 21,
       "status": "Aktiv",
-      "active": true,
+      "active": false,
       "photoUrl": "",
       "bio": "Bekannt aus Party-Reality",
       "gender": "F",
@@ -133,7 +133,7 @@
       "knownFrom": "Forsthaus Rampensau, Match in Paradise",
       "age": 21,
       "status": "Aktiv",
-      "active": false,
+      "active": true,
       "photoUrl": "",
       "bio": "Reality-Format Teilnehmerin aus Österreich",
       "gender": "F",
@@ -373,6 +373,48 @@
       "createdAt": "2026-09-03T20:17:42.420Z",
       "ausstrahlungsdatum": "2026-09-03",
       "ausstrahlungszeit": "21:00"
+    },
+    {
+      "id": 612,
+      "name": "Matching Night #4",
+      "date": "2026-09-09",
+      "pairs": [
+        { "woman": "Francesca", "man": "Raúl" },
+        { "woman": "Zoe", "man": "Fabi" },
+        { "woman": "Jenny", "man": "Daymian" },
+        { "woman": "Julia", "man": "Cansin" },
+        { "woman": "Emma", "man": "Marwin" },
+        { "woman": "Joena", "man": "Robin" },
+        { "woman": "Michelle", "man": "Germain" },
+        { "woman": "Alexandra", "man": "Brian" },
+        { "woman": "Christin", "man": "Bennett" },
+        { "woman": "Marta", "man": "Johannes" }
+      ],
+      "totalLights": 4,
+      "createdAt": "2026-09-09T20:38:07.559Z",
+      "ausstrahlungsdatum": "2026-09-09",
+      "ausstrahlungszeit": "21:00"
+    },
+    {
+      "id": 613,
+      "name": "Matching Night #5",
+      "date": "2026-09-18",
+      "pairs": [
+        { "woman": "Zoe", "man": "Laurenz" },
+        { "woman": "Alexandra", "man": "Brian" },
+        { "woman": "Emma", "man": "Germain" },
+        { "woman": "Francesca", "man": "Marwin" },
+        { "woman": "Jenny", "man": "Daymian" },
+        { "woman": "Joena", "man": "Robin" },
+        { "woman": "Marta", "man": "Johannes" },
+        { "woman": "Christin", "man": "Bennett" },
+        { "woman": "Julia", "man": "Cansin" },
+        { "woman": "Michelle", "man": "Raúl" }
+      ],
+      "totalLights": 3,
+      "createdAt": "2026-09-18T18:53:09.494Z",
+      "ausstrahlungsdatum": "2026-09-16",
+      "ausstrahlungszeit": "21:00"
     }
   ],
   "matchboxes": [
@@ -416,9 +458,35 @@
       "ausstrahlungsdatum": "2026-09-02",
       "ausstrahlungszeit": "20:15",
       "createdAt": "2026-09-02T20:44:26.748Z",
-      "updatedAt": "2026-09-04T11:11:59.406Z",
+      "updatedAt": "2026-09-09T21:46:05.478Z",
       "isDoppelmatch": true,
-      "doppelmatchPartner": "Zoe"
+      "doppelmatchPartner": "Janice"
+    },
+    {
+      "id": 513,
+      "woman": "Julia",
+      "man": "Bennett",
+      "matchType": "no-match",
+      "price": 0,
+      "buyer": "",
+      "ausstrahlungsdatum": "2026-09-09",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-09-09T19:37:04.122Z",
+      "updatedAt": "2026-09-09T19:37:04.122Z",
+      "isDoppelmatch": false
+    },
+    {
+      "id": 514,
+      "woman": "Emma",
+      "man": "Laurenz",
+      "matchType": "sold",
+      "price": -10000,
+      "buyer": "Fabi",
+      "ausstrahlungsdatum": "2026-09-16",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-09-17T20:00:09.623Z",
+      "updatedAt": "2026-09-18T06:12:33.469Z",
+      "isDoppelmatch": false
     }
   ],
   "penalties": []

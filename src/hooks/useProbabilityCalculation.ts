@@ -35,7 +35,7 @@ import { generateDataHash } from '@/services/probabilityService'
 /**
  * Konvertiert Datenbank-Daten zu ProbabilityInput
  */
-function convertToProbabilityInput(
+export function convertToProbabilityInput(
   participants: Participant[],
   matchingNights: MatchingNight[],
   matchboxes: Matchbox[]
@@ -78,12 +78,21 @@ function convertToProbabilityInput(
     gefilterteNamen: allParticipants.map(p => p.name)
   })
   
+  // Doppelmatch-Partner*innen (z.B. Janice bei Marta+Johannes) haben keine eigene
+  // Matchbox-Zeile, sind aber bereits durch die Doppelmatch-Markierung "verbraucht" -
+  // sie stehen für weitere Zuordnungen nicht mehr zur Verfügung (ODI-354, Nutzer-Hinweis).
+  const doppelmatchPartnerNames = new Set(
+    matchboxes
+      .filter(mb => mb.matchType === 'perfect' && mb.isDoppelmatch && mb.doppelmatchPartner)
+      .map(mb => mb.doppelmatchPartner as string)
+  )
+
   const men = allParticipants
-    .filter(p => p.gender === 'M')
+    .filter(p => p.gender === 'M' && !doppelmatchPartnerNames.has(p.name))
     .map(p => p.name)
-  
+
   const women = allParticipants
-    .filter(p => p.gender === 'F')
+    .filter(p => p.gender === 'F' && !doppelmatchPartnerNames.has(p.name))
     .map(p => p.name)
   
   console.log('👥 Alle Kandidat*innen für Berechnung:', {
@@ -101,25 +110,7 @@ function convertToProbabilityInput(
     return dateA - dateB
   })
   const nightsForCalculation = matchingNightsSorted.filter(mn => mn.matchType !== 'sold')
-  
-  // DEBUG: Welche Kandidat*innen kommen in den Zeremonien vor?
-  const participantsInCeremonies = new Set<string>()
-  nightsForCalculation.forEach(night => {
-    night.pairs.forEach(pair => {
-      participantsInCeremonies.add(pair.woman)
-      participantsInCeremonies.add(pair.man)
-    })
-  })
-  
-  console.log('🎭 Kandidat*innen in Zeremonien:', {
-    gesamt: participantsInCeremonies.size,
-    namen: Array.from(participantsInCeremonies),
-    männerInCeremonies: men.filter(m => participantsInCeremonies.has(m)),
-    frauenInCeremonies: women.filter(w => participantsInCeremonies.has(w)),
-    männerNICHTInCeremonies: men.filter(m => !participantsInCeremonies.has(m)),
-    frauenNICHTInCeremonies: women.filter(w => !participantsInCeremonies.has(w))
-  })
-  
+
   // Guard: Keine Kandidat*innen vorhanden
   if (allParticipants.length === 0) {
     console.warn('⚠️ Keine Kandidat*innen vorhanden!')
@@ -130,38 +121,7 @@ function convertToProbabilityInput(
       boxDecisions: []
     }
   }
-  
-  // KRITISCH: Nur Kandidat*innen aus der LETZTEN Matching Night (mit Lichter-Info, keine verkauften)
-  const lastNight = nightsForCalculation[nightsForCalculation.length - 1]
-  
-  if (!lastNight) {
-    console.warn('⚠️ Keine Matching Nights mit Lichter-Info vorhanden!')
-    return {
-      men: [],
-      women: [],
-      ceremonies: [],
-      boxDecisions: []
-    }
-  }
-  
-  const menInLastNight = new Set(lastNight.pairs.map(p => p.man))
-  const womenInLastNight = new Set(lastNight.pairs.map(p => p.woman))
-  
-  const relevantMen = men.filter(m => menInLastNight.has(m))
-  const relevantWomen = women.filter(w => womenInLastNight.has(w))
-  
-  console.log('🎯 Relevante Kandidat*innen für Berechnung (aus letzter Matching Night):', {
-    relevantMen: relevantMen.length,
-    relevantWomen: relevantWomen.length,
-    menNames: relevantMen,
-    womenNames: relevantWomen,
-    ausgeschlossen: {
-      männer: men.filter(m => !relevantMen.includes(m)),
-      frauen: women.filter(w => !relevantWomen.includes(w))
-    },
-    hinweis: 'Ausgeschlossene haben bereits ihr Perfect Match gefunden'
-  })
-  
+
   // Konvertiere Matching Nights zu Constraints (nur Nights mit Lichter-Info, keine verkauften)
   const ceremonies: CeremonyConstraint[] = nightsForCalculation.map(night => {
     // Ermittle Perfect Matches die VOR dieser Matching Night bekannt waren
@@ -201,8 +161,8 @@ function convertToProbabilityInput(
     }))
   
   return {
-    men: relevantMen,
-    women: relevantWomen,
+    men,
+    women,
     ceremonies,
     boxDecisions
   }

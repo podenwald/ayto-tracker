@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.10.0] - 2026-09-18
+- Wichtiger Fehler behoben: Die Wahrscheinlichkeits-Berechnung zeigte "0 gültige Kombinationen", wenn jemand ohne Perfect Match mal eine Matching Night ausgesetzt hat. Das ist jetzt korrigiert
+
+---
+
 ## [1.9.5] - 2026-09-09
 - Wichtiger Fehler behoben: Im Admin-Bereich ließ sich ein bereits eingetragener Doppelmatch nicht mehr bearbeiten, wenn die Staffel eine gerade Anzahl Frauen/Männer hatte. Das funktioniert jetzt wieder
 

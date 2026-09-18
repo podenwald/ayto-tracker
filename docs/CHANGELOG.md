@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0] - 2026-09-18
+
+### 🐛 Bugfixes (kritisch)
+- Wahrscheinlichkeitsberechnung lieferte "0 gültige Kombinationen", sobald jemand ohne bestätigtes Perfect Match eine Matching Night aussetzte (z.B. wegen ungerader Kandidat*innen-Zahl seit Laurenz' Aufnahme, ODI-343). `convertToProbabilityInput` schränkte die berechnungsrelevanten Kandidat*innen bisher fälschlich auf die Teilnehmer*innen der ZULETZT ausgestrahlten Matching Night ein, mit der falschen Annahme "wer fehlt, hat schon sein Perfect Match" — das widersprach sogar einem gegenteiligen Kommentar direkt im selben Code. Die Einschränkung wurde entfernt; alle aktiven Kandidat*innen fließen jetzt wieder korrekt in die Berechnung ein. Mit dem realen, vom Nutzer gemeldeten Datensatz verifiziert: Ergebnis war 0, ist jetzt > 0 (ODI-354)
+
+---
+
 ## [1.9.5] - 2026-09-09
 
 ### 🐛 Bugfixes (kritisch)

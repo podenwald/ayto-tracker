@@ -53,14 +53,33 @@ describe('convertToProbabilityInput', () => {
     expect(input.women).toContain('Marta')
     expect(input.men).toContain('Johannes')
   })
+
+  it('excludes a Doppelmatch partner (no own matchbox row, but already "used up") from the pool', () => {
+    // Janice hat keine eigene Matchbox-Zeile, ist aber als doppelmatchPartner von
+    // Johannes (Marta + Johannes, isDoppelmatch) bereits vergeben - sie darf daher
+    // nicht mehr als "noch offen" in men/women auftauchen (Nutzer-Hinweis zu ODI-354).
+    const participants: Participant[] = [
+      participant('Marta', 'F'), participant('Janice', 'F'), participant('Johannes', 'M')
+    ]
+    const boxes: Matchbox[] = [
+      matchbox('Marta', 'Johannes', 'perfect', { isDoppelmatch: true, doppelmatchPartner: 'Janice' })
+    ]
+
+    const input = convertToProbabilityInput(participants, [], boxes)
+
+    expect(input.women).not.toContain('Janice')
+    expect(input.women).toContain('Marta')
+    expect(input.men).toContain('Johannes')
+  })
 })
 
 describe('calculateProbabilities — real-world regression (ODI-354)', () => {
   it('finds at least one valid matching for the reported production dataset, once absentees are no longer wrongly excluded', async () => {
     // Exakt der Datensatz aus dem Nutzer-Export vom 2026-09-18, der zuvor
-    // "0 gültige Kombinationen" lieferte, weil Fabi und Janice (beide ohne bestätigtes
-    // Perfect Match) in Matching Night #5 aussetzten und dadurch komplett aus der
-    // Berechnung herausfielen.
+    // "0 gültige Kombinationen" lieferte: Fabi (ohne Perfect Match, saß in Matching
+    // Night #5 nur aus) fiel fälschlich komplett aus der Berechnung heraus. Janice
+    // wird weiterhin korrekt ausgeschlossen, da sie als doppelmatchPartner von
+    // Johannes bereits "verbraucht" ist.
     const women = ['Emma', 'Alexandra', 'Christin', 'Francesca', 'Janice', 'Jenny', 'Julia', 'Marta', 'Michelle', 'Zoe', 'Joena']
     const men = ['Bennett', 'Brian', 'Cansin', 'Daymian', 'Fabi', 'Germain', 'Marwin', 'Johannes', 'Raúl', 'Robin', 'Laurenz']
     const participants: Participant[] = [
@@ -110,8 +129,11 @@ describe('calculateProbabilities — real-world regression (ODI-354)', () => {
     ]
 
     const input = convertToProbabilityInput(participants, nights, boxes)
-    expect(input.women).toHaveLength(11)
+    // Janice ausgeschlossen (Doppelmatch-Partnerin ohne eigene Matchbox-Zeile), Fabi enthalten.
+    expect(input.women).toHaveLength(10)
+    expect(input.women).not.toContain('Janice')
     expect(input.men).toHaveLength(11)
+    expect(input.men).toContain('Fabi')
 
     const result = await calculateProbabilities(input)
     expect(result.totalValidMatchings).toBeGreaterThan(0)

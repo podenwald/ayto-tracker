@@ -3,7 +3,13 @@
 ## [1.10.0] - 2026-09-18
 
 ### 🐛 Bugfixes (kritisch)
-- Wahrscheinlichkeitsberechnung lieferte "0 gültige Kombinationen", sobald jemand ohne bestätigtes Perfect Match eine Matching Night aussetzte (z.B. wegen ungerader Kandidat*innen-Zahl seit Laurenz' Aufnahme, ODI-343). `convertToProbabilityInput` schränkte die berechnungsrelevanten Kandidat*innen bisher fälschlich auf die Teilnehmer*innen der ZULETZT ausgestrahlten Matching Night ein, mit der falschen Annahme "wer fehlt, hat schon sein Perfect Match" — das widersprach sogar einem gegenteiligen Kommentar direkt im selben Code. Die Einschränkung wurde entfernt; alle aktiven Kandidat*innen fließen jetzt wieder korrekt in die Berechnung ein. Mit dem realen, vom Nutzer gemeldeten Datensatz verifiziert: Ergebnis war 0, ist jetzt > 0 (ODI-354)
+- Wahrscheinlichkeitsberechnung lieferte "0 gültige Kombinationen", sobald jemand ohne bestätigtes Perfect Match eine Matching Night aussetzte (z.B. wegen ungerader Kandidat*innen-Zahl seit Laurenz' Aufnahme, ODI-343). `convertToProbabilityInput` schränkte die berechnungsrelevanten Kandidat*innen bisher fälschlich auf die Teilnehmer*innen der ZULETZT ausgestrahlten Matching Night ein, mit der falschen Annahme "wer fehlt, hat schon sein Perfect Match" — das widersprach sogar einem gegenteiligen Kommentar direkt im selben Code. Die Einschränkung wurde entfernt; alle aktiven Kandidat*innen fließen jetzt wieder korrekt in die Berechnung ein. Zusätzlich werden Doppelmatch-Partner*innen ohne eigene Matchbox-Zeile (z.B. Janice) weiterhin korrekt ausgeschlossen, da sie durch die Doppelmatch-Markierung bereits vergeben sind. Mit dem realen, vom Nutzer gemeldeten Datensatz verifiziert: Ergebnis war 0, ist jetzt > 0 (ODI-354)
+
+### 📋 Daten
+- Standard-Datensatz der aktuellen Season (`public/json/ayto-rsil-2026.json`) auf den neuesten Stand gebracht: Matching Night #4 und #5 ergänzt, zwei neue Matchboxes (Julia + Bennett, Emma + Laurenz), Doppelmatch-Partnerin von Johannes auf Janice aktualisiert (ODI-354)
+
+### 🎨 Design
+- Standard-Theme-Farben angepasst: Hauptfarbe (Männer) auf `#D067BD`, Akzentfarbe (Frauen) auf `#37B4CD`
 
 ---
 

@@ -78,12 +78,21 @@ export function convertToProbabilityInput(
     gefilterteNamen: allParticipants.map(p => p.name)
   })
   
+  // Doppelmatch-Partner*innen (z.B. Janice bei Marta+Johannes) haben keine eigene
+  // Matchbox-Zeile, sind aber bereits durch die Doppelmatch-Markierung "verbraucht" -
+  // sie stehen für weitere Zuordnungen nicht mehr zur Verfügung (ODI-354, Nutzer-Hinweis).
+  const doppelmatchPartnerNames = new Set(
+    matchboxes
+      .filter(mb => mb.matchType === 'perfect' && mb.isDoppelmatch && mb.doppelmatchPartner)
+      .map(mb => mb.doppelmatchPartner as string)
+  )
+
   const men = allParticipants
-    .filter(p => p.gender === 'M')
+    .filter(p => p.gender === 'M' && !doppelmatchPartnerNames.has(p.name))
     .map(p => p.name)
-  
+
   const women = allParticipants
-    .filter(p => p.gender === 'F')
+    .filter(p => p.gender === 'F' && !doppelmatchPartnerNames.has(p.name))
     .map(p => p.name)
   
   console.log('👥 Alle Kandidat*innen für Berechnung:', {

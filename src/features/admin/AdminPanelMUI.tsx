@@ -2711,7 +2711,7 @@ Alle Daten gehen unwiderruflich verloren!`)
                 label="Hauptfarbe (Männer)"
                 value={themeColorSettings.primary}
                 onChange={(e) => setThemeColorSettings(prev => ({ ...prev, primary: e.target.value }))}
-                placeholder="#BD0A16"
+                placeholder="#D067BD"
                 sx={{ width: 280 }}
               />
               <TextField
@@ -2726,7 +2726,7 @@ Alle Daten gehen unwiderruflich verloren!`)
                 label="Akzentfarbe (Frauen)"
                 value={themeColorSettings.secondary}
                 onChange={(e) => setThemeColorSettings(prev => ({ ...prev, secondary: e.target.value }))}
-                placeholder="#CD9536"
+                placeholder="#37B4CD"
                 sx={{ width: 280 }}
               />
             </Box>

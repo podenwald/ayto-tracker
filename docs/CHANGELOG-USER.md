@@ -4,6 +4,8 @@ Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert ha
 
 ## [1.10.0] - 2026-09-18
 - Wichtiger Fehler behoben: Die Wahrscheinlichkeits-Berechnung zeigte "0 gültige Kombinationen", wenn jemand ohne Perfect Match mal eine Matching Night ausgesetzt hat. Das ist jetzt korrigiert
+- Aktueller Stand der Staffel aktualisiert (Matching Nights #4 und #5, neue Matchboxes)
+- Neue Standardfarben für die Übersicht
 
 ---
 

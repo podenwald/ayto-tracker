@@ -4,8 +4,8 @@ export type AppColorPreferences = {
 }
 
 export const DEFAULT_COLOR_PREFERENCES: AppColorPreferences = {
-  primary: '#BD0A16',
-  secondary: '#CD9536'
+  primary: '#D067BD',
+  secondary: '#37B4CD'
 }
 
 export const COLOR_PREFERENCES_STORAGE_KEY = 'ayto-theme-colors'

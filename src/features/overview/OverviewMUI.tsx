@@ -76,6 +76,9 @@ import SeasonPickerDialog from '@/components/SeasonPickerDialog'
 import { computeSeasonFinale, type SeasonFinaleResult } from '@/utils/seasonFinale'
 import { getActiveSeasonSummary } from '@/services/seasonCatalogService'
 
+/** "Deine Lösung" deaktiviert - durch "Alle exakten Kombinationen" ersetzt (ODI-358) */
+const DEINE_LOESUNG_ENABLED = false
+
 // ** Tab Panel Component
 interface TabPanelProps {
   children?: React.ReactNode
@@ -1786,70 +1789,6 @@ const OverviewMUI: React.FC = () => {
                         </ToggleButtonGroup>
                       </Box>
                     )}
-                    {probabilityResult?.allValidMatchings && probabilityResult.allValidMatchings.length > 0 && (
-                      <Box sx={{ mx: 2, mb: 3 }}>
-                        <Button
-                          size="small"
-                          startIcon={combinationsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                          onClick={() => setCombinationsExpanded(!combinationsExpanded)}
-                          sx={{ textTransform: 'none', color: 'text.secondary' }}
-                        >
-                          Alle {probabilityResult.allValidMatchings.length} exakten Kombinationen anzeigen
-                        </Button>
-                        <Collapse in={combinationsExpanded} unmountOnExit>
-                          <Box sx={{ maxHeight: 600, overflow: 'auto', bgcolor: 'grey.50', borderRadius: 1, p: 1.5, mt: 0.5 }}>
-                            <Box
-                              sx={{
-                                display: 'grid',
-                                gridTemplateColumns: `minmax(36px, auto) repeat(${men.length}, minmax(70px, auto))`,
-                                columnGap: 1,
-                                rowGap: 1.5,
-                                alignItems: 'center',
-                                width: 'fit-content'
-                              }}
-                            >
-                              {/* Kopfzeile: ein Mann pro Spalte, jede Kombinations-Zeile darunter bleibt spaltengleich */}
-                              <Box />
-                              {men.map(man => (
-                                <Typography key={man.id} variant="caption" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-                                  {man.name}
-                                </Typography>
-                              ))}
-
-                              {probabilityResult.allValidMatchings.map((solution, idx) => (
-                                <React.Fragment key={idx}>
-                                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                                    #{idx + 1}
-                                  </Typography>
-                                  {men.map(man => {
-                                    const pair = solution.pairs.find(p => p.man === man.name)
-                                    if (pair) {
-                                      return (
-                                        <CoupleAvatars
-                                          key={man.id}
-                                          womanName={pair.woman}
-                                          manName={pair.man}
-                                          matchType={fixedPairs.some(fp => fp.woman === pair.woman && fp.man === pair.man) ? 'perfect' : undefined}
-                                          participants={participants}
-                                          size={28}
-                                        />
-                                      )
-                                    }
-                                    return (
-                                      <Box key={man.id} sx={{ display: 'flex', justifyContent: 'center' }}>
-                                        <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: 'transparent', color: 'grey.400', border: '2px dashed', borderColor: 'grey.400' }}>
-                                          –
-                                        </Avatar>
-                                      </Box>
-                                    )
-                                  })}
-                                </React.Fragment>
-                              ))}
-                            </Box>
-                          </Box>
-                        </Collapse>
-                      </Box>
-                    )}
                   </>
                 )}
 
@@ -2256,9 +2195,84 @@ const OverviewMUI: React.FC = () => {
                 </CardContent>
               </Card>
 
-            {/* Benutzer-Lösungs-Matrix */}
+            {/* Alle exakten Kombinationen (ODI-358), nur bei ≤50 gültigen Lösungen */}
+            {probabilityResult?.allValidMatchings && probabilityResult.allValidMatchings.length > 0 && (
+              <Card sx={{ height: 'fit-content', mb: 3 }}>
+                <CardHeader
+                  title="Alle exakten Kombinationen"
+                  subheader={`${probabilityResult.allValidMatchings.length} noch mögliche Lösungen im Detail`}
+                  action={
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={combinationsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                      onClick={() => setCombinationsExpanded(!combinationsExpanded)}
+                    >
+                      {combinationsExpanded ? 'Einklappen' : 'Anzeigen'}
+                    </Button>
+                  }
+                />
+                <Collapse in={combinationsExpanded} unmountOnExit>
+                  <CardContent>
+                    <Box sx={{ maxHeight: 600, overflow: 'auto' }}>
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: `minmax(36px, auto) repeat(${men.length}, minmax(70px, auto))`,
+                          columnGap: 1,
+                          rowGap: 1.5,
+                          alignItems: 'center',
+                          width: 'fit-content'
+                        }}
+                      >
+                        {/* Kopfzeile: ein Mann pro Spalte, jede Kombinations-Zeile darunter bleibt spaltengleich */}
+                        <Box />
+                        {men.map(man => (
+                          <Typography key={man.id} variant="caption" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+                            {man.name}
+                          </Typography>
+                        ))}
+
+                        {probabilityResult.allValidMatchings.map((solution, idx) => (
+                          <React.Fragment key={idx}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                              #{idx + 1}
+                            </Typography>
+                            {men.map(man => {
+                              const pair = solution.pairs.find(p => p.man === man.name)
+                              if (pair) {
+                                return (
+                                  <CoupleAvatars
+                                    key={man.id}
+                                    womanName={pair.woman}
+                                    manName={pair.man}
+                                    matchType={fixedPairs.some(fp => fp.woman === pair.woman && fp.man === pair.man) ? 'perfect' : undefined}
+                                    participants={participants}
+                                    size={28}
+                                  />
+                                )
+                              }
+                              return (
+                                <Box key={man.id} sx={{ display: 'flex', justifyContent: 'center' }}>
+                                  <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: 'transparent', color: 'grey.400', border: '2px dashed', borderColor: 'grey.400' }}>
+                                    –
+                                  </Avatar>
+                                </Box>
+                              )
+                            })}
+                          </React.Fragment>
+                        ))}
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Collapse>
+              </Card>
+            )}
+
+            {/* Benutzer-Lösungs-Matrix - deaktiviert: durch "Alle exakten Kombinationen" ersetzt (ODI-358) */}
+            {DEINE_LOESUNG_ENABLED && (
             <Card sx={{ height: 'fit-content', mb: 3 }}>
-                <CardHeader 
+                <CardHeader
                   title="Deine Lösung"
                   subheader="Trage hier deine eigene Lösung ein"
                   action={
@@ -2505,6 +2519,7 @@ const OverviewMUI: React.FC = () => {
                   </Box>
                 </CardContent>
               </Card>
+            )}
 
           </TabPanel>
         </Card>

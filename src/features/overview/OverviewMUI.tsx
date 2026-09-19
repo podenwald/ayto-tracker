@@ -538,7 +538,6 @@ const OverviewMUI: React.FC = () => {
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false)
   const [herleitungExpanded, setHerleitungExpanded] = useState(false)
   const [matrixView, setMatrixView] = useState<'radar' | 'matrix'>('matrix')
-  const [combinationsExpanded, setCombinationsExpanded] = useState(false)
   const [expandedMatchingNights, setExpandedMatchingNights] = useState<Set<number>>(new Set())
   const [seasonPickerOpen, setSeasonPickerOpen] = useState(false)
   const [activeSeasonLabel, setActiveSeasonLabel] = useState<string | undefined>()
@@ -2200,72 +2199,74 @@ const OverviewMUI: React.FC = () => {
               <Card sx={{ height: 'fit-content', mb: 3 }}>
                 <CardHeader
                   title="Alle exakten Kombinationen"
-                  subheader={`${probabilityResult.allValidMatchings.length} noch mögliche Lösungen im Detail`}
-                  action={
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={combinationsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                      onClick={() => setCombinationsExpanded(!combinationsExpanded)}
-                    >
-                      {combinationsExpanded ? 'Einklappen' : 'Anzeigen'}
-                    </Button>
-                  }
+                  subheader={`${probabilityResult.allValidMatchings.length} noch mögliche Lösungen im Detail • ↕ scrollbar`}
                 />
-                <Collapse in={combinationsExpanded} unmountOnExit>
-                  <CardContent>
-                    <Box sx={{ maxHeight: 600, overflow: 'auto' }}>
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: `minmax(36px, auto) repeat(${men.length}, minmax(70px, auto))`,
-                          columnGap: 1,
-                          rowGap: 1.5,
-                          alignItems: 'center',
-                          width: 'fit-content'
-                        }}
-                      >
-                        {/* Kopfzeile: ein Mann pro Spalte, jede Kombinations-Zeile darunter bleibt spaltengleich */}
-                        <Box />
-                        {men.map(man => (
-                          <Typography key={man.id} variant="caption" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-                            {man.name}
-                          </Typography>
-                        ))}
+                <CardContent>
+                  <Box
+                    sx={{
+                      maxHeight: 600,
+                      overflow: 'auto',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      p: 1.5,
+                      // Scrollbar bewusst sichtbar statt macOS-typisch nur beim Scrollen einblenden lassen
+                      scrollbarWidth: 'auto',
+                      '&::-webkit-scrollbar': { width: 10, height: 10 },
+                      '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.400', borderRadius: 1 },
+                      '&::-webkit-scrollbar-track': { bgcolor: 'grey.100' }
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: `minmax(36px, auto) repeat(${men.length}, minmax(70px, auto))`,
+                        columnGap: 1,
+                        rowGap: 1.5,
+                        alignItems: 'center',
+                        width: 'fit-content'
+                      }}
+                    >
+                      {/* Kopfzeile: ein Mann pro Spalte, jede Kombinations-Zeile darunter bleibt spaltengleich */}
+                      <Box />
+                      {men.map(man => (
+                        <Typography key={man.id} variant="caption" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+                          {man.name}
+                        </Typography>
+                      ))}
 
-                        {probabilityResult.allValidMatchings.map((solution, idx) => (
-                          <React.Fragment key={idx}>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                              #{idx + 1}
-                            </Typography>
-                            {men.map(man => {
-                              const pair = solution.pairs.find(p => p.man === man.name)
-                              if (pair) {
-                                return (
-                                  <CoupleAvatars
-                                    key={man.id}
-                                    womanName={pair.woman}
-                                    manName={pair.man}
-                                    matchType={fixedPairs.some(fp => fp.woman === pair.woman && fp.man === pair.man) ? 'perfect' : undefined}
-                                    participants={participants}
-                                    size={28}
-                                  />
-                                )
-                              }
+                      {probabilityResult.allValidMatchings.map((solution, idx) => (
+                        <React.Fragment key={idx}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                            #{idx + 1}
+                          </Typography>
+                          {men.map(man => {
+                            const pair = solution.pairs.find(p => p.man === man.name)
+                            if (pair) {
                               return (
-                                <Box key={man.id} sx={{ display: 'flex', justifyContent: 'center' }}>
-                                  <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: 'transparent', color: 'grey.400', border: '2px dashed', borderColor: 'grey.400' }}>
-                                    –
-                                  </Avatar>
-                                </Box>
+                                <CoupleAvatars
+                                  key={man.id}
+                                  womanName={pair.woman}
+                                  manName={pair.man}
+                                  matchType={fixedPairs.some(fp => fp.woman === pair.woman && fp.man === pair.man) ? 'perfect' : undefined}
+                                  participants={participants}
+                                  size={28}
+                                />
                               )
-                            })}
-                          </React.Fragment>
-                        ))}
-                      </Box>
+                            }
+                            return (
+                              <Box key={man.id} sx={{ display: 'flex', justifyContent: 'center' }}>
+                                <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: 'transparent', color: 'grey.400', border: '2px dashed', borderColor: 'grey.400' }}>
+                                  –
+                                </Avatar>
+                              </Box>
+                            )
+                          })}
+                        </React.Fragment>
+                      ))}
                     </Box>
-                  </CardContent>
-                </Collapse>
+                  </Box>
+                </CardContent>
               </Card>
             )}
 

@@ -1761,7 +1761,7 @@ const OverviewMUI: React.FC = () => {
                       </Collapse>
                     </Box>
                     {men.length > 0 && women.length > 0 && (
-                      <Box sx={{ mx: 2, mt: 2, display: 'flex', justifyContent: 'center' }}>
+                      <Box sx={{ mx: 2, mt: 2, mb: 3, display: 'flex', justifyContent: 'center' }}>
                         <ToggleButtonGroup
                           value={matrixView}
                           exclusive

@@ -1797,58 +1797,55 @@ const OverviewMUI: React.FC = () => {
                           Alle {probabilityResult.allValidMatchings.length} exakten Kombinationen anzeigen
                         </Button>
                         <Collapse in={combinationsExpanded} unmountOnExit>
-                          <Box sx={{ maxHeight: 600, overflowY: 'auto', bgcolor: 'grey.50', borderRadius: 1, p: 1.5, mt: 0.5 }}>
-                            {probabilityResult.allValidMatchings.map((solution, idx) => (
-                              <Box
-                                key={idx}
-                                sx={{
-                                  pb: 2,
-                                  mb: 2,
-                                  borderBottom: idx < probabilityResult.allValidMatchings!.length - 1 ? '1px solid' : 'none',
-                                  borderColor: 'divider'
-                                }}
-                              >
-                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
-                                  Kombination #{idx + 1}
+                          <Box sx={{ maxHeight: 600, overflow: 'auto', bgcolor: 'grey.50', borderRadius: 1, p: 1.5, mt: 0.5 }}>
+                            <Box
+                              sx={{
+                                display: 'grid',
+                                gridTemplateColumns: `minmax(36px, auto) repeat(${men.length}, minmax(70px, auto))`,
+                                columnGap: 1,
+                                rowGap: 1.5,
+                                alignItems: 'center',
+                                width: 'fit-content'
+                              }}
+                            >
+                              {/* Kopfzeile: ein Mann pro Spalte, jede Kombinations-Zeile darunter bleibt spaltengleich */}
+                              <Box />
+                              {men.map(man => (
+                                <Typography key={man.id} variant="caption" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+                                  {man.name}
                                 </Typography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                  {solution.pairs.map(p => (
-                                    <CoupleAvatars
-                                      key={`${p.woman}-${p.man}`}
-                                      womanName={p.woman}
-                                      manName={p.man}
-                                      matchType={fixedPairs.some(fp => fp.woman === p.woman && fp.man === p.man) ? 'perfect' : undefined}
-                                      participants={participants}
-                                      size={28}
-                                    />
-                                  ))}
-                                  {solution.openMen.map(man => {
-                                    const manParticipant = participants.find(p => p.name === man)
+                              ))}
+
+                              {probabilityResult.allValidMatchings.map((solution, idx) => (
+                                <React.Fragment key={idx}>
+                                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                                    #{idx + 1}
+                                  </Typography>
+                                  {men.map(man => {
+                                    const pair = solution.pairs.find(p => p.man === man.name)
+                                    if (pair) {
+                                      return (
+                                        <CoupleAvatars
+                                          key={man.id}
+                                          womanName={pair.woman}
+                                          manName={pair.man}
+                                          matchType={fixedPairs.some(fp => fp.woman === pair.woman && fp.man === pair.man) ? 'perfect' : undefined}
+                                          participants={participants}
+                                          size={28}
+                                        />
+                                      )
+                                    }
                                     return (
-                                      <Box key={man} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <Avatar
-                                          src={manParticipant?.photoUrl || undefined}
-                                          sx={{
-                                            width: 28,
-                                            height: 28,
-                                            fontSize: '0.8rem',
-                                            bgcolor: manParticipant?.photoUrl ? undefined : 'primary.main',
-                                            border: '2px dashed',
-                                            borderColor: 'grey.400',
-                                            mb: 1
-                                          }}
-                                        >
-                                          {!manParticipant?.photoUrl && man.charAt(0)}
+                                      <Box key={man.id} sx={{ display: 'flex', justifyContent: 'center' }}>
+                                        <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: 'transparent', color: 'grey.400', border: '2px dashed', borderColor: 'grey.400' }}>
+                                          –
                                         </Avatar>
-                                        <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.65rem', textAlign: 'center' }}>
-                                          {man} (offen)
-                                        </Typography>
                                       </Box>
                                     )
                                   })}
-                                </Box>
-                              </Box>
-                            ))}
+                                </React.Fragment>
+                              ))}
+                            </Box>
                           </Box>
                         </Collapse>
                       </Box>

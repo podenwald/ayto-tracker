@@ -31,6 +31,8 @@ import {
   TableRow,
   TableCell,
   LinearProgress,
+  ToggleButton,
+  ToggleButtonGroup,
   useTheme,
   useMediaQuery
 } from '@mui/material'
@@ -49,7 +51,9 @@ import {
   Add as AddIcon,
   Groups as GroupsIcon,
   Delete as DeleteIcon,
-  AutoAwesome as AutoAwesomeIcon
+  AutoAwesome as AutoAwesomeIcon,
+  Radar as RadarIcon,
+  GridView as GridViewIcon
 } from '@mui/icons-material'
 import ThemeProvider from '@/theme/ThemeProvider'
 import { type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
@@ -63,6 +67,7 @@ import { MatchingNightService } from '@/services/matchingNightService'
 import { ParticipantService } from '@/services/participantService'
 import { PenaltyService } from '@/services/penaltyService'
 import { getConfirmedPerfectMatchNames, getSmallerGender, getAvailableParticipants } from '@/utils/matchStatus'
+import { getOpenPairs, getTopMatchesPerPerson } from '@/utils/radarView'
 import { calculateBudget } from '@/utils/budget'
 import ParticipantsView from '@/components/ParticipantsView'
 import UpdateInfoBox from '@/components/UpdateInfoBox'
@@ -521,6 +526,7 @@ const OverviewMUI: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0)
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false)
   const [herleitungExpanded, setHerleitungExpanded] = useState(false)
+  const [matrixView, setMatrixView] = useState<'radar' | 'matrix'>('matrix')
   const [expandedMatchingNights, setExpandedMatchingNights] = useState<Set<number>>(new Set())
   const [seasonPickerOpen, setSeasonPickerOpen] = useState(false)
   const [activeSeasonLabel, setActiveSeasonLabel] = useState<string | undefined>()
@@ -757,7 +763,19 @@ const OverviewMUI: React.FC = () => {
 
   // Get pair probabilities from calculation result or use empty matrix
   const pairProbabilities: Record<string, Record<string, number>> = probabilityResult?.probabilityMatrix || {}
-  
+
+  // Radar-Ansicht (ODI-356): nur noch offene, unbestätigte Kombinationen
+  const womenNames = women.map(w => w.name!)
+  const menNames = men.map(m => m.name!)
+  const fixedPairs = probabilityResult?.fixedPairs || []
+  const openPairs = probabilityResult
+    ? getOpenPairs(pairProbabilities, fixedPairs, womenNames, menNames)
+    : []
+  const personRadarEntries = probabilityResult
+    ? getTopMatchesPerPerson(pairProbabilities, fixedPairs, womenNames, menNames)
+    : []
+  const hottestPairs = openPairs.slice(0, 3)
+
   // Helper: Check if participant has a perfect match (nur ausgestrahlte Matchboxes, ODI-273)
   const hasConfirmedPerfectMatch = (participantName: string, gender: 'M' | 'F') => {
     const validPerfectMatches = getValidPerfectMatchesBeforeDateTime(matchboxes, new Date())
@@ -1662,9 +1680,9 @@ const OverviewMUI: React.FC = () => {
 
             {/* Heatmap Matrix */}
             <Card sx={{ height: 'fit-content', mb: 3 }}>
-                <CardHeader 
-                  title="Wahrscheinlichkeits-Matrix"
-                  subheader="Heatmap aller Paar-Kombinationen"
+                <CardHeader
+                  title={matrixView === 'radar' ? 'Wahrscheinlichkeits-Radar' : 'Wahrscheinlichkeits-Matrix'}
+                  subheader={matrixView === 'radar' ? 'Heißeste offene Matches auf einen Blick' : 'Heatmap aller Paar-Kombinationen'}
                   action={
                     <Button
                       variant="contained"
@@ -1742,9 +1760,26 @@ const OverviewMUI: React.FC = () => {
                         </Box>
                       </Collapse>
                     </Box>
+                    {men.length > 0 && women.length > 0 && (
+                      <Box sx={{ mx: 2, mt: 2, mb: 3, display: 'flex', justifyContent: 'center' }}>
+                        <ToggleButtonGroup
+                          value={matrixView}
+                          exclusive
+                          size="small"
+                          onChange={(_, value) => value && setMatrixView(value)}
+                        >
+                          <ToggleButton value="matrix">
+                            <GridViewIcon fontSize="small" sx={{ mr: 1 }} /> Matrix
+                          </ToggleButton>
+                          <ToggleButton value="radar">
+                            <RadarIcon fontSize="small" sx={{ mr: 1 }} /> Radar
+                          </ToggleButton>
+                        </ToggleButtonGroup>
+                      </Box>
+                    )}
                   </>
                 )}
-                
+
                 <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
                   {/* Keine Daten vorhanden */}
                   {(!probabilityResult && !probabilityStatus.isCalculating && !probabilityStatus.error) && (
@@ -1791,8 +1826,90 @@ const OverviewMUI: React.FC = () => {
                     </Box>
                   )}
                   
+                  {/* Radar nur anzeigen wenn Daten vorhanden */}
+                  {probabilityResult && men.length > 0 && women.length > 0 && matrixView === 'radar' && (
+                    <Box sx={{ p: 2 }}>
+                      {openPairs.length === 0 ? (
+                        <Alert severity="success">Alle Matches bereits bestätigt 🎉</Alert>
+                      ) : (
+                        <>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1.5 }}>
+                            Heißeste Matches
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
+                            {hottestPairs.map(pair => {
+                              const womanP = participants.find(p => p.name === pair.woman)
+                              const manP = participants.find(p => p.name === pair.man)
+                              return (
+                                <Card key={`${pair.woman}-${pair.man}`} variant="outlined" sx={{ flex: '1 1 200px', minWidth: 180 }}>
+                                  <CardContent sx={{ textAlign: 'center' }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5, mb: 1 }}>
+                                      <Avatar src={womanP?.photoUrl} sx={{ bgcolor: womanP?.photoUrl ? undefined : 'secondary.main', border: '2px solid white' }}>
+                                        {pair.woman.charAt(0)}
+                                      </Avatar>
+                                      <Avatar src={manP?.photoUrl} sx={{ bgcolor: manP?.photoUrl ? undefined : 'primary.main', border: '2px solid white' }}>
+                                        {pair.man.charAt(0)}
+                                      </Avatar>
+                                    </Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                      {pair.woman} × {pair.man}
+                                    </Typography>
+                                    <Typography variant="h6" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                                      {Math.round(pair.probability * 100)}%
+                                    </Typography>
+                                  </CardContent>
+                                </Card>
+                              )
+                            })}
+                          </Box>
+
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1.5 }}>
+                            Top 3 Match-Radar pro Person
+                          </Typography>
+                          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 2 }}>
+                            {personRadarEntries.map(entry => {
+                              const person = participants.find(p => p.name === entry.name)
+                              return (
+                                <Card key={entry.name} variant="outlined">
+                                  <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                                      <Avatar
+                                        src={person?.photoUrl}
+                                        sx={{ bgcolor: person?.photoUrl ? undefined : (entry.gender === 'F' ? 'secondary.main' : 'primary.main') }}
+                                      >
+                                        {entry.name.charAt(0)}
+                                      </Avatar>
+                                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                        {entry.name}
+                                      </Typography>
+                                    </Box>
+                                    {entry.topMatches.map((match, idx) => (
+                                      <Box key={match.partnerName} sx={{ mb: 1 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                          <Typography variant="caption">{idx + 1}. {match.partnerName}</Typography>
+                                          <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                                            {Math.round(match.probability * 100)}%
+                                          </Typography>
+                                        </Box>
+                                        <LinearProgress
+                                          variant="determinate"
+                                          value={Math.round(match.probability * 100)}
+                                          sx={{ height: 6, borderRadius: 1 }}
+                                        />
+                                      </Box>
+                                    ))}
+                                  </CardContent>
+                                </Card>
+                              )
+                            })}
+                          </Box>
+                        </>
+                      )}
+                    </Box>
+                  )}
+
                   {/* Matrix nur anzeigen wenn Daten vorhanden */}
-                  {probabilityResult && men.length > 0 && women.length > 0 && (
+                  {probabilityResult && men.length > 0 && women.length > 0 && matrixView === 'matrix' && (
                   <>
                   <Box sx={{ overflowX: 'auto', overflowY: 'visible', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
                     <Table

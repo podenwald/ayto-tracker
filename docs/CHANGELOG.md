@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0] - 2026-09-19
+
+### ✨ Features
+- Neue "Radar"-Ansicht als Alternative zur bestehenden Wahrscheinlichkeits-Matrix (Toggle "Radar"/"Matrix" oberhalb der Tabelle): "Heißeste Matches" zeigt die Top 3 offenen Paare season-weit als Karten, "Top 3 Match-Radar pro Person" zeigt für jede Person ohne bestätigten Perfect Match ihre drei wahrscheinlichsten Kandidat*innen mit Fortschrittsbalken. Bereits bestätigte Perfect Matches werden aus beiden Ansichten ausgeschlossen, da sie kein Rätsel mehr sind. Die Ableitungslogik (Filterung/Sortierung, stabiler Tiebreaker bei Prozent-Gleichstand) liegt in `src/utils/radarView.ts` und ist unabhängig von der UI unit-getestet (ODI-356)
+
+---
+
 ## [1.10.1] - 2026-09-18
 
 ### 🐛 Bugfixes (kritisch)

@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.11.0] - 2026-09-19
+- Neu: Die Wahrscheinlichkeits-Ergebnisse gibt es jetzt auch als "Radar"-Ansicht (Umschalter oben) – zeigt dir auf einen Blick die aktuell heißesten offenen Matches und pro Person die Top 3 wahrscheinlichsten Kandidat*innen, statt nur die große Tabelle
+
+---
+
 ## [1.10.1] - 2026-09-18
 - Wichtiger Fehler behoben: Die Wahrscheinlichkeits-Berechnung konnte durch den Doppelmatch (Johannes/Marta/Janice) ein Paar fälschlich als "100% sicher" anzeigen, obwohl es das nicht war. Die Berechnung ist jetzt wieder korrekt
 

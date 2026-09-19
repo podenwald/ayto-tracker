@@ -1788,14 +1788,56 @@ const OverviewMUI: React.FC = () => {
                         >
                           Alle {probabilityResult.allValidMatchings.length} exakten Kombinationen anzeigen
                         </Button>
-                        <Collapse in={combinationsExpanded}>
-                          <Box sx={{ maxHeight: 400, overflowY: 'auto', bgcolor: 'grey.50', borderRadius: 1, p: 1.5, mt: 0.5 }}>
+                        <Collapse in={combinationsExpanded} unmountOnExit>
+                          <Box sx={{ maxHeight: 600, overflowY: 'auto', bgcolor: 'grey.50', borderRadius: 1, p: 1.5, mt: 0.5 }}>
                             {probabilityResult.allValidMatchings.map((solution, idx) => (
-                              <Typography key={idx} variant="body2" sx={{ mb: 0.75 }}>
-                                <strong>#{idx + 1}:</strong>{' '}
-                                {solution.pairs.map(p => `${p.woman} × ${p.man}`).join(', ')}
-                                {solution.openMen.length > 0 && ` (offen: ${solution.openMen.join(', ')})`}
-                              </Typography>
+                              <Box
+                                key={idx}
+                                sx={{
+                                  pb: 2,
+                                  mb: 2,
+                                  borderBottom: idx < probabilityResult.allValidMatchings!.length - 1 ? '1px solid' : 'none',
+                                  borderColor: 'divider'
+                                }}
+                              >
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
+                                  Kombination #{idx + 1}
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                                  {solution.pairs.map(p => (
+                                    <CoupleAvatars
+                                      key={`${p.woman}-${p.man}`}
+                                      womanName={p.woman}
+                                      manName={p.man}
+                                      matchType={fixedPairs.some(fp => fp.woman === p.woman && fp.man === p.man) ? 'perfect' : undefined}
+                                      participants={participants}
+                                    />
+                                  ))}
+                                  {solution.openMen.map(man => {
+                                    const manParticipant = participants.find(p => p.name === man)
+                                    return (
+                                      <Box key={man} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <Avatar
+                                          src={manParticipant?.photoUrl || undefined}
+                                          sx={{
+                                            width: 48,
+                                            height: 48,
+                                            bgcolor: manParticipant?.photoUrl ? undefined : 'primary.main',
+                                            border: '2px dashed',
+                                            borderColor: 'grey.400',
+                                            mb: 1
+                                          }}
+                                        >
+                                          {!manParticipant?.photoUrl && man.charAt(0)}
+                                        </Avatar>
+                                        <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.75rem', textAlign: 'center' }}>
+                                          {man} (offen)
+                                        </Typography>
+                                      </Box>
+                                    )
+                                  })}
+                                </Box>
+                              </Box>
                             ))}
                           </Box>
                         </Collapse>

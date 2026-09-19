@@ -98,7 +98,7 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index, ...other })
 }
 
 // ** Couple Avatar Component for Matching Nights and Matchboxes
-const CoupleAvatars: React.FC<{ 
+const CoupleAvatars: React.FC<{
   womanName: string
   manName: string
   womanPhoto?: string
@@ -106,8 +106,15 @@ const CoupleAvatars: React.FC<{
   additionalInfo?: string
   matchType?: 'perfect' | 'no-match' | 'sold'
   participants?: Participant[]
-}> = ({ womanName, manName, womanPhoto, manPhoto, additionalInfo, matchType, participants = [] }) => {
-  
+  /** Avatar-Durchmesser in px, Standard 48 (z.B. für die Kombinationsliste kleiner, ODI-358) */
+  size?: number
+}> = ({ womanName, manName, womanPhoto, manPhoto, additionalInfo, matchType, participants = [], size = 48 }) => {
+  const compact = size <= 32
+  const avatarFontSize = compact ? '0.8rem' : '1.2rem'
+  const nameFontSize = compact ? '0.65rem' : '0.75rem'
+  const nameMaxWidth = compact ? 90 : 120
+  const heartPadding = compact ? 0.25 : 0.5
+
   // Find participant photos dynamically
   const womanParticipant = participants.find(p => p.name === womanName)
   const manParticipant = participants.find(p => p.name === manName)
@@ -173,14 +180,14 @@ const CoupleAvatars: React.FC<{
           position: 'relative'
         }}>
           {/* Woman Avatar */}
-          <Avatar 
+          <Avatar
             className="avatar"
             src={finalWomanPhoto || undefined}
-            sx={{ 
-              width: 48, 
-              height: 48,
+            sx={{
+              width: size,
+              height: size,
               bgcolor: finalWomanPhoto ? undefined : 'secondary.main',
-              fontSize: '1.2rem',
+              fontSize: avatarFontSize,
               fontWeight: 'bold',
               border: `2px solid`,
               borderColor: getBorderColor(),
@@ -191,28 +198,29 @@ const CoupleAvatars: React.FC<{
           >
             {!finalWomanPhoto && womanName?.charAt(0)}
           </Avatar>
-          
+
           {/* Heart/Connection Icon */}
-          <Box sx={{ 
-            mx: -1, 
+          <Box sx={{
+            mx: -1,
             zIndex: 3,
             bgcolor: 'background.paper',
             borderRadius: '50%',
-            p: 0.5,
-            boxShadow: 1
+            p: heartPadding,
+            boxShadow: 1,
+            fontSize: compact ? '0.7rem' : '1rem'
           }}>
             {matchType === 'perfect' ? '💕' : matchType === 'no-match' ? '💔' : matchType === 'sold' ? '💼' : '🤍'}
           </Box>
-          
+
           {/* Man Avatar */}
-          <Avatar 
+          <Avatar
             className="avatar"
             src={finalManPhoto || undefined}
-            sx={{ 
-              width: 48, 
-              height: 48,
+            sx={{
+              width: size,
+              height: size,
               bgcolor: finalManPhoto ? undefined : 'primary.main',
-              fontSize: '1.2rem',
+              fontSize: avatarFontSize,
               fontWeight: 'bold',
               border: `2px solid`,
               borderColor: getBorderColor(),
@@ -224,15 +232,15 @@ const CoupleAvatars: React.FC<{
             {!finalManPhoto && manName?.charAt(0)}
           </Avatar>
         </Box>
-        
+
         {/* Names */}
-        <Typography 
-          variant="body2" 
-          sx={{ 
-            fontWeight: 'bold', 
-            fontSize: '0.75rem', 
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 'bold',
+            fontSize: nameFontSize,
             textAlign: 'center',
-            maxWidth: '120px',
+            maxWidth: nameMaxWidth,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
@@ -1803,7 +1811,7 @@ const OverviewMUI: React.FC = () => {
                                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
                                   Kombination #{idx + 1}
                                 </Typography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                   {solution.pairs.map(p => (
                                     <CoupleAvatars
                                       key={`${p.woman}-${p.man}`}
@@ -1811,6 +1819,7 @@ const OverviewMUI: React.FC = () => {
                                       manName={p.man}
                                       matchType={fixedPairs.some(fp => fp.woman === p.woman && fp.man === p.man) ? 'perfect' : undefined}
                                       participants={participants}
+                                      size={28}
                                     />
                                   ))}
                                   {solution.openMen.map(man => {
@@ -1820,8 +1829,9 @@ const OverviewMUI: React.FC = () => {
                                         <Avatar
                                           src={manParticipant?.photoUrl || undefined}
                                           sx={{
-                                            width: 48,
-                                            height: 48,
+                                            width: 28,
+                                            height: 28,
+                                            fontSize: '0.8rem',
                                             bgcolor: manParticipant?.photoUrl ? undefined : 'primary.main',
                                             border: '2px dashed',
                                             borderColor: 'grey.400',
@@ -1830,7 +1840,7 @@ const OverviewMUI: React.FC = () => {
                                         >
                                           {!manParticipant?.photoUrl && man.charAt(0)}
                                         </Avatar>
-                                        <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.75rem', textAlign: 'center' }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.65rem', textAlign: 'center' }}>
                                           {man} (offen)
                                         </Typography>
                                       </Box>

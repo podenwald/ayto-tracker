@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.12.0] - 2026-09-19
+- Neu: Sobald nur noch wenige (50 oder weniger) mögliche Lösungen für die Staffel übrig sind, kannst du dir jetzt per Klick auf "Alle N exakten Kombinationen anzeigen" jede einzelne davon komplett ansehen – nicht nur die Prozentwerte pro Paar
+
+---
+
 ## [1.11.0] - 2026-09-19
 - Neu: Die Wahrscheinlichkeits-Ergebnisse gibt es jetzt auch als "Radar"-Ansicht (Umschalter oben) – zeigt dir auf einen Blick die aktuell heißesten offenen Matches und pro Person die Top 3 wahrscheinlichsten Kandidat*innen, statt nur die große Tabelle
 

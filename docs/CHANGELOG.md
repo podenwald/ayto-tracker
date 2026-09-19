@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0] - 2026-09-19
+
+### ✨ Features
+- Sobald höchstens 50 gültige Gesamt-Kombinationen übrig sind, zeigen Matrix- und Radar-Ansicht jetzt einen einklappbaren Bereich "Alle N exakten Kombinationen anzeigen": jede Zeile listet die komplette Zuordnung einer noch möglichen Lösung (Frau × Mann), Männer ohne Partnerin in dieser Lösung (Doppelmatch-Platzhalter-Überschuss) werden als "(offen: ...)" markiert. `probabilityService.ts` sammelt die einzelnen Lösungen während der ohnehin laufenden Suche mit, verwirft sie aber sofort wieder, sobald mehr als 50 gefunden werden, um bei großen Suchräumen keinen unnötigen Speicher-/Zeit-Overhead zu erzeugen (ODI-358)
+
+---
+
 ## [1.11.0] - 2026-09-19
 
 ### ✨ Features

@@ -527,6 +527,7 @@ const OverviewMUI: React.FC = () => {
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false)
   const [herleitungExpanded, setHerleitungExpanded] = useState(false)
   const [matrixView, setMatrixView] = useState<'radar' | 'matrix'>('matrix')
+  const [combinationsExpanded, setCombinationsExpanded] = useState(false)
   const [expandedMatchingNights, setExpandedMatchingNights] = useState<Set<number>>(new Set())
   const [seasonPickerOpen, setSeasonPickerOpen] = useState(false)
   const [activeSeasonLabel, setActiveSeasonLabel] = useState<string | undefined>()
@@ -1775,6 +1776,29 @@ const OverviewMUI: React.FC = () => {
                             <RadarIcon fontSize="small" sx={{ mr: 1 }} /> Radar
                           </ToggleButton>
                         </ToggleButtonGroup>
+                      </Box>
+                    )}
+                    {probabilityResult?.allValidMatchings && probabilityResult.allValidMatchings.length > 0 && (
+                      <Box sx={{ mx: 2, mb: 3 }}>
+                        <Button
+                          size="small"
+                          startIcon={combinationsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                          onClick={() => setCombinationsExpanded(!combinationsExpanded)}
+                          sx={{ textTransform: 'none', color: 'text.secondary' }}
+                        >
+                          Alle {probabilityResult.allValidMatchings.length} exakten Kombinationen anzeigen
+                        </Button>
+                        <Collapse in={combinationsExpanded}>
+                          <Box sx={{ maxHeight: 400, overflowY: 'auto', bgcolor: 'grey.50', borderRadius: 1, p: 1.5, mt: 0.5 }}>
+                            {probabilityResult.allValidMatchings.map((solution, idx) => (
+                              <Typography key={idx} variant="body2" sx={{ mb: 0.75 }}>
+                                <strong>#{idx + 1}:</strong>{' '}
+                                {solution.pairs.map(p => `${p.woman} × ${p.man}`).join(', ')}
+                                {solution.openMen.length > 0 && ` (offen: ${solution.openMen.join(', ')})`}
+                              </Typography>
+                            ))}
+                          </Box>
+                        </Collapse>
                       </Box>
                     )}
                   </>

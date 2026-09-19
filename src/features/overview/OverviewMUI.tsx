@@ -526,7 +526,7 @@ const OverviewMUI: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0)
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false)
   const [herleitungExpanded, setHerleitungExpanded] = useState(false)
-  const [matrixView, setMatrixView] = useState<'radar' | 'matrix'>('radar')
+  const [matrixView, setMatrixView] = useState<'radar' | 'matrix'>('matrix')
   const [expandedMatchingNights, setExpandedMatchingNights] = useState<Set<number>>(new Set())
   const [seasonPickerOpen, setSeasonPickerOpen] = useState(false)
   const [activeSeasonLabel, setActiveSeasonLabel] = useState<string | undefined>()
@@ -1768,11 +1768,11 @@ const OverviewMUI: React.FC = () => {
                           size="small"
                           onChange={(_, value) => value && setMatrixView(value)}
                         >
-                          <ToggleButton value="radar">
-                            <RadarIcon fontSize="small" sx={{ mr: 1 }} /> Radar
-                          </ToggleButton>
                           <ToggleButton value="matrix">
                             <GridViewIcon fontSize="small" sx={{ mr: 1 }} /> Matrix
+                          </ToggleButton>
+                          <ToggleButton value="radar">
+                            <RadarIcon fontSize="small" sx={{ mr: 1 }} /> Radar
                           </ToggleButton>
                         </ToggleButtonGroup>
                       </Box>

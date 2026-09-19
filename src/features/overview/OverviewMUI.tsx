@@ -1843,11 +1843,11 @@ const OverviewMUI: React.FC = () => {
                               return (
                                 <Card key={`${pair.woman}-${pair.man}`} variant="outlined" sx={{ flex: '1 1 200px', minWidth: 180 }}>
                                   <CardContent sx={{ textAlign: 'center' }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5, mb: 1 }}>
                                       <Avatar src={womanP?.photoUrl} sx={{ bgcolor: womanP?.photoUrl ? undefined : 'secondary.main', border: '2px solid white' }}>
                                         {pair.woman.charAt(0)}
                                       </Avatar>
-                                      <Avatar src={manP?.photoUrl} sx={{ bgcolor: manP?.photoUrl ? undefined : 'primary.main', border: '2px solid white', ml: -1.5 }}>
+                                      <Avatar src={manP?.photoUrl} sx={{ bgcolor: manP?.photoUrl ? undefined : 'primary.main', border: '2px solid white' }}>
                                         {pair.man.charAt(0)}
                                       </Avatar>
                                     </Box>

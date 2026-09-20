@@ -26,7 +26,8 @@ import type {
   ProbabilityInput,
   ProbabilityResult,
   Pair,
-  ProbabilityMatrix
+  ProbabilityMatrix,
+  MatchingSolution
 } from '@/types'
 
 /**
@@ -36,6 +37,15 @@ import type {
  * vor einer hypothetischen, deutlich größeren Besetzung in einer zukünftigen Staffel.
  */
 const SAFETY_LEAF_LIMIT = 200_000_000
+
+/**
+ * Ab wie vielen gültigen Gesamt-Kombinationen die einzelnen Lösungen NICHT mehr
+ * gesammelt werden (ODI-358). Bis zu dieser Grenze ist eine vollständige Liste noch
+ * übersichtlich und das Sammeln vernachlässigbar billig; darüber wird sie sofort
+ * verworfen, um bei großen Suchräumen (Zehntausende+ Kombinationen) keinen unnötigen
+ * Speicher-/Zeit-Overhead zu erzeugen - die reine Zählung läuft davon unberührt weiter.
+ */
+export const FULL_MATCHING_LIST_THRESHOLD = 50
 
 /**
  * Callback-Typ für Progress-Updates
@@ -139,6 +149,9 @@ export async function calculateProbabilities(
     let totalValid = 0
     let totalLeaves = 0
     let limitReached = false
+    // Wird auf null gesetzt, sobald mehr als FULL_MATCHING_LIST_THRESHOLD gültige
+    // Lösungen gefunden wurden - ab dann lohnt sich das Sammeln nicht mehr (ODI-358)
+    let collectedMatchings: MatchingSolution[] | null = []
 
     if (!contradictoryConstraints) {
       onProgress?.(10, 'Durchsuche mögliche Zuordnungen...')
@@ -180,6 +193,20 @@ export async function calculateProbabilities(
               // nicht in die Matrix ein - der Mann bleibt in diesem Blatt ohne
               // berechenbare Partnerin.
               if (wi < nWomen) pairCounts[wi][mi]++
+            }
+            if (collectedMatchings !== null) {
+              if (collectedMatchings.length >= FULL_MATCHING_LIST_THRESHOLD) {
+                collectedMatchings = null
+              } else {
+                const pairs: Pair[] = []
+                const openMen: string[] = []
+                for (let mi = 0; mi < nMen; mi++) {
+                  const wi = assignment[mi]
+                  if (wi < nWomen) pairs.push({ woman: women[wi], man: men[mi] })
+                  else openMen.push(men[mi])
+                }
+                collectedMatchings.push({ pairs, openMen })
+              }
             }
           }
           if (totalLeaves % 500_000 === 0) {
@@ -243,7 +270,8 @@ export async function calculateProbabilities(
       fixedPairs,
       totalValidMatchings: totalValid,
       calculationTime,
-      limitReached
+      limitReached,
+      allValidMatchings: collectedMatchings ?? undefined
     }
   } catch (error) {
     console.error('Fehler bei der Wahrscheinlichkeits-Berechnung:', error)

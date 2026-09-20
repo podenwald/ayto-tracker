@@ -256,6 +256,16 @@ export interface ProbabilityMatrix {
 }
 
 /**
+ * Eine einzelne vollständige, gültige Gesamt-Zuordnung (eine von mehreren möglichen
+ * "Lösungen" der Staffel) - siehe `ProbabilityResult.allValidMatchings` (ODI-358).
+ */
+export interface MatchingSolution {
+  pairs: Pair[]
+  /** Männer ohne berechenbare Partnerin in dieser Lösung (Doppelmatch-Platzhalter-Überschuss, ODI-355) */
+  openMen: string[]
+}
+
+/**
  * Ergebnis der Wahrscheinlichkeits-Berechnung
  */
 export interface ProbabilityResult {
@@ -264,6 +274,12 @@ export interface ProbabilityResult {
   totalValidMatchings: number
   calculationTime: number // in ms
   limitReached: boolean
+  /**
+   * Alle einzelnen gültigen Gesamt-Zuordnungen, NUR gesetzt wenn `totalValidMatchings`
+   * höchstens `FULL_MATCHING_LIST_THRESHOLD` (probabilityService.ts) beträgt - bei großen
+   * Suchräumen wäre das Sammeln aller Lösungen unnötig speicher-/zeitintensiv (ODI-358).
+   */
+  allValidMatchings?: MatchingSolution[]
 }
 
 /**

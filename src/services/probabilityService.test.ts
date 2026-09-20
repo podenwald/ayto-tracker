@@ -195,6 +195,63 @@ describe('calculateProbabilities — basic properties', () => {
   })
 })
 
+describe('calculateProbabilities — allValidMatchings (ODI-358)', () => {
+  it('collects every individual solution when the count is well below the threshold', async () => {
+    const result = await calculateProbabilities(input({ men: ['A', 'B', 'C'], women: ['X', 'Y', 'Z'] }))
+
+    expect(result.totalValidMatchings).toBe(6)
+    expect(result.allValidMatchings).toHaveLength(6)
+    for (const solution of result.allValidMatchings ?? []) {
+      expect(solution.pairs).toHaveLength(3)
+      expect(solution.openMen).toEqual([])
+    }
+    // Jede der 6 Permutationen von {A,B,C} auf {X,Y,Z} muss genau einmal vorkommen
+    const asStrings = (result.allValidMatchings ?? []).map(s =>
+      [...s.pairs].sort((a, b) => a.man.localeCompare(b.man)).map(p => `${p.man}:${p.woman}`).join(',')
+    )
+    expect(new Set(asStrings).size).toBe(6)
+  })
+
+  it('marks Männer ohne Partnerin durch einen placeholderSlot korrekt als "offen"', async () => {
+    const result = await calculateProbabilities(
+      input({ men: ['A', 'B', 'C'], women: ['X', 'Y'], placeholderSlots: 1 })
+    )
+
+    expect(result.totalValidMatchings).toBe(6)
+    expect(result.allValidMatchings).toHaveLength(6)
+    for (const solution of result.allValidMatchings ?? []) {
+      expect(solution.pairs).toHaveLength(2)
+      expect(solution.openMen).toHaveLength(1)
+    }
+  })
+
+  it('does not collect the individual solutions once the count exceeds the threshold', async () => {
+    // 5! = 120 > FULL_MATCHING_LIST_THRESHOLD (50)
+    const men = Array.from({ length: 5 }, (_, i) => `M${i}`)
+    const women = Array.from({ length: 5 }, (_, i) => `W${i}`)
+    const result = await calculateProbabilities(input({ men, women }))
+
+    expect(result.totalValidMatchings).toBe(120)
+    expect(result.allValidMatchings).toBeUndefined()
+  })
+
+  it('gibt eine leere Liste zurück, wenn die Constraints widersprüchlich sind (0 Lösungen)', async () => {
+    const result = await calculateProbabilities(
+      input({
+        men: ['A', 'B'],
+        women: ['X', 'Y'],
+        boxDecisions: [
+          { woman: 'X', man: 'A', isPerfectMatch: true },
+          { woman: 'Y', man: 'A', isPerfectMatch: true }
+        ]
+      })
+    )
+
+    expect(result.totalValidMatchings).toBe(0)
+    expect(result.allValidMatchings).toEqual([])
+  })
+})
+
 describe('calculateProbabilities — differential tests vs. a naive reference', () => {
   const cases: ProbabilityInput[] = [
     input({ men: ['A', 'B', 'C', 'D'], women: ['W', 'X', 'Y', 'Z'] }),

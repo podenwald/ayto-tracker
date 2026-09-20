@@ -76,6 +76,9 @@ import SeasonPickerDialog from '@/components/SeasonPickerDialog'
 import { computeSeasonFinale, type SeasonFinaleResult } from '@/utils/seasonFinale'
 import { getActiveSeasonSummary } from '@/services/seasonCatalogService'
 
+/** "Deine Lösung" deaktiviert - durch "Alle exakten Kombinationen" ersetzt (ODI-358) */
+const DEINE_LOESUNG_ENABLED = false
+
 // ** Tab Panel Component
 interface TabPanelProps {
   children?: React.ReactNode
@@ -98,7 +101,7 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index, ...other })
 }
 
 // ** Couple Avatar Component for Matching Nights and Matchboxes
-const CoupleAvatars: React.FC<{ 
+const CoupleAvatars: React.FC<{
   womanName: string
   manName: string
   womanPhoto?: string
@@ -106,8 +109,15 @@ const CoupleAvatars: React.FC<{
   additionalInfo?: string
   matchType?: 'perfect' | 'no-match' | 'sold'
   participants?: Participant[]
-}> = ({ womanName, manName, womanPhoto, manPhoto, additionalInfo, matchType, participants = [] }) => {
-  
+  /** Avatar-Durchmesser in px, Standard 48 (z.B. für die Kombinationsliste kleiner, ODI-358) */
+  size?: number
+}> = ({ womanName, manName, womanPhoto, manPhoto, additionalInfo, matchType, participants = [], size = 48 }) => {
+  const compact = size <= 32
+  const avatarFontSize = compact ? '0.8rem' : '1.2rem'
+  const nameFontSize = compact ? '0.65rem' : '0.75rem'
+  const nameMaxWidth = compact ? 90 : 120
+  const heartPadding = compact ? 0.25 : 0.5
+
   // Find participant photos dynamically
   const womanParticipant = participants.find(p => p.name === womanName)
   const manParticipant = participants.find(p => p.name === manName)
@@ -173,14 +183,14 @@ const CoupleAvatars: React.FC<{
           position: 'relative'
         }}>
           {/* Woman Avatar */}
-          <Avatar 
+          <Avatar
             className="avatar"
             src={finalWomanPhoto || undefined}
-            sx={{ 
-              width: 48, 
-              height: 48,
+            sx={{
+              width: size,
+              height: size,
               bgcolor: finalWomanPhoto ? undefined : 'secondary.main',
-              fontSize: '1.2rem',
+              fontSize: avatarFontSize,
               fontWeight: 'bold',
               border: `2px solid`,
               borderColor: getBorderColor(),
@@ -191,28 +201,29 @@ const CoupleAvatars: React.FC<{
           >
             {!finalWomanPhoto && womanName?.charAt(0)}
           </Avatar>
-          
+
           {/* Heart/Connection Icon */}
-          <Box sx={{ 
-            mx: -1, 
+          <Box sx={{
+            mx: -1,
             zIndex: 3,
             bgcolor: 'background.paper',
             borderRadius: '50%',
-            p: 0.5,
-            boxShadow: 1
+            p: heartPadding,
+            boxShadow: 1,
+            fontSize: compact ? '0.7rem' : '1rem'
           }}>
             {matchType === 'perfect' ? '💕' : matchType === 'no-match' ? '💔' : matchType === 'sold' ? '💼' : '🤍'}
           </Box>
-          
+
           {/* Man Avatar */}
-          <Avatar 
+          <Avatar
             className="avatar"
             src={finalManPhoto || undefined}
-            sx={{ 
-              width: 48, 
-              height: 48,
+            sx={{
+              width: size,
+              height: size,
               bgcolor: finalManPhoto ? undefined : 'primary.main',
-              fontSize: '1.2rem',
+              fontSize: avatarFontSize,
               fontWeight: 'bold',
               border: `2px solid`,
               borderColor: getBorderColor(),
@@ -224,15 +235,15 @@ const CoupleAvatars: React.FC<{
             {!finalManPhoto && manName?.charAt(0)}
           </Avatar>
         </Box>
-        
+
         {/* Names */}
-        <Typography 
-          variant="body2" 
-          sx={{ 
-            fontWeight: 'bold', 
-            fontSize: '0.75rem', 
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 'bold',
+            fontSize: nameFontSize,
             textAlign: 'center',
-            maxWidth: '120px',
+            maxWidth: nameMaxWidth,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
@@ -2183,9 +2194,86 @@ const OverviewMUI: React.FC = () => {
                 </CardContent>
               </Card>
 
-            {/* Benutzer-Lösungs-Matrix */}
+            {/* Alle exakten Kombinationen (ODI-358), nur bei ≤50 gültigen Lösungen */}
+            {probabilityResult?.allValidMatchings && probabilityResult.allValidMatchings.length > 0 && (
+              <Card sx={{ height: 'fit-content', mb: 3 }}>
+                <CardHeader
+                  title="Alle exakten Kombinationen"
+                  subheader={`${probabilityResult.allValidMatchings.length} noch mögliche Lösungen im Detail • ↕ scrollbar`}
+                />
+                <CardContent>
+                  <Box
+                    sx={{
+                      maxHeight: 600,
+                      overflow: 'auto',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      p: 1.5,
+                      // Scrollbar bewusst sichtbar statt macOS-typisch nur beim Scrollen einblenden lassen
+                      scrollbarWidth: 'auto',
+                      '&::-webkit-scrollbar': { width: 10, height: 10 },
+                      '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.400', borderRadius: 1 },
+                      '&::-webkit-scrollbar-track': { bgcolor: 'grey.100' }
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: `minmax(36px, auto) repeat(${men.length}, minmax(70px, auto))`,
+                        columnGap: 1,
+                        rowGap: 1.5,
+                        alignItems: 'center',
+                        width: 'fit-content'
+                      }}
+                    >
+                      {/* Kopfzeile: ein Mann pro Spalte, jede Kombinations-Zeile darunter bleibt spaltengleich */}
+                      <Box />
+                      {men.map(man => (
+                        <Typography key={man.id} variant="caption" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+                          {man.name}
+                        </Typography>
+                      ))}
+
+                      {probabilityResult.allValidMatchings.map((solution, idx) => (
+                        <React.Fragment key={idx}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                            #{idx + 1}
+                          </Typography>
+                          {men.map(man => {
+                            const pair = solution.pairs.find(p => p.man === man.name)
+                            if (pair) {
+                              return (
+                                <CoupleAvatars
+                                  key={man.id}
+                                  womanName={pair.woman}
+                                  manName={pair.man}
+                                  matchType={fixedPairs.some(fp => fp.woman === pair.woman && fp.man === pair.man) ? 'perfect' : undefined}
+                                  participants={participants}
+                                  size={28}
+                                />
+                              )
+                            }
+                            return (
+                              <Box key={man.id} sx={{ display: 'flex', justifyContent: 'center' }}>
+                                <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: 'transparent', color: 'grey.400', border: '2px dashed', borderColor: 'grey.400' }}>
+                                  –
+                                </Avatar>
+                              </Box>
+                            )
+                          })}
+                        </React.Fragment>
+                      ))}
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Benutzer-Lösungs-Matrix - deaktiviert: durch "Alle exakten Kombinationen" ersetzt (ODI-358) */}
+            {DEINE_LOESUNG_ENABLED && (
             <Card sx={{ height: 'fit-content', mb: 3 }}>
-                <CardHeader 
+                <CardHeader
                   title="Deine Lösung"
                   subheader="Trage hier deine eigene Lösung ein"
                   action={
@@ -2432,6 +2520,7 @@ const OverviewMUI: React.FC = () => {
                   </Box>
                 </CardContent>
               </Card>
+            )}
 
           </TabPanel>
         </Card>

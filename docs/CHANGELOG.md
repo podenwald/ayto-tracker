@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0] - 2026-09-25
+
+### 📋 Daten
+- Standard-Datensatz der aktuellen Season (`public/json/ayto-rsil-2026.json`) auf den neuesten Stand gebracht: Matching Night #6 ergänzt (5 Lichter, ausgestrahlt am 23.09.2026), neue Matchbox Michelle + Raúl (No-Match). Damit ist die Staffel nach aktuellem Stand bis auf einen Mann (Robin) vollständig aufgelöst
+
+---
+
 ## [1.12.0] - 2026-09-19
 
 ### ✨ Features

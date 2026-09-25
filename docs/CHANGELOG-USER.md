@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.13.0] - 2026-09-25
+- Aktueller Stand der Staffel aktualisiert (Matching Night #6, neue Matchbox Michelle & Raúl)
+
+---
+
 ## [1.12.0] - 2026-09-19
 - Neu: Sobald nur noch wenige (50 oder weniger) mögliche Lösungen für die Staffel übrig sind, kannst du dir jetzt per Klick auf "Alle N exakten Kombinationen anzeigen" jede einzelne davon komplett ansehen – nicht nur die Prozentwerte pro Paar
 

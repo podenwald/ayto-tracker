@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.13.1] - 2026-09-26
+- Wichtiger Fehler behoben: Weil Janice mit Johannes (Doppelmatch) in Matching Night #2 zusammensaß, zeigte die Berechnung fälschlich nur noch 1 statt der tatsächlich 3 möglichen Kombinationen an - dabei galt "Julia & Fabi" zu Unrecht als 100% sicher. Die Berechnung ist jetzt wieder korrekt
+
+---
+
 ## [1.13.0] - 2026-09-25
 - Aktueller Stand der Staffel aktualisiert (Matching Night #6, neue Matchbox Michelle & Raúl)
 

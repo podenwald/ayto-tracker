@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1] - 2026-09-26
+
+### 🐛 Bugfixes (kritisch)
+- Ein Doppelmatch-Sitzpaar (Janice + Johannes, Matching Night #2) wurde bei der Lichter-Prüfung falsch behandelt: Janice ist wegen des Doppelmatches komplett aus der Berechnung ausgeschlossen (ODI-354/355), wodurch ihr garantiert korrektes Paar mit Johannes stillschweigend aus der Zählung der Matching-Night-Paare verschwand - ohne die geforderte Lichter-Anzahl entsprechend zu reduzieren. Die Suche verlangte dadurch fälschlich 3 statt 2 korrekte Paare unter den verbleibenden 9 getrackten Paaren dieser Night und verwarf gültige Lösungen zu Unrecht. Mit dem aktuellen Datenstand zeigte die App dadurch nur noch 1 statt der tatsächlich 3 gültigen Kombinationen an - u.a. wurde "Julia & Fabi" fälschlich als 100% sicher angezeigt. `convertToProbabilityInput` reduziert `correctCount` einer Zeremonie jetzt automatisch um jedes darin enthaltene, aber nicht mehr getrackte Doppelmatch-Paar. Mit echten Produktionsdaten verifiziert: Ergebnis stieg von (fehlerhaften) 1 auf die korrekten 3 gültigen Kombinationen (ODI-364)
+
+---
+
 ## [1.13.0] - 2026-09-25
 
 ### 📋 Daten

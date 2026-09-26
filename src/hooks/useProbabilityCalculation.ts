@@ -99,6 +99,17 @@ export function convertToProbabilityInput(
   // probabilityService.ts durch (placeholderSlots), damit der dadurch entstehende
   // Männer-Überschuss nicht eine beliebige andere Frau verdoppelt (ODI-355).
   const placeholderSlots = allParticipants.filter(p => p.gender === 'F' && doppelmatchPartnerNames.has(p.name)).length
+
+  // Jedes Doppelmatch-Paar (z.B. Janice+Johannes) ist ein garantiert korrektes Paar, das aber
+  // durch den Ausschluss der Partner*in oben (doppelmatchPartnerNames) aus `women` verschwindet
+  // und damit in probabilityService.ts (toIdxPairs) aus JEDER Zeremonie herausgefiltert wird, in
+  // der es als Sitzpaar vorkommt. Ohne Korrektur bliebe `correctCount` dieser Zeremonie
+  // unverändert, obwohl eines ihrer Lichter bereits durch dieses (nicht mehr getrackte) Paar
+  // erklärt ist - die verbleibenden, weiterhin getrackten Paare müssten dann ein Licht weniger
+  // enthalten. Sonst verlangt die Suche zu viele korrekte Paare und verwirft gültige Lösungen (ODI-364).
+  const doppelmatchGuaranteedPairs = matchboxes
+    .filter(mb => mb.matchType === 'perfect' && mb.isDoppelmatch && mb.doppelmatchPartner)
+    .map(mb => ({ woman: mb.doppelmatchPartner as string, man: mb.man }))
   
   console.log('👥 Alle Kandidat*innen für Berechnung:', {
     männer: men.length,
@@ -149,9 +160,19 @@ export function convertToProbabilityInput(
     // WICHTIG: Verwende die Paare wie sie sind!
     // countCorrectPairs zählt nur die Paare, die in night.pairs vorkommen
     // Das ist automatisch korrekt für jede Zeremonie
+    //
+    // Ausnahme (ODI-364): Enthält diese Night ein Doppelmatch-Sitzpaar (z.B. Janice+Johannes),
+    // ist eines ihrer Lichter bereits dadurch erklärt - dieses Paar wird aber aus `women`
+    // ausgeschlossen und taucht in probabilityService.ts nie in den getrackten Paaren auf.
+    // correctCount muss daher um die Anzahl solcher garantiert korrekten, aber nicht mehr
+    // getrackten Paare reduziert werden.
+    const guaranteedCorrectUntracked = doppelmatchGuaranteedPairs.filter(gp =>
+      night.pairs.some(p => p.woman === gp.woman && p.man === gp.man)
+    ).length
+
     return {
       pairs: night.pairs, // NICHT filtern!
-      correctCount: night.totalLights || 0,
+      correctCount: (night.totalLights || 0) - guaranteedCorrectUntracked,
       knownPerfectMatches
     }
   })

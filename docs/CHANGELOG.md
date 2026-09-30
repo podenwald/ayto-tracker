@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0] - 2026-09-30
+
+### 📋 Daten
+- Standard-Datensatz der aktuellen Season (`public/json/ayto-rsil-2026.json`) auf den neuesten Stand gebracht: Matching Night #7 ergänzt (5 Lichter, ausgestrahlt am 30.09.2026), neue Matchbox Jenny + Daymian (Perfect Match). Jenny und Daymian dadurch analog zu bereits bestätigten Perfect Matches auf `active: false` gesetzt
+
+---
+
 ## [1.13.1] - 2026-09-26
 
 ### 🐛 Bugfixes (kritisch)

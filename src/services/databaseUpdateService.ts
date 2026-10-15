@@ -22,7 +22,6 @@ import {
 // Manifest-Interface
 export interface DatabaseManifest {
   version: string
-  dataHash: string
   released: string
   description?: string
 }
@@ -43,7 +42,6 @@ export interface DatabaseUpdateState {
 export interface DatabaseUpdateResult {
   success: boolean
   newVersion: string
-  newDataHash: string
   releasedDate: string
   error?: string
 }
@@ -69,7 +67,7 @@ export async function fetchDatabaseManifest(): Promise<DatabaseManifest> {
     const manifest: DatabaseManifest = await response.json()
     
     // Validierung
-    if (!manifest.version || !manifest.dataHash || !manifest.released) {
+    if (!manifest.version || !manifest.released) {
       throw new Error('Ungültiges Manifest-Format')
     }
     
@@ -104,11 +102,9 @@ async function resolveActiveSeasonCatalogEntry(): Promise<{
  * Prüft, ob für die AKTIVE Staffel ein Datenbank-Update verfügbar ist.
  *
  * Basiert bewusst NICHT auf der App-Code-Version (die ändert sich bei jedem Release,
- * auch ohne Datenbezug) und NICHT auf manifest.json's dataHash (der wird nur aus einer
- * fest hinterlegten Fallback-Datei berechnet, nicht aus der Datenquelle der aktiven
- * Staffel) - sondern auf einem Inhalts-Hash der tatsächlichen `dataUrl` der aktiven
- * Staffel, pro Staffel gespeichert (derselbe Meta-Key wie in seasonCatalogService.ts,
- * damit beide Mechanismen konsistent bleiben). Siehe ODI-331.
+ * auch ohne Datenbezug) und NICHT auf dem Manifest, sondern auf einem Inhalts-Hash der
+ * tatsächlichen `dataUrl` der aktiven Staffel, pro Staffel gespeichert (derselbe Meta-Key
+ * wie in seasonCatalogService.ts, damit beide Mechanismen konsistent bleiben). Siehe ODI-331.
  */
 export async function checkForDatabaseUpdate(): Promise<DatabaseUpdateState> {
   try {
@@ -367,7 +363,6 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
       await Promise.all([
         DatabaseUtils.setMetaValue(catalogBundleMetaKey(active.entry.id), latestDataHash),
         manifest ? DatabaseUtils.setDbVersion(manifest.version) : Promise.resolve(),
-        manifest ? DatabaseUtils.setDataHash(manifest.dataHash) : Promise.resolve(),
         DatabaseUtils.setLastUpdateDate(manifest?.released ?? new Date().toISOString())
       ])
     })
@@ -377,7 +372,6 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
     return {
       success: true,
       newVersion: manifest?.version ?? 'unknown',
-      newDataHash: manifest?.dataHash ?? 'unknown',
       releasedDate: manifest?.released ?? ''
     }
   } catch (error) {
@@ -385,7 +379,6 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
     return {
       success: false,
       newVersion: 'unknown',
-      newDataHash: 'unknown',
       releasedDate: '',
       error: error instanceof Error ? error.message : 'Unbekannter Fehler'
     }

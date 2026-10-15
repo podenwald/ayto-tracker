@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.2] - 2026-10-15
+
+### 🧹 Aufräumen
+- Das Feld `dataHash` aus `public/manifest.json` entfernt (ODI-368). Es hashte nur die alte Fallback-Datei `public/json/ayto-2026.json` und blieb deshalb seit Wochen unverändert, obwohl sich die Staffel-Daten änderten, wurde aber noch als Pflichtfeld geprüft und gespeichert - irreführend, denn die Update-Erkennung nutzt es seit ODI-331 gar nicht mehr (sie vergleicht einen Inhalts-Hash der Daten-Datei der aktiven Staffel). Entfernt in `scripts/update-manifest.cjs`, `DatabaseManifest`/`fetchDatabaseManifest()` (Manifeste mit und ohne `dataHash` werden akzeptiert), `DatabaseUpdateResult.newDataHash` und `DatabaseUtils.getDataHash()/setDataHash()`. Doku (`DATABASE_UPDATE_SYSTEM.md`, `DEPLOYMENT.md`, `production-deploy-guide.md`, `IMPLEMENTATION_SUMMARY.md`, `CLAUDE.md`) angepasst, dabei auch die falsche Aussage korrigiert, der Update-Hinweis hänge am Manifest-`dataHash`
+- Im Dev-Server geprüft: Nach einer Änderung an `ayto-rsil-2026.json` erscheint der Daten-Update-Hinweis weiterhin, "Jetzt aktualisieren" übernimmt die neue Matching Night und aktualisiert den Staffel-Hash
+
+---
+
 ## [1.14.1] - 2026-10-15
 
 ### 🐛 Bugfixes (kritisch)

@@ -44,7 +44,7 @@ Tailwind v4 is wired via the native `@tailwindcss/vite` plugin (no `postcss.conf
 ### PWA: two independent update mechanisms
 
 1. `vite-plugin-pwa` (`VitePWA({registerType: 'autoUpdate', ...})` in `vite.config.ts`) — standard service-worker asset caching/auto-update.
-2. A separate, hand-rolled data-update system: `scripts/update-manifest.cjs` (run in `prebuild`) hashes `public/ayto-vip-2025.json` and writes `{version, dataHash, released}` to `public/manifest.json`; `src/services/databaseUpdateService.ts` polls that manifest client-side and drives a user-gated "apply update" flow (`useDatabaseUpdate.ts`, `DatabaseUpdateBanner.tsx`, `VersionCheckDialog.tsx`). This is about detecting new *seed data* releases, unrelated to the service worker's own asset updates — don't conflate the two when debugging update issues.
+2. A separate, hand-rolled data-update system: `scripts/update-manifest.cjs` (run in `prebuild`) writes `{version, released}` (git tag + tag date) to `public/manifest.json`; `src/services/databaseUpdateService.ts` detects new seed data by hashing the active season's data file (`dataUrl`) and comparing it with a per-season hash stored in IndexedDB (not via the manifest), and drives a user-gated "apply update" flow (`useDatabaseUpdate.ts`, `DatabaseUpdateBanner.tsx`, `VersionCheckDialog.tsx`). This is about detecting new *seed data* releases, unrelated to the service worker's own asset updates — don't conflate the two when debugging update issues.
 
 ### Two changelogs — update both on release
 

@@ -12,15 +12,14 @@ Das benutzer-gesteuerte Datenbank-Update-System ermöglicht es, neue Daten (z.B.
 ```json
 {
   "version": "v1.2.1",
-  "dataHash": "f713b046",
   "released": "2026-07-23T07:21:14.000Z",
   "description": "AYTO-Tracker - Zentrale Version für Code und Daten"
 }
 ```
 
 - `version`: aktueller Git-Tag (nicht `dbVersion` - das Feld heißt tatsächlich `version`)
-- `dataHash`: MD5-Hash (erste 8 Zeichen) der Fallback-Datendatei `public/json/ayto-2026.json` - erkennt nur Änderungen an dieser einen Datei, nicht an den übrigen in `index.json` gelisteten Staffel-Dateien
 - `released`: ISO-Datum des Tags
+- Das Manifest sagt nur, welche **App-Version** ausgeliefert wird. Ob es neue **Staffel-Daten** gibt, erkennt die App nicht darüber, sondern über einen Inhalts-Hash der Daten-Datei (`dataUrl`) der aktiven Staffel, der pro Staffel in IndexedDB gespeichert wird (`checkForDatabaseUpdate()` in `databaseUpdateService.ts`, ODI-331). Das frühere Manifest-Feld `dataHash` (hashte nur `public/json/ayto-2026.json`) wurde mit ODI-368 entfernt.
 - Wird bei jedem `npm run build` automatisch neu generiert (`prebuild`-Skript)
 
 ### 2. IndexedDB Meta Store
@@ -70,7 +69,7 @@ Das benutzer-gesteuerte Datenbank-Update-System ermöglicht es, neue Daten (z.B.
 ### Deployment
 1. `npm run build` läuft automatisch beim Push auf `main` (GitHub Actions)
 2. `prebuild` führt `scripts/generate-version.cjs` und `scripts/update-manifest.cjs` aus - **nicht** `update-manifest.js` (diese Datei war ein ungenutztes Duplikat und wurde entfernt)
-3. `version` und `dataHash` werden im generierten `public/manifest.json` aktualisiert
+3. `version` und `released` werden im generierten `public/manifest.json` aktualisiert
 
 ## Verwendung
 
@@ -117,7 +116,7 @@ if (result.success) {
 ### Datenquellen
 
 Die tatsächliche Dateiliste steht in `public/json/index.json` und wird dynamisch geladen, aktuell z. B.:
-- `ayto-2026.json` (Fallback-Datei, wird auch für `dataHash` gehasht)
+- `ayto-2026.json` (Fallback-Datei)
 - `ayto-rsil-2025.json`
 - `ayto-rsil-2026.json`
 
@@ -136,14 +135,10 @@ Die früher hier dokumentierten Dateien (`ayto-vip-2025.json`, `ayto-complete-ex
 
 ### Banner wird nicht angezeigt
 1. Manifest-Datei (`/manifest.json`) erreichbar?
-2. `dataHash`/`version` im Manifest unterscheiden sich tatsächlich vom lokal gespeicherten Stand?
-
-### `dataHash` zeigt „unknown“
-War bis 2026-07-23 ein bekannter Bug: `scripts/update-manifest.cjs` verwies auf eine nicht mehr existierende Datei (`public/ayto-vip-2025.json`). Behoben, indem der Pfad auf die tatsächlich vorhandene Fallback-Datei (`public/json/ayto-2026.json`) korrigiert wurde.
+2. Hat sich die Daten-Datei der aktiven Staffel (z. B. `/json/ayto-rsil-2026.json`) inhaltlich geändert? Der Hinweis erscheint nur, wenn ihr Inhalts-Hash vom lokal gespeicherten Hash dieser Staffel abweicht - die App-Version im Manifest spielt dafür keine Rolle.
 
 ## Erweiterungen
 
 ### Zukünftige Features
-- [ ] `dataHash` über alle in `index.json` gelisteten Dateien berechnen, nicht nur die Fallback-Datei
 - [ ] Update-Historie anzeigen
 - [ ] Rollback-Funktionalität

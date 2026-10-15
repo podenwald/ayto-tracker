@@ -6,10 +6,10 @@ Dieser Leitfaden beschreibt, wie bei jedem Deployment sichergestellt wird, dass 
 
 ### Überblick
 - Datenquellen: alle Dateien, die in `public/json/index.json` gelistet sind (aktuell `ayto-2026.json`, `ayto-rsil-2025.json`, `ayto-rsil-2026.json`) - es gibt keine einzelne feste „Primärdatenquelle“ mehr
-- `dataHash` im Manifest hasht nur die Fallback-Datei `public/json/ayto-2026.json`, nicht alle Dateien (bekannte Einschränkung)
+- Ob es neue Staffel-Daten gibt, erkennt die App nicht über das Manifest, sondern über einen Inhalts-Hash der Daten-Datei der aktiven Staffel (siehe `docs/DATABASE_UPDATE_SYSTEM.md`)
 - Beim Build wird automatisch (`prebuild`):
   1) die App-Version aus dem Git-Tag ermittelt (`scripts/generate-version.cjs`)
-  2) das Manifest mit Version und Daten-Hash generiert (`scripts/update-manifest.cjs`)
+  2) das Manifest mit Version und Release-Datum generiert (`scripts/update-manifest.cjs`)
 
 ### Voraussetzungen
 - GitHub Actions Workflow `.github/workflows/main.yml`, Trigger: Push auf `main`
@@ -30,14 +30,13 @@ Dieser Leitfaden beschreibt, wie bei jedem Deployment sichergestellt wird, dass 
 3) Nach `main` mergen und pushen → GitHub Actions baut und deployed automatisch
 4) Post-Deploy prüfen:
    - Footer/Admin-Panel zeigt den erwarteten Git-Tag/Commit
-   - `/manifest.json` zeigt `version` = Git-Tag und `dataHash` ≠ `unknown`
+   - `/manifest.json` zeigt `version` = Git-Tag
 
 ### Was der Build automatisch macht
 - `prebuild` führt aus:
   - `scripts/generate-version.cjs` → ermittelt Git-Tag, Commit, Build-Zeit, Production-Flag, schreibt `src/utils/version.ts`
   - `scripts/update-manifest.cjs` → schreibt `public/manifest.json` mit:
     - `version`: aktueller Git-Tag
-    - `dataHash`: Hash von `public/json/ayto-2026.json` (nur diese eine Datei, siehe Überblick)
     - `released`: Datum/Uhrzeit des Tags
 
 ### Nach dem Deploy – Checks
@@ -46,7 +45,6 @@ Dieser Leitfaden beschreibt, wie bei jedem Deployment sichergestellt wird, dass 
   - Commit = 7-stelliger Prefix des letzten Commits
 - Manifest unter `/manifest.json`:
   - `version` = Git-Tag
-  - `dataHash` ≠ `unknown`
   - `released` plausibel
 - GitHub-Actions-Run: Status „success“ (`gh run list --branch main --limit 1`)
 
@@ -57,9 +55,6 @@ Dieser Leitfaden beschreibt, wie bei jedem Deployment sichergestellt wird, dass 
 - Problem: Production zeigt alte Version
   - Ursache: Push kam nicht auf `main` an, oder Workflow ist fehlgeschlagen
   - Lösung: `gh run list --branch main` prüfen, ggf. erneut pushen
-- Problem: Manifest zeigt `dataHash: "unknown"`
-  - Ursache: `public/json/ayto-2026.json` nicht vorhanden
-  - Lösung: Datei muss im Repo existieren (aktuell der Fall); ansonsten `scripts/update-manifest.cjs` prüfen
 - Problem: App meldet „Keine JSON-Dateien gefunden“
   - Ursache: `public/json/index.json` fehlt, ist leer oder verweist auf nicht existierende Dateien
   - Lösung: `index.json` prüfen, Build erneut ausführen
@@ -77,5 +72,5 @@ Dieser Leitfaden beschreibt, wie bei jedem Deployment sichergestellt wird, dass 
 2. GitHub-Actions-Run abwarten und auf Erfolg prüfen
 3. Prüfen:
    - Footer-Version = erwarteter Tag
-   - `/manifest.json` hat korrekte `version` und `dataHash`
+   - `/manifest.json` hat die korrekte `version`
    - Seite lädt und zeigt aktuelle Daten

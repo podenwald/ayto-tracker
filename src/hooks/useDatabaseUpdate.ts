@@ -126,7 +126,6 @@ export function useDatabaseUpdate(): UseDatabaseUpdateResult {
       return {
         success: false,
         newVersion: 'unknown',
-        newDataHash: 'unknown',
         releasedDate: '',
         error: errorMessage
       }

@@ -3,20 +3,17 @@
 /**
  * Script zur Aktualisierung der manifest.json
  * 
- * Generiert Manifest aus Git-Tag und Daten-Hash.
- * Zentrale Version für Code und Daten.
+ * Generiert Manifest aus Git-Tag.
+ * Zentrale Version für Code und Daten. Ob neue Staffel-Daten vorliegen, erkennt die App
+ * nicht über das Manifest, sondern über einen Inhalts-Hash der Daten-Datei der aktiven
+ * Staffel (siehe databaseUpdateService.ts, ODI-331).
  */
 
 const fs = require('fs')
 const path = require('path')
-const crypto = require('crypto')
 const { execSync } = require('child_process')
 
 const MANIFEST_PATH = path.join(__dirname, '..', 'public', 'manifest.json')
-// Hasht nur die Fallback-Datei (siehe databaseUpdateService.ts), nicht alle in
-// public/json/index.json gelisteten Staffel-Dateien - Änderungen an den
-// anderen Dateien werden von dataHash aktuell nicht erkannt.
-const DATA_FILE_PATH = path.join(__dirname, '..', 'public', 'json', 'ayto-2026.json')
 const PROJECT_ROOT = path.join(__dirname, '..')
 const HAS_GIT_REPO = fs.existsSync(path.join(PROJECT_ROOT, '.git'))
 
@@ -41,18 +38,6 @@ function getGitTag() {
   }
 }
 
-function getDataHash() {
-  try {
-    if (fs.existsSync(DATA_FILE_PATH)) {
-      const content = fs.readFileSync(DATA_FILE_PATH, 'utf8')
-      return crypto.createHash('md5').update(content).digest('hex').substring(0, 8)
-    }
-  } catch (error) {
-    console.warn('⚠️ Konnte Daten-Hash nicht berechnen:', error.message)
-  }
-  return 'unknown'
-}
-
 function getTagDate(tag) {
   if (!HAS_GIT_REPO) {
     // Ohne Git-Repository einfach aktuelles Datum verwenden
@@ -68,15 +53,13 @@ function getTagDate(tag) {
 
 function updateManifest() {
   try {
-    // Git-Tag und Daten-Hash ermitteln
+    // Git-Tag ermitteln
     const gitTag = getGitTag()
-    const dataHash = getDataHash()
     const released = getTagDate(gitTag)
 
     // Manifest erstellen
     const manifest = {
       version: gitTag,
-      dataHash: dataHash,
       released: released,
       description: "AYTO-Tracker - Zentrale Version für Code und Daten"
     }
@@ -86,7 +69,6 @@ function updateManifest() {
 
     console.log('✅ Manifest erfolgreich generiert:')
     console.log(`   Version: ${manifest.version}`)
-    console.log(`   Data Hash: ${manifest.dataHash}`)
     console.log(`   Released: ${manifest.released}`)
     
     return manifest

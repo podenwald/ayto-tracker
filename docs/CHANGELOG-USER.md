@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.14.2] - 2026-10-15
+- Technische Aufräumarbeiten im Hintergrund, für dich ändert sich nichts Sichtbares
+
+---
+
 ## [1.14.1] - 2026-10-15
 - Wichtiger Fehler behoben: Die Berechnung zeigte "0 gültige Kombinationen", weil Laurenz ein zweites Doppelmatch auslöst (eine Frau hat zwei Männer). Das wird jetzt richtig berechnet, die App findet die doppelt gematchte Person selbst. Aktuell bleibt genau 1 mögliche Lösung übrig
 - Aktueller Stand der Staffel aktualisiert (Matching Night #8 und #9, Matchbox Alexandra & Germain)

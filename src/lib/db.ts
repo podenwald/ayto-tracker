@@ -485,15 +485,6 @@ export class DatabaseUtils {
     await this.setMetaValue('dbVersion', version)
   }
 
-  static async getDataHash(): Promise<string> {
-    const hash = await this.getMetaValue('dataHash')
-    return typeof hash === 'string' ? hash : 'unknown'
-  }
-
-  static async setDataHash(hash: string): Promise<void> {
-    await this.setMetaValue('dataHash', hash)
-  }
-
   static async getLastUpdateDate(): Promise<string | null> {
     const date = await this.getMetaValue('lastUpdateDate')
     return typeof date === 'string' ? date : null

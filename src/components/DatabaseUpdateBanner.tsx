@@ -35,7 +35,6 @@ export default function DatabaseUpdateBanner({
       setUpdateResult({
         success: false,
         newVersion: 'unknown',
-        newDataHash: 'unknown',
         releasedDate: '',
         error: error instanceof Error ? error.message : 'Unbekannter Fehler'
       })

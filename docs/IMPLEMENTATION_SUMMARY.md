@@ -69,7 +69,7 @@
 ### Deployment
 1. Push auf `main` löst GitHub Actions aus (`.github/workflows/main.yml`)
 2. `npm run build` (inkl. `prebuild`) läuft automatisch, `scripts/update-manifest.cjs` wird dabei mitausgeführt
-3. `version` (Git-Tag) und `dataHash` werden aktualisiert, `released` wird gesetzt
+3. `version` (Git-Tag) wird aktualisiert, `released` wird gesetzt
 
 ## Verwendung
 

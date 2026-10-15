@@ -79,7 +79,7 @@ Nach dem Push:
 
 1. GitHub-Actions-Run prüfen (`gh run list --branch main` oder in der GitHub-UI) - läuft er auf „success“?
 2. App unter https://ayto-tracker.legendforest.de/ neu laden (ggf. Hard-Reload) und Version im Footer/Admin-Panel prüfen
-3. `/manifest.json` abrufen und `version`/`dataHash` gegenprüfen
+3. `/manifest.json` abrufen und `version` gegenprüfen (Query-Parameter wie `?nocache=...` anhängen, damit kein Cache dazwischenfunkt)
 
 ## Versionierung
 

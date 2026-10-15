@@ -10,16 +10,18 @@
  * möglichen Zuordnungen, gefiltert nach den bekannten Constraints, Wahrscheinlichkeit
  * = Anteil der gültigen Zuordnungen, die ein bestimmtes Paar enthalten.
  *
+ * Modell (ODI-367): Jede Person hat mindestens einen Partner, die Gesamtzahl der Paare ist
+ * minimal (= Größe der größeren Seite). Jede Person der größeren Seite hat daher genau eine
+ * Partnerin, jede Person der kleineren Seite mindestens einen Partner. Bei einem Überschuss
+ * (Doppelmatch) hat eine Person der kleineren Seite zwei - wer das ist, ergibt sich allein aus
+ * den Constraints und muss nicht eingetragen werden. Ausdrücklich eingetragene Doppelmatch-
+ * Partner*innen (z.B. Janice) sind bereits vor dem Aufruf aus dem Pool entfernt.
+ *
  * Generierung, Filterung und Zählung laufen in EINEM Durchgang über indexbasierte,
  * typisierte Arrays statt (wie zuvor) in getrennten Schritten über materialisierte
- * JS-Objekt-Arrays (ODI-339). Das vermeidet nicht nur den Objekt-Allokations-Overhead,
- * sondern behebt auch einen echten Korrektheits-Bug: die alte Implementierung musste
- * die Generierung bei MAX_VALID_MATCHINGS abbrechen, bevor überhaupt Constraints
- * angewendet wurden - bei der realen Saison-Größe (11 Frauen/10 Männer = 39.916.800
- * mögliche Zuordnungen) wurde dabei ein durch die feste Tiefensuche-Reihenfolge
- * systematisch verzerrter Teil des Lösungsraums abgeschnitten. Box-Entscheidungen
- * werden jetzt zusätzlich strukturell in die Suche eingebaut (Pruning), wodurch der
- * tatsächlich durchsuchte Raum in der Praxis ohnehin meist deutlich kleiner ist.
+ * JS-Objekt-Arrays (ODI-339). Box-Entscheidungen und die Abdeckungs-Regel werden
+ * strukturell in die Suche eingebaut (Pruning), wodurch der tatsächlich durchsuchte
+ * Raum in der Praxis meist deutlich kleiner ist als der theoretische.
  */
 
 import type {
@@ -32,9 +34,9 @@ import type {
 
 /**
  * Sicherheitslimit für die Anzahl vollständig ausgewerteter Zuordnungen (Blätter der
- * Suche). Bei den real möglichen Besetzungsgrößen dieser Show (bis ~11 Personen pro
- * Seite, max. ~40 Mio. Zuordnungen) wird dieses Limit nie erreicht - es schützt nur
- * vor einer hypothetischen, deutlich größeren Besetzung in einer zukünftigen Staffel.
+ * Suche). Der größte reale Fall - 11 gegen 10 Personen ganz ohne Constraints - hat
+ * 199.584.000 gültige Zuordnungen und bleibt knapp darunter; das Limit schützt vor
+ * einer hypothetischen, noch größeren Besetzung in einer zukünftigen Staffel.
  */
 const SAFETY_LEAF_LIMIT = 200_000_000
 
@@ -53,10 +55,10 @@ export const FULL_MATCHING_LIST_THRESHOLD = 50
 export type ProgressCallback = (progress: number, step: string) => void
 
 interface IndexedCeremony {
-  /** [womanIdx, manIdx] Paare der Zeremonie-Sitzordnung */
+  /** [targetIdx, driverIdx] Paare der Zeremonie-Sitzordnung */
   pairsIdx: Array<[number, number]>
   correctCount: number
-  /** [womanIdx, manIdx] Paare, die zum Zeitpunkt der Zeremonie schon als Perfect Match bekannt waren */
+  /** [targetIdx, driverIdx] Paare, die zum Zeitpunkt der Zeremonie schon als Perfect Match bekannt waren */
   knownIdx: Array<[number, number]>
 }
 
@@ -70,59 +72,51 @@ export async function calculateProbabilities(
   const startTime = performance.now()
 
   try {
-    const { men, women, ceremonies, boxDecisions, placeholderSlots = 0 } = input
+    const { men, women, ceremonies, boxDecisions } = input
     const nMen = men.length
     const nWomen = women.length
 
     onProgress?.(5, 'Bereite Berechnung vor...')
 
-    const menIdx = new Map(men.map((m, i) => [m, i]))
-    const womenIdx = new Map(women.map((w, i) => [w, i]))
+    // "Treiber" ist die größere Seite (bei Gleichstand die Männer): jeder Treiber bekommt
+    // genau eine Partnerin aus der Gegenseite ("Ziel"), jedes Ziel muss mindestens einen
+    // Treiber bekommen.
+    const menAreDrivers = nMen >= nWomen
+    const drivers = menAreDrivers ? men : women
+    const targets = menAreDrivers ? women : men
+    const nDrivers = drivers.length
+    const nTargets = targets.length
 
-    // Jede Frau darf maximal so oft vorkommen, wie es die Geschlechterzahlen erlauben
-    // (bei mehr Männern als Frauen kann eine Frau mehrfach vorkommen; bei mehr Frauen
-    // als Männern bleiben überzählige Frauen ohne Zuordnung). ceil(n/n) = 1, die Formel
-    // deckt daher auch den Gleichstand-Fall ab.
-    //
-    // `placeholderSlots` zählt Frauen, die wegen eines Doppelmatches komplett aus
-    // `women` entfernt wurden (ODI-355) - ohne Korrektur würde das künstlich so
-    // aussehen, als gäbe es zu wenige Frauen, und `maxPerWoman` würde JEDER realen
-    // Frau erlauben, zwei Männer zu bekommen (statt nur der eigentlich betroffenen
-    // Person, die gar nicht mehr im Suchraum steckt). Für die Berechnung von
-    // `maxPerWoman` wird deshalb die ursprüngliche, ungekürzte Frauenzahl verwendet;
-    // der dadurch entstehende Überschuss an Männern wird über zusätzliche, rein
-    // interne "Platzhalter"-Plätze absorbiert (= "keine berechenbare Partnerin"),
-    // statt eine beliebige reale Frau zu verdoppeln.
-    const maxPerWoman = Math.ceil(nMen / (nWomen + placeholderSlots))
-    const totalSlots = nWomen + placeholderSlots
+    const driverIdx = new Map(drivers.map((d, i) => [d, i]))
+    const targetIdx = new Map(targets.map((t, i) => [t, i]))
 
     // ** Box-Entscheidungen strukturell in die Suche einbauen (Pruning) **
-    const requiredCandidates: number[][] = Array.from({ length: nMen }, () => [])
-    const forbiddenWomen: Set<number>[] = Array.from({ length: nMen }, () => new Set())
+    const requiredCandidates: number[][] = Array.from({ length: nDrivers }, () => [])
+    const forbiddenTargets: Set<number>[] = Array.from({ length: nDrivers }, () => new Set())
     for (const decision of boxDecisions) {
-      const mi = menIdx.get(decision.man)
-      const wi = womenIdx.get(decision.woman)
-      if (mi === undefined || wi === undefined) continue
+      const di = driverIdx.get(menAreDrivers ? decision.man : decision.woman)
+      const ti = targetIdx.get(menAreDrivers ? decision.woman : decision.man)
+      if (di === undefined || ti === undefined) continue
       if (decision.isPerfectMatch) {
-        requiredCandidates[mi].push(wi)
+        requiredCandidates[di].push(ti)
       } else {
-        forbiddenWomen[mi].add(wi)
+        forbiddenTargets[di].add(ti)
       }
     }
 
-    const requiredWoman = new Int16Array(nMen).fill(-1)
+    const requiredTarget = new Int16Array(nDrivers).fill(-1)
     let contradictoryConstraints = false
-    for (let mi = 0; mi < nMen; mi++) {
-      const uniqueRequired = [...new Set(requiredCandidates[mi])]
+    for (let di = 0; di < nDrivers; di++) {
+      const uniqueRequired = [...new Set(requiredCandidates[di])]
       if (uniqueRequired.length > 1) {
-        // Ein Mann kann nicht gleichzeitig als Perfect Match mit zwei verschiedenen
-        // Frauen bestätigt sein - widersprüchliche Eingabedaten, kein Matching möglich.
+        // Ein Treiber hat genau eine Partnerin und kann nicht gleichzeitig als Perfect Match
+        // mit zwei verschiedenen Personen bestätigt sein - widersprüchliche Eingabedaten.
         contradictoryConstraints = true
         break
       }
       if (uniqueRequired.length === 1) {
-        requiredWoman[mi] = uniqueRequired[0]
-        if (forbiddenWomen[mi].has(uniqueRequired[0])) {
+        requiredTarget[di] = uniqueRequired[0]
+        if (forbiddenTargets[di].has(uniqueRequired[0])) {
           contradictoryConstraints = true
           break
         }
@@ -133,9 +127,9 @@ export async function calculateProbabilities(
     const toIdxPairs = (pairs: Pair[]): Array<[number, number]> =>
       pairs
         .map((p): [number, number] | null => {
-          const wi = womenIdx.get(p.woman)
-          const mi = menIdx.get(p.man)
-          return wi !== undefined && mi !== undefined ? [wi, mi] : null
+          const di = driverIdx.get(menAreDrivers ? p.man : p.woman)
+          const ti = targetIdx.get(menAreDrivers ? p.woman : p.man)
+          return di !== undefined && ti !== undefined ? [ti, di] : null
         })
         .filter((p): p is [number, number] => p !== null)
 
@@ -145,7 +139,7 @@ export async function calculateProbabilities(
       knownIdx: toIdxPairs(c.knownPerfectMatches)
     }))
 
-    const pairCounts: Uint32Array[] = Array.from({ length: nWomen }, () => new Uint32Array(nMen))
+    const pairCounts: Uint32Array[] = Array.from({ length: nTargets }, () => new Uint32Array(nDrivers))
     let totalValid = 0
     let totalLeaves = 0
     let limitReached = false
@@ -156,56 +150,55 @@ export async function calculateProbabilities(
     if (!contradictoryConstraints) {
       onProgress?.(10, 'Durchsuche mögliche Zuordnungen...')
 
-      const assignment = new Int16Array(nMen).fill(-1)
-      const womanUseCount = new Int16Array(totalSlots).fill(0)
+      const assignment = new Int16Array(nDrivers).fill(-1)
+      const targetUseCount = new Int16Array(nTargets).fill(0)
+      let uncoveredTargets = nTargets
 
       // Grobe Schätzung des Gesamtraums (ohne Pruning) für die Fortschrittsanzeige
-      const estimatedTotal = estimateSearchSpaceSize(nMen, totalSlots)
+      const estimatedTotal = countSurjections(nDrivers, nTargets)
       let lastReportedPercent = 10
 
       const isLeafValid = (): boolean => {
         for (const ceremony of ceremoniesIdx) {
-          for (const [wi, mi] of ceremony.knownIdx) {
-            if (assignment[mi] !== wi) return false
+          for (const [ti, di] of ceremony.knownIdx) {
+            if (assignment[di] !== ti) return false
           }
           let correct = 0
-          for (const [wi, mi] of ceremony.pairsIdx) {
-            if (assignment[mi] === wi) correct++
+          for (const [ti, di] of ceremony.pairsIdx) {
+            if (assignment[di] === ti) correct++
           }
           if (correct !== ceremony.correctCount) return false
         }
         return true
       }
 
-      const backtrack = (manIndex: number): void => {
+      const backtrack = (di: number): void => {
         if (totalLeaves >= SAFETY_LEAF_LIMIT) {
           limitReached = true
           return
         }
 
-        if (manIndex === nMen) {
+        // Abdeckung: sind weniger Treiber übrig als noch Ziele ohne Partner, kann am Ende
+        // keine Person der Gegenseite leer ausgehen - dieser Ast kann keine Lösung enthalten.
+        if (nDrivers - di < uncoveredTargets) return
+
+        if (di === nDrivers) {
           totalLeaves++
           if (isLeafValid()) {
             totalValid++
-            for (let mi = 0; mi < nMen; mi++) {
-              const wi = assignment[mi]
-              // Platzhalter-Plätze (wi >= nWomen) sind keine reale Person und fließen
-              // nicht in die Matrix ein - der Mann bleibt in diesem Blatt ohne
-              // berechenbare Partnerin.
-              if (wi < nWomen) pairCounts[wi][mi]++
+            for (let d = 0; d < nDrivers; d++) {
+              pairCounts[assignment[d]][d]++
             }
             if (collectedMatchings !== null) {
               if (collectedMatchings.length >= FULL_MATCHING_LIST_THRESHOLD) {
                 collectedMatchings = null
               } else {
                 const pairs: Pair[] = []
-                const openMen: string[] = []
-                for (let mi = 0; mi < nMen; mi++) {
-                  const wi = assignment[mi]
-                  if (wi < nWomen) pairs.push({ woman: women[wi], man: men[mi] })
-                  else openMen.push(men[mi])
+                for (let d = 0; d < nDrivers; d++) {
+                  const target = targets[assignment[d]]
+                  pairs.push(menAreDrivers ? { woman: target, man: drivers[d] } : { woman: drivers[d], man: target })
                 }
-                collectedMatchings.push({ pairs, openMen })
+                collectedMatchings.push({ pairs })
               }
             }
           }
@@ -219,29 +212,19 @@ export async function calculateProbabilities(
           return
         }
 
-        const required = requiredWoman[manIndex]
-        if (required !== -1) {
-          if (womanUseCount[required] < maxPerWoman) {
-            assignment[manIndex] = required
-            womanUseCount[required]++
-            backtrack(manIndex + 1)
-            womanUseCount[required]--
-            assignment[manIndex] = -1
-          }
-          return
-        }
-
-        const forbidden = forbiddenWomen[manIndex]
-        for (let wi = 0; wi < totalSlots; wi++) {
-          // Platzhalter-Plätze (wi >= nWomen) sind keine reale Person - No-Match-
-          // Entscheidungen (forbidden) können sich nie auf sie beziehen.
-          if (wi < nWomen && forbidden.has(wi)) continue
-          if (womanUseCount[wi] >= maxPerWoman) continue
-          assignment[manIndex] = wi
-          womanUseCount[wi]++
-          backtrack(manIndex + 1)
-          womanUseCount[wi]--
-          assignment[manIndex] = -1
+        const required = requiredTarget[di]
+        const forbidden = forbiddenTargets[di]
+        const first = required !== -1 ? required : 0
+        const last = required !== -1 ? required + 1 : nTargets
+        for (let ti = first; ti < last; ti++) {
+          if (required === -1 && forbidden.has(ti)) continue
+          assignment[di] = ti
+          if (targetUseCount[ti] === 0) uncoveredTargets--
+          targetUseCount[ti]++
+          backtrack(di + 1)
+          targetUseCount[ti]--
+          if (targetUseCount[ti] === 0) uncoveredTargets++
+          assignment[di] = -1
         }
       }
 
@@ -255,8 +238,8 @@ export async function calculateProbabilities(
       const woman = women[wi]
       probabilityMatrix[woman] = {}
       for (let mi = 0; mi < nMen; mi++) {
-        probabilityMatrix[woman][men[mi]] =
-          totalValid > 0 ? pairCounts[wi][mi] / totalValid : 0
+        const count = menAreDrivers ? pairCounts[wi][mi] : pairCounts[mi][wi]
+        probabilityMatrix[woman][men[mi]] = totalValid > 0 ? count / totalValid : 0
       }
     }
 
@@ -280,19 +263,18 @@ export async function calculateProbabilities(
 }
 
 /**
- * Grobe Schätzung der Gesamtgröße des Suchraums (ohne Pruning), nur für die
- * Fortschrittsanzeige - muss nicht exakt sein.
+ * Anzahl der Zuordnungen von nDrivers Treibern auf nTargets Ziele, bei denen jedes Ziel
+ * mindestens einen Treiber bekommt (Inklusion-Exklusion) - nur für die Fortschrittsanzeige.
  */
-function estimateSearchSpaceSize(nMen: number, nWomen: number): number {
-  if (nMen === 0) return 1
-  const larger = Math.max(nMen, nWomen)
-  const smaller = Math.min(nMen, nWomen)
-  // Fallende Fakultät: larger! / (larger - smaller)!
-  let result = 1
-  for (let i = 0; i < smaller; i++) {
-    result *= larger - i
+function countSurjections(nDrivers: number, nTargets: number): number {
+  if (nTargets === 0) return 1
+  let total = 0
+  let binomial = 1
+  for (let j = 0; j <= nTargets; j++) {
+    total += (j % 2 === 0 ? 1 : -1) * binomial * Math.pow(nTargets - j, nDrivers)
+    binomial = (binomial * (nTargets - j)) / (j + 1)
   }
-  return Math.max(result, 1)
+  return Math.max(Math.round(total), 1)
 }
 
 /**
@@ -311,6 +293,12 @@ function extractFixedPairs(matrix: ProbabilityMatrix): Pair[] {
 
   return fixedPairs
 }
+
+/**
+ * Version des Berechnungsmodells - Teil des Daten-Hashs, damit Ergebnisse eines früheren
+ * Modells (andere Bedeutung von "gültige Zuordnung") nie aus dem Cache wiederverwendet werden.
+ */
+const MODEL_VERSION = 'cover-v2'
 
 /**
  * Generiert einen Hash aus den Input-Daten für Caching
@@ -335,7 +323,7 @@ export function generateDataHash(input: ProbabilityInput): string {
     .sort()
     .join(';')
 
-  const fullString = `men:${menStr}|women:${womenStr}|placeholders:${input.placeholderSlots ?? 0}|ceremonies:${ceremoniesStr}|decisions:${decisionsStr}`
+  const fullString = `model:${MODEL_VERSION}|men:${menStr}|women:${womenStr}|ceremonies:${ceremoniesStr}|decisions:${decisionsStr}`
 
   // Simple hash function (FNV-1a)
   let hash = 2166136261

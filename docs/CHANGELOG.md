@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.14.1] - 2026-10-15
+
+### 🐛 Bugfixes (kritisch)
+- Die Berechnung lieferte "0 gültige Kombinationen", sobald durch Laurenz ein zweites Doppelmatch entstand (eine Frau mit zwei Männern). Seit ODI-355 nahm `probabilityService.ts` an, dass bei einem Männer-Überschuss der überzählige Mann "offen" bleibt (Platzhalter ohne Partnerin) und jede reale Frau höchstens einen Mann hat. In der Staffel hat aber jede Person mindestens einen Partner: nach dem Ausschluss von Janice stehen 11 Männer gegen 10 Frauen, also hat genau eine Frau zwei Männer (Emma mit Fabi und Laurenz). Das alte Modell verbot das, es blieb keine gültige Lösung. Das Modell vor ODI-355 war die Gegenrichtung des Fehlers (Frauen ohne Partner waren erlaubt, mehrere Frauen konnten doppelt vorkommen). Neues Modell: Jede Person der größeren Seite hat genau eine Partnerin, jede Person der kleineren Seite mindestens einen Partner (minimale Kantenüberdeckung, Abdeckung wird schon während der Suche geprüft). Wer doppelt gematcht ist, ergibt sich allein aus den Ergebnissen und muss nicht eingetragen werden; die Zeile einer doppelt gematchten Frau summiert sich daher auf mehr als 100%. `placeholderSlots` und der "(offen)"-Platzhalter in der Kombinationsliste entfallen. Mit den echten Exporten nachgerechnet: 461 (18.09.), 51 (23.09.), 12 (30.09.) und 1 (15.10.) gültige Kombinationen - die Zahl sinkt mit jeder Matching Night und fällt nie auf 0 (ODI-367)
+- Das garantiert korrekte Paar eines ausdrücklich eingetragenen Doppelmatches (ODI-364) wird jetzt auch dann von der Lichter-Anzahl abgezogen, wenn die zweite Partner*in ein Mann ist (Frau mit zwei Männern); bisher war das nur für eine zweite Frau richtig (ODI-367)
+- Der Daten-Hash der Berechnung enthält jetzt eine Modell-Version, damit im Browser zwischengespeicherte Ergebnisse des alten Modells (u.a. die fälschlichen 0 Kombinationen) nicht wiederverwendet werden (ODI-367)
+
+### 📋 Daten
+- Standard-Datensatz der aktuellen Season (`public/json/ayto-rsil-2026.json`) auf den Stand vom 15.10.2026 gebracht: Matching Night #8 (6 Lichter) und #9 (8 Lichter), Matchbox Zoe + Fabi (verkauft für -5.000 € an Brian) und Alexandra + Germain (No-Match) (ODI-367)
+
+### 🧪 Tests
+- Neues Berechnungsmodell gegen eine bewusst naive Brute-Force-Referenz geprüft (inkl. Fälle mit mehr Männern und mit mehr Frauen), Regressionstest mit dem Datenstand vom 15.10.2026. Der Test für die größte denkbare Besetzung ohne jede Information (11 gegen 10, 199.584.000 Zuordnungen) dauert rund 20 Sekunden (ODI-367)
+
+---
+
 ## [1.14.0] - 2026-09-30
 
 ### 📋 Daten

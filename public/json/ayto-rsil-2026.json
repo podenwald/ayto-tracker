@@ -457,6 +457,48 @@
       "createdAt": "2026-09-30T20:37:00.193Z",
       "ausstrahlungsdatum": "2026-09-30",
       "ausstrahlungszeit": "21:00"
+    },
+    {
+      "id": 616,
+      "name": "Matching Night #8",
+      "date": "2026-10-07",
+      "pairs": [
+        { "woman": "Jenny", "man": "Daymian" },
+        { "woman": "Marta", "man": "Johannes" },
+        { "woman": "Francesca", "man": "Raúl" },
+        { "woman": "Zoe", "man": "Cansin" },
+        { "woman": "Christin", "man": "Bennett" },
+        { "woman": "Julia", "man": "Brian" },
+        { "woman": "Michelle", "man": "Fabi" },
+        { "woman": "Emma", "man": "Laurenz" },
+        { "woman": "Alexandra", "man": "Germain" },
+        { "woman": "Joena", "man": "Robin" }
+      ],
+      "totalLights": 6,
+      "createdAt": "2026-10-07T21:15:27.058Z",
+      "ausstrahlungsdatum": "2026-10-07",
+      "ausstrahlungszeit": "21:00"
+    },
+    {
+      "id": 617,
+      "name": "Matching Night #9",
+      "date": "2026-10-14",
+      "pairs": [
+        { "woman": "Marta", "man": "Johannes" },
+        { "woman": "Jenny", "man": "Daymian" },
+        { "woman": "Michelle", "man": "Germain" },
+        { "woman": "Emma", "man": "Laurenz" },
+        { "woman": "Joena", "man": "Robin" },
+        { "woman": "Julia", "man": "Brian" },
+        { "woman": "Alexandra", "man": "Raúl" },
+        { "woman": "Francesca", "man": "Marwin" },
+        { "woman": "Christin", "man": "Bennett" },
+        { "woman": "Zoe", "man": "Cansin" }
+      ],
+      "totalLights": 8,
+      "createdAt": "2026-10-14T20:21:16.949Z",
+      "ausstrahlungsdatum": "2026-10-14",
+      "ausstrahlungszeit": "21:00"
     }
   ],
   "matchboxes": [
@@ -552,6 +594,32 @@
       "ausstrahlungszeit": "20:15",
       "createdAt": "2026-09-30T19:38:50.153Z",
       "updatedAt": "2026-09-30T19:38:50.153Z",
+      "isDoppelmatch": false
+    },
+    {
+      "id": 517,
+      "woman": "Zoe",
+      "man": "Fabi",
+      "matchType": "sold",
+      "price": -5000,
+      "buyer": "Brian",
+      "ausstrahlungsdatum": "2026-10-07",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-10-07T20:31:49.293Z",
+      "updatedAt": "2026-10-07T20:31:49.293Z",
+      "isDoppelmatch": false
+    },
+    {
+      "id": 518,
+      "woman": "Alexandra",
+      "man": "Germain",
+      "matchType": "no-match",
+      "price": 0,
+      "buyer": "",
+      "ausstrahlungsdatum": "2026-10-14",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-10-14T19:20:25.133Z",
+      "updatedAt": "2026-10-14T19:20:25.133Z",
       "isDoppelmatch": false
     }
   ],

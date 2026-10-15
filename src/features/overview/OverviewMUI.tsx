@@ -1749,7 +1749,7 @@ const OverviewMUI: React.FC = () => {
                       <Collapse in={herleitungExpanded}>
                         <Box component="ol" sx={{ pl: 2.5, pr: 1, py: 1, bgcolor: 'grey.50', borderRadius: 1, mt: 0.5 }}>
                           <Typography component="li" variant="body2" sx={{ mb: 1 }}>
-                            <strong>Schritt 1:</strong> Es werden alle theoretisch möglichen Gesamt-Matchings erzeugt (wer mit wem ein Paar sein könnte).
+                            <strong>Schritt 1:</strong> Es werden alle theoretisch möglichen Gesamt-Matchings erzeugt (wer mit wem ein Paar sein könnte). Dabei hat jede Person mindestens einen Partner; gibt es auf einer Seite mehr Personen (Doppelmatch), hat eine Person der anderen Seite zwei – wer das ist, ergibt sich aus den Ergebnissen.
                           </Typography>
                           <Typography component="li" variant="body2" sx={{ mb: 1 }}>
                             <strong>Schritt 2:</strong> Es bleiben nur die Matchings übrig, die zu allen <strong>Matching Nights</strong> passen: In jeder Night muss die Anzahl der „richtigen“ Paare (Lichter) exakt der eingegebenen Lichter-Anzahl entsprechen.
@@ -2241,17 +2241,22 @@ const OverviewMUI: React.FC = () => {
                             #{idx + 1}
                           </Typography>
                           {men.map(man => {
-                            const pair = solution.pairs.find(p => p.man === man.name)
-                            if (pair) {
+                            // Meist genau eine Partnerin; bei einem Doppelmatch (Mann mit zwei Frauen) zwei
+                            const manPairs = solution.pairs.filter(p => p.man === man.name)
+                            if (manPairs.length > 0) {
                               return (
-                                <CoupleAvatars
-                                  key={man.id}
-                                  womanName={pair.woman}
-                                  manName={pair.man}
-                                  matchType={fixedPairs.some(fp => fp.woman === pair.woman && fp.man === pair.man) ? 'perfect' : undefined}
-                                  participants={participants}
-                                  size={28}
-                                />
+                                <Box key={man.id} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  {manPairs.map(pair => (
+                                    <CoupleAvatars
+                                      key={pair.woman}
+                                      womanName={pair.woman}
+                                      manName={pair.man}
+                                      matchType={fixedPairs.some(fp => fp.woman === pair.woman && fp.man === pair.man) ? 'perfect' : undefined}
+                                      participants={participants}
+                                      size={28}
+                                    />
+                                  ))}
+                                </Box>
                               )
                             }
                             return (

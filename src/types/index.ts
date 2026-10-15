@@ -260,9 +260,8 @@ export interface ProbabilityMatrix {
  * "Lösungen" der Staffel) - siehe `ProbabilityResult.allValidMatchings` (ODI-358).
  */
 export interface MatchingSolution {
+  /** Alle Paare dieser Lösung; eine doppelt gematchte Person (Doppelmatch) kommt in zwei Paaren vor */
   pairs: Pair[]
-  /** Männer ohne berechenbare Partnerin in dieser Lösung (Doppelmatch-Platzhalter-Überschuss, ODI-355) */
-  openMen: string[]
 }
 
 /**
@@ -315,14 +314,6 @@ export interface ProbabilityInput {
   women: string[] // Namen der Frauen
   ceremonies: CeremonyConstraint[]
   boxDecisions: BoxDecision[]
-  /**
-   * Anzahl der Frauen, die wegen eines Doppelmatches komplett aus `women` entfernt wurden
-   * (z.B. Janice, die keine eigene Matchbox-Zeile hat, aber durch die Doppelmatch-
-   * Markierung bereits an einen Mann vergeben ist). Jede entfernte Person hinterlässt
-   * eine "freie Stelle": irgendein anderer Mann bleibt dadurch ohne Partnerin übrig,
-   * statt dass zufällig eine beliebige reale Frau doppelt gezählt wird (ODI-355).
-   */
-  placeholderSlots?: number
 }
 
 /**

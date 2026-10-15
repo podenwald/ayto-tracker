@@ -95,21 +95,24 @@ export function convertToProbabilityInput(
     .filter(p => p.gender === 'F' && !doppelmatchPartnerNames.has(p.name))
     .map(p => p.name)
 
-  // Wie viele Frauen wurden oben aus `women` entfernt? Diese Zahl reicht
-  // probabilityService.ts durch (placeholderSlots), damit der dadurch entstehende
-  // Männer-Überschuss nicht eine beliebige andere Frau verdoppelt (ODI-355).
-  const placeholderSlots = allParticipants.filter(p => p.gender === 'F' && doppelmatchPartnerNames.has(p.name)).length
-
   // Jedes Doppelmatch-Paar (z.B. Janice+Johannes) ist ein garantiert korrektes Paar, das aber
-  // durch den Ausschluss der Partner*in oben (doppelmatchPartnerNames) aus `women` verschwindet
+  // durch den Ausschluss der Partner*in oben (doppelmatchPartnerNames) aus dem Pool verschwindet
   // und damit in probabilityService.ts (toIdxPairs) aus JEDER Zeremonie herausgefiltert wird, in
   // der es als Sitzpaar vorkommt. Ohne Korrektur bliebe `correctCount` dieser Zeremonie
   // unverändert, obwohl eines ihrer Lichter bereits durch dieses (nicht mehr getrackte) Paar
   // erklärt ist - die verbleibenden, weiterhin getrackten Paare müssten dann ein Licht weniger
   // enthalten. Sonst verlangt die Suche zu viele korrekte Paare und verwirft gültige Lösungen (ODI-364).
+  // Die zweite Partner*in kann eine Frau (Mann mit zwei Frauen) oder ein Mann (Frau mit zwei
+  // Männern) sein - das Paar muss entsprechend aus der Matchbox zusammengesetzt werden (ODI-367).
   const doppelmatchGuaranteedPairs = matchboxes
     .filter(mb => mb.matchType === 'perfect' && mb.isDoppelmatch && mb.doppelmatchPartner)
-    .map(mb => ({ woman: mb.doppelmatchPartner as string, man: mb.man }))
+    .map(mb => {
+      const partnerName = mb.doppelmatchPartner as string
+      const partner = allParticipants.find(p => p.name === partnerName)
+      return partner?.gender === 'M'
+        ? { woman: mb.woman, man: partnerName }
+        : { woman: partnerName, man: mb.man }
+    })
   
   console.log('👥 Alle Kandidat*innen für Berechnung:', {
     männer: men.length,
@@ -190,8 +193,7 @@ export function convertToProbabilityInput(
     men,
     women,
     ceremonies,
-    boxDecisions,
-    placeholderSlots
+    boxDecisions
   }
 }
 

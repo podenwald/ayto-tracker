@@ -3,7 +3,7 @@
 ## [1.14.4] - 2026-10-21
 
 ### 🐛 Bugfixes
-- Das Staffelende-Overlay (10 Lichter) teilte die Gesamtsumme nur auf die aktiven Teilnehmer*innen auf (17 von 22). Bei 10 Lichtern bekommen aber alle Perfect Matches Geld, also auch die bereits ausgezogenen Paare und das Doppelmatch. `computeSeasonFinale` teilt jetzt durch alle Teilnehmer*innen der Staffel, unabhängig vom Status aktiv/inaktiv; das Ergebnisfeld heißt entsprechend `participantNames` statt `activeParticipantNames`. Mit den aktuellen Daten: 185.000 € / 22 = 8.409,09 € pro Person statt 10.882,35 € (ODI-373)
+- Das Staffelende-Overlay (10 Lichter) teilte die Gesamtsumme nur auf die aktiven Teilnehmer*innen auf (17 von 22). Bei 10 Lichtern bekommen aber die 10 Perfect Matches Geld: die Paare der 10. Matching Night plus die bereits per Matchbox gefundenen Perfect Matches, ohne Duplikate. Doppelmatch-Personen (z.B. Janice, Laurenz) sitzen dort nicht nebeneinander und bekommen nichts. `computeSeasonFinale` bestimmt die Empfänger*innen jetzt daraus (neues Ergebnisfeld `recipientNames`/`perRecipientEuro`, der Parameter `participants` entfällt). Mit den aktuellen Daten: 185.000 € / 20 Personen = 9.250 € pro Person statt 10.882,35 € (ODI-373)
 
 ---
 

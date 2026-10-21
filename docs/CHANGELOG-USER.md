@@ -3,7 +3,7 @@
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
 ## [1.14.4] - 2026-10-21
-- Abschluss-Screen am Staffelende: Bei 10 Lichtern wird die Gewinnsumme jetzt auf alle Teilnehmer*innen aufgeteilt, auch auf die Paare, die schon ausgezogen sind, und nicht mehr nur auf die noch aktiven
+- Abschluss-Screen am Staffelende: Bei 10 Lichtern wird die Gewinnsumme jetzt auf die 20 Personen der 10 Perfect Matches aufgeteilt (die Paare der letzten Matching Night plus die schon gefundenen). Doppelmatches bekommen kein Geld, und die Liste zeigt die Perfect Matches
 
 ---
 

@@ -2,6 +2,11 @@
 
 Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert hat. Technische Details zu jeder Änderung findest du im Quellcode auf GitHub.
 
+## [1.14.3] - 2026-10-21
+- Fehler behoben: Auf dem Abschluss-Screen am Staffelende wurde bei 10 Lichtern eine falsche Gewinnsumme angezeigt (z.B. -15.000 €). Jetzt wird die tatsächliche Summe aufgeteilt: das Startbudget minus verkaufte Matchboxen und Strafen plus Gutschriften, genau wie im Kopfbereich der App
+
+---
+
 ## [1.14.2] - 2026-10-15
 - Technische Aufräumarbeiten im Hintergrund, für dich ändert sich nichts Sichtbares
 

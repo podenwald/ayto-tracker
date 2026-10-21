@@ -4,6 +4,7 @@ Diese Liste zeigt dir in einfachen Worten, was sich in AYTO-Tracker geändert ha
 
 ## [1.14.4] - 2026-10-21
 - Abschluss-Screen am Staffelende: Bei 10 Lichtern wird die Gewinnsumme jetzt auf die 20 Personen der 10 Perfect Matches aufgeteilt (die Paare der letzten Matching Night plus die schon gefundenen). Doppelmatches bekommen kein Geld, und die Liste zeigt die Perfect Matches
+- Aktueller Stand der Staffel aktualisiert (Matching Night #10 mit 10 Lichtern, Matchbox Joena & Robin)
 
 ---
 

@@ -475,14 +475,18 @@ const MatchingNightCard: React.FC<{
 }
 
 
+// Startbudget aus den Admin-Einstellungen (gleiche Quelle wie Header und Admin-Bereich)
+const getStartingBudget = (): number => {
+  const savedBudget = localStorage.getItem('ayto-starting-budget')
+  return savedBudget ? parseInt(savedBudget, 10) : 200000
+}
+
 // Helper function to calculate statistics
 const calculateStatistics = (matchboxes: Matchbox[], matchingNights: MatchingNight[], penalties: Penalty[]) => {
   const perfectMatches = matchboxes.filter(mb => mb.matchType === 'perfect')
   
   // Gemeinsame Budget-/Saldo-Berechnung mit dem Admin-Bereich (ODI-272)
-  const savedBudget = localStorage.getItem('ayto-starting-budget')
-  const startingBudget = savedBudget ? parseInt(savedBudget, 10) : 200000
-  const { currentBalance } = calculateBudget(matchboxes, matchingNights, penalties, startingBudget)
+  const { currentBalance } = calculateBudget(matchboxes, matchingNights, penalties, getStartingBudget())
 
   // Get latest matching night lights (nur Nights mit Lichter-Info, keine verkauften)
   const matchingNightsWithLights = matchingNights.filter(mn => mn.matchType !== 'sold' && mn.totalLights !== undefined)
@@ -888,6 +892,7 @@ const OverviewMUI: React.FC = () => {
     boxes: Matchbox[],
     nights: MatchingNight[],
     participantsArr: Participant[],
+    penaltiesArr: Penalty[],
     subtitle: string
   ): boolean => {
     if (nights.length < 10) return false
@@ -895,7 +900,7 @@ const OverviewMUI: React.FC = () => {
     const tenthNight = sortedById[9]
     if (!tenthNight) return false
     setSeasonFinaleSubtitle(subtitle)
-    setSeasonFinaleResult(computeSeasonFinale(boxes, nights, participantsArr, tenthNight))
+    setSeasonFinaleResult(computeSeasonFinale(boxes, nights, participantsArr, tenthNight, penaltiesArr, getStartingBudget()))
     setSeasonFinaleOpen(true)
     return true
   }
@@ -923,12 +928,13 @@ const OverviewMUI: React.FC = () => {
         ...(isSold ? { matchType: 'sold' as const, price: matchingNightForm.price, buyer: matchingNightForm.buyer } : {})
       })
 
-      const [nightsAfter, boxesAfter, participantsAfter] = await Promise.all([
+      const [nightsAfter, boxesAfter, participantsAfter, penaltiesAfter] = await Promise.all([
         MatchingNightService.getAllMatchingNights(),
         MatchboxService.getAllMatchboxes(),
-        ParticipantService.getAllParticipants()
+        ParticipantService.getAllParticipants(),
+        PenaltyService.getAllPenalties()
       ])
-      triggerSeasonFinaleIfComplete(boxesAfter, nightsAfter, participantsAfter, '10. Matching Night gespeichert')
+      triggerSeasonFinaleIfComplete(boxesAfter, nightsAfter, participantsAfter, penaltiesAfter, '10. Matching Night gespeichert')
 
       setSnackbar({ open: true, message: isSold ? `Matching Night "${nameToUse}" wurde als verkauft gespeichert.` : `Matching Night "${nameToUse}" mit allen 10 Paaren wurde erfolgreich erstellt!`, severity: 'success' })
       setMatchingNightDialog(false)
@@ -1129,12 +1135,13 @@ const OverviewMUI: React.FC = () => {
 
   const handleOpenSeasonFinale = useCallback(async () => {
     try {
-      const [nightsArr, boxesArr, participantsArr] = await Promise.all([
+      const [nightsArr, boxesArr, participantsArr, penaltiesArr] = await Promise.all([
         MatchingNightService.getAllMatchingNights(),
         MatchboxService.getAllMatchboxes(),
-        ParticipantService.getAllParticipants()
+        ParticipantService.getAllParticipants(),
+        PenaltyService.getAllPenalties()
       ])
-      const opened = triggerSeasonFinaleIfComplete(boxesArr, nightsArr, participantsArr, 'Auswertung zum Ende der Staffel')
+      const opened = triggerSeasonFinaleIfComplete(boxesArr, nightsArr, participantsArr, penaltiesArr, 'Auswertung zum Ende der Staffel')
       if (!opened) {
         setSnackbar({
           open: true,

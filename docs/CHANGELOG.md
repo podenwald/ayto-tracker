@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.3] - 2026-10-21
+
+### 🐛 Bugfixes
+- Das Staffelende-Overlay (alle 10 Lichter in der 10. Matching Night) zeigte als Gesamtsumme nur die Summe der Verkäufe, z.B. -15.000 € (und -882,35 € pro Person) statt 185.000 € (10.882,35 € pro Person). `computeSeasonFinale` ließ Startbudget, Strafen und Gutschriften aus und rechnete nicht wie `calculateBudget` (ODI-272). Die Gesamtsumme ist jetzt `calculateBudget(...).currentBalance` und damit identisch zur Anzeige in Header und Admin. Dafür übergibt `OverviewMUI.tsx` Strafen und das im Admin eingestellte Startbudget an `computeSeasonFinale`. Der Zweig "Verkäufer-Auszahlungen" (weniger als 10 Lichter) ist unverändert (ODI-372)
+
+---
+
 ## [1.14.2] - 2026-10-15
 
 ### 🧹 Aufräumen

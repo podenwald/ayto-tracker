@@ -1,4 +1,5 @@
-import type { Matchbox, MatchingNight, Participant } from '@/types'
+import type { Matchbox, MatchingNight, Participant, Penalty } from '@/types'
+import { calculateBudget } from '@/utils/budget'
 
 /** Eine Auszahlungszeile: wer verkauft hat (laut erfasstem Namen beim Verkauf), Betrag, optional Kontext. */
 export interface SellerPayoutRow {
@@ -13,7 +14,7 @@ export interface SellerPayoutRow {
 export type SeasonFinaleResult =
   | {
       kind: 'all-lights-jackpot'
-      /** Summe aus verkauften Matchboxes und verkauften Matching Nights (wie Budget-Berechnung). */
+      /** Aktuelles Budget: Startbudget + Verkäufe - Strafen + Gutschriften (wie Header und Admin, ODI-372). */
       totalPoolEuro: number
       perParticipantEuro: number
       activeParticipantNames: string[]
@@ -30,26 +31,26 @@ export type SeasonFinaleResult =
 
 /**
  * Berechnet die Abschluss-Rückmeldung nach der 10. Matching Night.
- * - 10 Lichter: Gesamtsumme (alle Verkäufe inkl. Bonus) für alle Aktiven.
+ * - 10 Lichter: aktuelles Budget (Startbudget + Verkäufe - Strafen + Gutschriften) für alle Aktiven.
  * - Sonst: nur Abzüge (negative Preise) in Liste und Summe; Bonus (positive Preise) ausgeschlossen.
  */
 export function computeSeasonFinale(
   matchboxes: Matchbox[],
   matchingNights: MatchingNight[],
   participants: Participant[],
-  tenthNight: MatchingNight
+  tenthNight: MatchingNight,
+  penalties: Penalty[],
+  startingBudget: number
 ): SeasonFinaleResult {
   const soldMatchingNights = matchingNights.filter(
     mn => mn.matchType === 'sold' && typeof mn.price === 'number'
   )
-  const totalSoldMN = soldMatchingNights.reduce((s, mn) => s + (mn.price ?? 0), 0)
 
   const soldMatchboxes = matchboxes.filter(
     mb => mb.matchType === 'sold' && typeof mb.price === 'number'
   )
-  const totalSoldMB = soldMatchboxes.reduce((s, mb) => s + (mb.price ?? 0), 0)
 
-  const totalPoolEuro = totalSoldMB + totalSoldMN
+  const totalPoolEuro = calculateBudget(matchboxes, matchingNights, penalties, startingBudget).currentBalance
 
   const isTenLights =
     tenthNight.matchType !== 'sold' && tenthNight.totalLights === 10

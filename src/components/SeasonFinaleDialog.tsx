@@ -67,22 +67,22 @@ const SeasonFinaleDialog: React.FC<SeasonFinaleDialogProps> = ({
         {result.kind === 'all-lights-jackpot' ? (
           <Box>
             <Typography variant="body1" paragraph sx={{ fontWeight: 600 }}>
-              Alle zehn Lichter sind angegangen – die Gesamtsumme geht an alle Teilnehmer*innen.
+              Alle zehn Lichter sind angegangen – die Gesamtsumme geht an die zehn Perfect Matches.
             </Typography>
             <Typography variant="h6" color="primary.main" gutterBottom>
               Gesamtsumme: {fmt(result.totalPoolEuro)} €
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Aufgeteilt auf {result.activeParticipantNames.length} aktive Teilnehmer*innen: je{' '}
-              <strong>{fmt(result.perParticipantEuro)} €</strong>
+              Aufgeteilt auf {result.recipientNames.length} Personen: je{' '}
+              <strong>{fmt(result.perRecipientEuro)} €</strong>
             </Typography>
-            {result.activeParticipantNames.length > 0 && (
+            {result.recipientNames.length > 0 && (
               <>
                 <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                  Teilnehmer*innen
+                  Perfect Matches
                 </Typography>
                 <List dense disablePadding>
-                  {result.activeParticipantNames.map(name => (
+                  {result.recipientNames.map(name => (
                     <ListItem key={name} disableGutters sx={{ py: 0.25 }}>
                       <ListItemText primary={name} />
                     </ListItem>

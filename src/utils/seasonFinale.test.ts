@@ -21,7 +21,7 @@ function participant(overrides: Partial<Participant>): Participant {
 }
 
 describe('computeSeasonFinale', () => {
-  it('splits the pool (starting budget 0 + sold items) equally across active participants on an all-lights night', () => {
+  it('splits the pool (starting budget 0 + sold items) equally across all participants on an all-lights night, incl. inactive ones (ODI-373)', () => {
     const matchboxes = [mb({ matchType: 'sold', price: 100 })]
     const matchingNights = [mn({ matchType: 'sold', price: 50 })]
     const participants = [
@@ -36,8 +36,8 @@ describe('computeSeasonFinale', () => {
     expect(result.kind).toBe('all-lights-jackpot')
     if (result.kind === 'all-lights-jackpot') {
       expect(result.totalPoolEuro).toBe(150)
-      expect(result.perParticipantEuro).toBe(75)
-      expect(result.activeParticipantNames).toEqual(['A', 'B'])
+      expect(result.perParticipantEuro).toBe(50)
+      expect(result.participantNames).toEqual(['A', 'B', 'C'])
     }
   })
 
@@ -93,7 +93,8 @@ describe('computeSeasonFinale', () => {
       mb({ matchType: 'sold', price: -10000, buyer: 'Fabi' }),
       mb({ matchType: 'sold', price: -5000, buyer: 'Brian' })
     ]
-    const participants = Array.from({ length: 17 }, (_, i) => participant({ name: `P${i}`, active: true }))
+    // 17 aktiv + 5 ausgezogen (Perfect Match / Doppelmatch): alle 22 bekommen Geld (ODI-373)
+    const participants = Array.from({ length: 22 }, (_, i) => participant({ name: `P${i}`, active: i < 17 }))
     const tenthNight = mn({ totalLights: 10 })
 
     const result = computeSeasonFinale(matchboxes, [], participants, tenthNight, [], 200000)
@@ -101,7 +102,7 @@ describe('computeSeasonFinale', () => {
     expect(result.kind).toBe('all-lights-jackpot')
     if (result.kind === 'all-lights-jackpot') {
       expect(result.totalPoolEuro).toBe(185000)
-      expect(result.perParticipantEuro).toBeCloseTo(10882.35, 2)
+      expect(result.perParticipantEuro).toBeCloseTo(8409.09, 2)
     }
   })
 

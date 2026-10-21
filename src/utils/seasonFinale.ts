@@ -17,7 +17,8 @@ export type SeasonFinaleResult =
       /** Aktuelles Budget: Startbudget + Verkäufe - Strafen + Gutschriften (wie Header und Admin, ODI-372). */
       totalPoolEuro: number
       perParticipantEuro: number
-      activeParticipantNames: string[]
+      /** Alle Teilnehmer*innen der Staffel, auch bereits ausgezogene Perfect Matches (ODI-373). */
+      participantNames: string[]
     }
   | {
       kind: 'seller-payouts'
@@ -31,7 +32,7 @@ export type SeasonFinaleResult =
 
 /**
  * Berechnet die Abschluss-Rückmeldung nach der 10. Matching Night.
- * - 10 Lichter: aktuelles Budget (Startbudget + Verkäufe - Strafen + Gutschriften) für alle Aktiven.
+ * - 10 Lichter: aktuelles Budget (Startbudget + Verkäufe - Strafen + Gutschriften) für alle Teilnehmer*innen.
  * - Sonst: nur Abzüge (negative Preise) in Liste und Summe; Bonus (positive Preise) ausgeschlossen.
  */
 export function computeSeasonFinale(
@@ -56,13 +57,12 @@ export function computeSeasonFinale(
     tenthNight.matchType !== 'sold' && tenthNight.totalLights === 10
 
   if (isTenLights) {
-    const active = participants.filter(p => p.active !== false)
-    const n = Math.max(active.length, 1)
+    const n = Math.max(participants.length, 1)
     return {
       kind: 'all-lights-jackpot',
       totalPoolEuro,
       perParticipantEuro: totalPoolEuro / n,
-      activeParticipantNames: active.map(p => p.name).filter(Boolean) as string[]
+      participantNames: participants.map(p => p.name).filter(Boolean) as string[]
     }
   }
 

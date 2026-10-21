@@ -73,16 +73,16 @@ const SeasonFinaleDialog: React.FC<SeasonFinaleDialogProps> = ({
               Gesamtsumme: {fmt(result.totalPoolEuro)} €
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Aufgeteilt auf {result.activeParticipantNames.length} aktive Teilnehmer*innen: je{' '}
+              Aufgeteilt auf {result.participantNames.length} Teilnehmer*innen: je{' '}
               <strong>{fmt(result.perParticipantEuro)} €</strong>
             </Typography>
-            {result.activeParticipantNames.length > 0 && (
+            {result.participantNames.length > 0 && (
               <>
                 <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
                   Teilnehmer*innen
                 </Typography>
                 <List dense disablePadding>
-                  {result.activeParticipantNames.map(name => (
+                  {result.participantNames.map(name => (
                     <ListItem key={name} disableGutters sx={{ py: 0.25 }}>
                       <ListItemText primary={name} />
                     </ListItem>

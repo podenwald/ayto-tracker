@@ -1,4 +1,4 @@
-import type { Matchbox, MatchingNight, Participant, Penalty } from '@/types'
+import type { Matchbox, MatchingNight, Penalty } from '@/types'
 import { calculateBudget } from '@/utils/budget'
 
 /** Eine Auszahlungszeile: wer verkauft hat (laut erfasstem Namen beim Verkauf), Betrag, optional Kontext. */
@@ -16,8 +16,12 @@ export type SeasonFinaleResult =
       kind: 'all-lights-jackpot'
       /** Aktuelles Budget: Startbudget + Verkäufe - Strafen + Gutschriften (wie Header und Admin, ODI-372). */
       totalPoolEuro: number
-      perParticipantEuro: number
-      activeParticipantNames: string[]
+      perRecipientEuro: number
+      /**
+       * Die Personen der 10 Perfect Matches: alle Paare der 10. Matching Night plus die bereits per
+       * Matchbox gefundenen Perfect Matches. Doppelmatch-Personen sind nicht dabei (ODI-373).
+       */
+      recipientNames: string[]
     }
   | {
       kind: 'seller-payouts'
@@ -31,13 +35,13 @@ export type SeasonFinaleResult =
 
 /**
  * Berechnet die Abschluss-Rückmeldung nach der 10. Matching Night.
- * - 10 Lichter: aktuelles Budget (Startbudget + Verkäufe - Strafen + Gutschriften) für alle Aktiven.
+ * - 10 Lichter: aktuelles Budget (Startbudget + Verkäufe - Strafen + Gutschriften) für die 10 Perfect Matches
+ *   (Paare der 10. Matching Night + bereits gefundene), ohne Doppelmatch-Personen.
  * - Sonst: nur Abzüge (negative Preise) in Liste und Summe; Bonus (positive Preise) ausgeschlossen.
  */
 export function computeSeasonFinale(
   matchboxes: Matchbox[],
   matchingNights: MatchingNight[],
-  participants: Participant[],
   tenthNight: MatchingNight,
   penalties: Penalty[],
   startingBudget: number
@@ -56,13 +60,24 @@ export function computeSeasonFinale(
     tenthNight.matchType !== 'sold' && tenthNight.totalLights === 10
 
   if (isTenLights) {
-    const active = participants.filter(p => p.active !== false)
-    const n = Math.max(active.length, 1)
+    // Set behält die Einfügereihenfolge und entfernt Doppelte (gefundene Paare sitzen meist schon in der Night)
+    const recipients = new Set<string>()
+    for (const pair of tenthNight.pairs) {
+      recipients.add(pair.woman)
+      recipients.add(pair.man)
+    }
+    for (const mb of matchboxes) {
+      if (mb.matchType === 'perfect') {
+        recipients.add(mb.woman)
+        recipients.add(mb.man)
+      }
+    }
+    const recipientNames = [...recipients].filter(Boolean)
     return {
       kind: 'all-lights-jackpot',
       totalPoolEuro,
-      perParticipantEuro: totalPoolEuro / n,
-      activeParticipantNames: active.map(p => p.name).filter(Boolean) as string[]
+      perRecipientEuro: totalPoolEuro / Math.max(recipientNames.length, 1),
+      recipientNames
     }
   }
 

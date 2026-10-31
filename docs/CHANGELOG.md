@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.14.4] - 2026-10-21
+
+### 🐛 Bugfixes
+- Das Staffelende-Overlay (10 Lichter) teilte die Gesamtsumme nur auf die aktiven Teilnehmer*innen auf (17 von 22). Bei 10 Lichtern bekommen aber die 10 Perfect Matches Geld: die Paare der 10. Matching Night plus die bereits per Matchbox gefundenen Perfect Matches, ohne Duplikate. Doppelmatch-Personen (z.B. Janice, Laurenz) sitzen dort nicht nebeneinander und bekommen nichts. `computeSeasonFinale` bestimmt die Empfänger*innen jetzt daraus (neues Ergebnisfeld `recipientNames`/`perRecipientEuro`, der Parameter `participants` entfällt). Mit den aktuellen Daten: 185.000 € / 20 Personen = 9.250 € pro Person statt 10.882,35 € (ODI-373)
+
+### 📋 Daten
+- Standard-Datensatz der aktuellen Season (`public/json/ayto-rsil-2026.json`) auf den Stand vom 21.10.2026 gebracht: Matching Night #10 (10 Lichter) und Matchbox Joena + Robin (kein Match). Teilnehmer*innen, Matching Nights #1-#9 und die übrigen Matchboxen sind unverändert (Feld-für-Feld-Abgleich mit dem Export vom 21.10.2026)
+
+---
+
 ## [1.14.3] - 2026-10-21
 
 ### 🐛 Bugfixes
